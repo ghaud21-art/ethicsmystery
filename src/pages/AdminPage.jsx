@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
-import { listScenarios, saveScenario, setScenarioPublished, deleteScenario } from '../firebase/scenariosApi.js'
+import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario } from '../firebase/scenariosApi.js'
 import { parseScenarioDoc } from '../firebase/functionsApi.js'
 import { fileToBase64, resizeImageToDataUrl } from '../utils/fileHelpers.js'
 
@@ -171,6 +171,23 @@ function ScenarioListSection({ scenarios, onChanged }) {
     }
   }
 
+  const handleThumbnail = async (s, e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, { maxWidth: 700, quality: 0.8 })
+      await setScenarioThumbnail(s.scenarioId, dataUrl)
+      onChanged()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+      e.target.value = ''
+    }
+  }
+
   return (
     <div className="col">
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
@@ -184,6 +201,15 @@ function ScenarioListSection({ scenarios, onChanged }) {
             <span className={`pill ${s.published ? 'pill-solid' : 'pill-muted'}`}>
               {s.published ? '플레이 가능' : '준비 중'}
             </span>
+          </div>
+          <div className="row" style={{ alignItems: 'center' }}>
+            {s.thumbnailDataUrl && (
+              <img src={s.thumbnailDataUrl} alt="썸네일" style={{ width: 64, height: 64, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
+            )}
+            <label className="dim" style={{ fontSize: 12 }}>
+              썸네일 이미지
+              <input type="file" accept="image/*" onChange={(e) => handleThumbnail(s, e)} disabled={busy} style={{ display: 'block', marginTop: 4 }} />
+            </label>
           </div>
           <div className="row">
             <button onClick={() => handleTogglePublished(s)} disabled={busy}>

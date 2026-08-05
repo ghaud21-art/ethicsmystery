@@ -7,7 +7,9 @@ service cloud.firestore {
       allow read: if request.auth != null && request.auth.uid == resource.data.uid;
       allow create: if request.auth != null
                     && request.auth.token.homeSchoolStudent == true
-                    && request.resource.data.uid == request.auth.uid;
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.studentName is string && request.resource.data.studentName.size() > 0
+                    && request.resource.data.studentId is string && request.resource.data.studentId.size() > 0;
       allow update, delete: if false;
     }
 

@@ -15,7 +15,7 @@ const MODEL_FALLBACK = defineString('GEMINI_MODEL_FALLBACK', { default: 'gemini-
 
 const { callGeminiWithFallback } = require('./gemini')
 const { callGeminiParse } = require('./scenarioParser')
-const { verifySchoolCode: verifySchoolCodeImpl } = require('./schoolCode')
+const { verifySchoolCode: verifySchoolCodeImpl, getMyResults: getMyResultsImpl } = require('./schoolCode')
 
 function requireAdmin(req) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
@@ -25,6 +25,7 @@ function requireAdmin(req) {
 }
 
 exports.verifySchoolCode = onCall({ secrets: [SCHOOL_CODE] }, (req) => verifySchoolCodeImpl(req, SCHOOL_CODE))
+exports.getMyResults = onCall({ secrets: [SCHOOL_CODE] }, (req) => getMyResultsImpl(req, SCHOOL_CODE))
 
 // homeSchoolStudent 등급만 호출 가능 — guest는 custom claim이 없으므로 여기서 차단된다.
 // firestore.rules에서도 동일 claim을 요구하므로 이중으로 강제됨.

@@ -99,6 +99,15 @@ export function RoomProvider({ scenario, roomCode, children }) {
     [room, roomCode, uid],
   )
 
+  // 실수로 선택한 캐릭터를 명시적으로 취소한다 — characterClaims 선점을 풀고
+  // players/{uid}/characterId를 비워, 다시 아무 캐릭터나 고를 수 있는 상태로 되돌린다.
+  const clearCharacterSelection = useCallback(async () => {
+    const myCharacterId = room?.players?.[uid]?.characterId
+    if (!myCharacterId) return
+    await remove(ref(db, `rooms/${roomCode}/characterClaims/${myCharacterId}`))
+    await set(ref(db, `rooms/${roomCode}/players/${uid}/characterId`), null)
+  }, [room, roomCode, uid])
+
   const startGame = useCallback(async () => {
     if (!room) return
     const apBudget = getPhaseApBudget(scenario, 'phase1', room.meta.playerCount)
@@ -134,8 +143,8 @@ export function RoomProvider({ scenario, roomCode, children }) {
   )
 
   const claimClue = useCallback(
-    (clueId, phase) => claimClueEngine(roomCode, uid, scenario, clueId, phase),
-    [roomCode, uid, scenario],
+    (clueId, phase) => claimClueEngine(roomCode, uid, scenario, clueId, phase, room?.meta?.playerCount),
+    [roomCode, uid, scenario, room],
   )
 
   const publishClue = useCallback(
@@ -176,6 +185,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       createRoom,
       joinRoom,
       selectCharacter,
+      clearCharacterSelection,
       startGame,
       advanceToPhase2,
       advanceToResolution,
@@ -194,6 +204,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       createRoom,
       joinRoom,
       selectCharacter,
+      clearCharacterSelection,
       startGame,
       advanceToPhase2,
       advanceToResolution,

@@ -1,4 +1,4 @@
-export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, onClaim, onPublish, players }) {
+export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, autoRevealed, onClaim, onPublish, players }) {
   const claimedByName = clueState?.claimedBy ? players?.[clueState.claimedBy]?.name : null
   const claimedByMe = clueState?.claimedBy && visible
   const isCombo = clue.unlockType === 'combo'
@@ -23,6 +23,9 @@ export default function ClueCard({ clue, clueState, visible, canClaim, comboRead
         <>
           <p className="dim" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>{clue.content}</p>
           <p className="dim" style={{ margin: 0, fontSize: 12 }}>{clue.implication}</p>
+          {autoRevealed && (
+            <span className="pill pill-outline" style={{ alignSelf: 'flex-start' }}>이번 판에 등장하지 않는 인물 · 자동 공개</span>
+          )}
           {claimedByMe && clueState?.publishedToRoom && (
             <span className="pill pill-solid" style={{ alignSelf: 'flex-start' }}>공개됨 · 모두에게 보임</span>
           )}

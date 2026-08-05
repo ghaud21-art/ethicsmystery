@@ -1,8 +1,21 @@
+import { getPlayableCharacters } from './characterAssignment'
+
+// owner가 있는 단서인데, 그 owner 캐릭터가 이번 방의 인원수(playerCount)에서는
+// 아예 플레이 대상이 아닌 경우(예: 4인용 시나리오를 3인으로 진행) — 그 인물을
+// 캐물을 사람 자체가 없으므로, 조사(claim) 없이 처음부터 모두에게 공개한다.
+export function isClueAutoRevealed(clue, scenario, playerCount) {
+  if (!clue.owner || !scenario || !playerCount) return false
+  const playable = getPlayableCharacters(scenario, playerCount)
+  return !playable.some((c) => c.id === clue.owner)
+}
+
 // 단서 하나가 특정 플레이어에게 보여야 하는지 판단한다.
 // clueState: rooms/{code}/clues/{clueId} 스냅샷 ({ claimedBy, publishedToRoom } | undefined)
-export function isClueVisibleTo(clue, clueState, uid, myCharacterId) {
+// scenario/playerCount를 넘기면 "미등장 인물"의 단서 자동 공개 규칙도 함께 적용된다.
+export function isClueVisibleTo(clue, clueState, uid, myCharacterId, scenario, playerCount) {
   if (clueState?.claimedBy === uid) return true // 직접 조사함
   if (clueState?.publishedToRoom) return true // 누군가 공개함
+  if (isClueAutoRevealed(clue, scenario, playerCount)) return true // 미등장 인물의 단서는 자동 공개
   return false
 }
 

@@ -1,6 +1,6 @@
 import { ref, runTransaction, get } from 'firebase/database'
 import { db } from '../firebase/firebaseConfig'
-import { isClueVisibleTo } from './visibility'
+import { isClueVisibleTo, isClueAutoRevealed } from './visibility'
 
 export function getPhaseApBudget(scenario, phase, playerCount) {
   const phaseDef = scenario.clues[phase]
@@ -19,26 +19,30 @@ export function findClueDef(scenario, clueId) {
 // 상태여야 열람 가능해진다 — 본인이 직접 확보했거나, 확보한 사람이 방에 공개했거나.
 // 팀 전체가 아니라 플레이어별로 판정하므로, 두 선행 단서를 서로 다른 사람이 나눠
 // 갖고 있다면 누군가 자기 단서를 '공개하기'로 공유해야만 조합이 풀린다.
-export function isComboReady(scenario, clue, roomClues, uid, myCharacterId) {
+export function isComboReady(scenario, clue, roomClues, uid, myCharacterId, playerCount) {
   if (clue.unlockType !== 'combo') return true
   return (clue.requiresClueIds ?? []).every((id) => {
     const prereqClue = findClueDef(scenario, id)
-    return prereqClue && isClueVisibleTo(prereqClue, roomClues?.[id], uid, myCharacterId)
+    return prereqClue && isClueVisibleTo(prereqClue, roomClues?.[id], uid, myCharacterId, scenario, playerCount)
   })
 }
 
 // 두 개의 별도 RTDB 트랜잭션(단서 선점 → AP 차감)으로 처리한다. 완전한 원자성은
 // 아니지만 3~4인 교실 규모의 낮은 동시 쓰기 경합에서는 충분한 트레이드오프.
-export async function claimClue(roomCode, uid, scenario, clueId, phase) {
+export async function claimClue(roomCode, uid, scenario, clueId, phase, playerCount) {
   const clue = findClueDef(scenario, clueId)
   if (!clue) throw new Error(`알 수 없는 단서: ${clueId}`)
+
+  if (isClueAutoRevealed(clue, scenario, playerCount)) {
+    throw new Error('이 단서는 이미 모두에게 공개된 정보입니다')
+  }
 
   if (clue.unlockType === 'combo') {
     const [cluesSnap, characterIdSnap] = await Promise.all([
       get(ref(db, `rooms/${roomCode}/clues`)),
       get(ref(db, `rooms/${roomCode}/players/${uid}/characterId`)),
     ])
-    if (!isComboReady(scenario, clue, cluesSnap.val(), uid, characterIdSnap.val())) {
+    if (!isComboReady(scenario, clue, cluesSnap.val(), uid, characterIdSnap.val(), playerCount)) {
       throw new Error('아직 조합 조건이 충족되지 않았습니다 — 선행 단서를 먼저 확보하거나 팀원이 공개해야 합니다')
     }
   }

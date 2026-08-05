@@ -12,8 +12,9 @@ function WaitingRoomInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
   const { uid } = useAuth()
-  const { room, loading, selectCharacter, startGame } = useRoom()
+  const { room, loading, selectCharacter, clearCharacterSelection, startGame } = useRoom()
   const [selectError, setSelectError] = useState(null)
+  const [busy, setBusy] = useState(false)
 
   useEffect(() => {
     if (room?.meta?.phase === 'phase1') {
@@ -34,10 +35,25 @@ function WaitingRoomInner({ scenario }) {
 
   const handleSelect = async (characterId) => {
     setSelectError(null)
+    setBusy(true)
     try {
       await selectCharacter(characterId)
     } catch (e) {
       setSelectError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const handleClear = async () => {
+    setSelectError(null)
+    setBusy(true)
+    try {
+      await clearCharacterSelection()
+    } catch (e) {
+      setSelectError(e.message)
+    } finally {
+      setBusy(false)
     }
   }
 
@@ -126,18 +142,27 @@ function WaitingRoomInner({ scenario }) {
               </div>
               <span className="dim" style={{ fontSize: 12 }}>{c.role}</span>
               <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>{c.publicInfo}</p>
-              <button
-                className={isMine ? '' : 'primary'}
-                onClick={() => handleSelect(c.id)}
-                disabled={!!takenByUid && !isMine}
-                style={{ alignSelf: 'flex-start' }}
-              >
-                {isMine ? '선택함' : takenByUid ? '이미 선택됨' : '이 캐릭터 선택'}
-              </button>
+              {isMine ? (
+                <button onClick={handleClear} disabled={busy} style={{ alignSelf: 'flex-start' }}>
+                  선택 취소
+                </button>
+              ) : (
+                <button
+                  className="primary"
+                  onClick={() => handleSelect(c.id)}
+                  disabled={busy || !!takenByUid}
+                  style={{ alignSelf: 'flex-start' }}
+                >
+                  {takenByUid ? '이미 선택됨' : '이 캐릭터 선택'}
+                </button>
+              )}
             </div>
           )
         })}
       </div>
+      <p className="dim" style={{ fontSize: 12, marginTop: -2 }}>
+        게임이 시작되기 전까지는 언제든 다른 캐릭터로 바꾸거나 선택을 취소할 수 있어요.
+      </p>
       {selectError && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{selectError}</p>}
 
       {isHost ? (

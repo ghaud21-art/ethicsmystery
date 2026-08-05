@@ -24,6 +24,10 @@ export async function setScenarioPublished(scenarioId, published) {
   await updateDoc(doc(scenariosCol(), scenarioId), { published })
 }
 
+export async function setScenarioThumbnail(scenarioId, thumbnailDataUrl) {
+  await updateDoc(doc(scenariosCol(), scenarioId), { thumbnailDataUrl })
+}
+
 export async function deleteScenario(scenarioId) {
   await deleteDoc(doc(scenariosCol(), scenarioId))
 }

@@ -50,11 +50,20 @@ export default function ScenarioSelectPage() {
             style={{ textDecoration: 'none', color: 'inherit' }}
           >
             <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}>
-              <div className={`mood-art ${MOODS[i % MOODS.length]}`}>
-                <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1" style={{ right: -20, bottom: -20 }}>
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M21 21l-4.3-4.3" />
-                </svg>
+              <div
+                className={`mood-art ${MOODS[i % MOODS.length]}`}
+                style={
+                  s.thumbnailDataUrl
+                    ? { backgroundImage: `url(${s.thumbnailDataUrl})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+                    : undefined
+                }
+              >
+                {!s.thumbnailDataUrl && (
+                  <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1" style={{ right: -20, bottom: -20 }}>
+                    <circle cx="11" cy="11" r="7" />
+                    <path d="M21 21l-4.3-4.3" />
+                  </svg>
+                )}
                 <div className="badge-stack">
                   <span className="corner-badge">{s.published ? '플레이 가능' : '준비 중'}</span>
                 </div>
@@ -91,7 +100,10 @@ export default function ScenarioSelectPage() {
         ))}
       </div>
 
-      <div style={{ textAlign: 'center', marginTop: 40 }}>
+      <div className="row" style={{ justifyContent: 'center', gap: 20, marginTop: 40 }}>
+        <Link to="/my-results" className="dim" style={{ fontSize: 12, textDecoration: 'none' }}>
+          예전에 플레이한 결과가 궁금하신가요? →
+        </Link>
         <Link to="/admin" className="dim" style={{ fontSize: 12, textDecoration: 'none' }}>
           관리자이신가요? →
         </Link>

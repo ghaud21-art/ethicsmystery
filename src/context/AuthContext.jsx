@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback } from 'rea
 import { onAuthStateChanged, signInAnonymously, signInWithPopup, signOut, GoogleAuthProvider } from 'firebase/auth'
 import { auth } from '../firebase/firebaseConfig'
 import { verifySchoolCode as verifySchoolCodeCall } from '../firebase/functionsApi'
+import { getStudentIdentity, saveStudentIdentity } from '../utils/studentIdentity'
 
 const AuthContext = createContext(null)
 
@@ -12,6 +13,7 @@ export function AuthProvider({ children }) {
   const [uid, setUid] = useState(null)
   const [email, setEmail] = useState(null)
   const [tier, setTier] = useState('guest')
+  const [studentIdentity, setStudentIdentity] = useState(() => getStudentIdentity()) // { name, studentId } — 학교 코드 인증 시 설정
   const [isAdmin, setIsAdmin] = useState(false)
   const [ready, setReady] = useState(false)
   const [error, setError] = useState(null)
@@ -45,11 +47,14 @@ export function AuthProvider({ children }) {
     return unsubscribe
   }, [refreshTier])
 
-  const verifySchoolCode = useCallback(async (code) => {
-    await verifySchoolCodeCall(code)
+  const verifySchoolCode = useCallback(async (code, name, studentId) => {
+    await verifySchoolCodeCall(code, name, studentId)
     // custom claim은 토큰을 강제 갱신해야 반영됨
     await auth.currentUser.getIdToken(true)
     await refreshTier(auth.currentUser)
+    const identity = { name: name.trim(), studentId: studentId.trim() }
+    setStudentIdentity(identity)
+    saveStudentIdentity(identity)
   }, [refreshTier])
 
   const signInWithGoogle = useCallback(async () => {
@@ -60,7 +65,7 @@ export function AuthProvider({ children }) {
     await signOut(auth) // onAuthStateChanged가 자동으로 다시 익명 로그인시킨다
   }, [])
 
-  const value = { uid, email, tier, isAdmin, ready, error, verifySchoolCode, signInWithGoogle, signOutAdmin }
+  const value = { uid, email, tier, isAdmin, ready, error, studentIdentity, verifySchoolCode, signInWithGoogle, signOutAdmin }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 

@@ -7,6 +7,7 @@ import ResultExportButton from '../components/ResultExportButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { evaluateEndings, computeResolutionMetrics } from '../engine/endingEvaluator.js'
+import { isClueAutoRevealed } from '../engine/visibility.js'
 import { saveLocalResult } from '../utils/localStorageStore.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
@@ -14,7 +15,7 @@ import { getAiFeedback } from '../firebase/functionsApi.js'
 function ResultsInner({ scenario }) {
   const { roomCode } = useParams()
   const navigate = useNavigate()
-  const { uid, tier } = useAuth()
+  const { uid, tier, studentIdentity } = useAuth()
   const { room, loading, leaveAndCleanupRoom } = useRoom()
 
   const handleEndGame = async () => {
@@ -71,11 +72,14 @@ function ResultsInner({ scenario }) {
 
   const handleReflectionSubmit = async () => {
     if (tier !== 'homeSchoolStudent') return
+    if (!studentIdentity) return setAiError('학교 인증 정보가 만료됐어요 — 새로고침 후 학교 코드를 다시 인증해주세요')
     setAiBusy(true)
     setAiError(null)
     try {
       const reflectionLogId = await saveReflectionLog({
         uid,
+        studentName: studentIdentity.name,
+        studentId: studentIdentity.studentId,
         scenarioId: scenario.scenarioId,
         roomCode,
         characterId: myCharacterId,
@@ -198,11 +202,13 @@ function ResultsInner({ scenario }) {
         {[...scenario.clues.phase1.items, ...scenario.clues.phase2.items].map((clue) => {
           const clueState = room.clues?.[clue.id]
           const finder = clueState?.claimedBy ? room.players?.[clueState.claimedBy]?.name : null
+          const autoRevealed = isClueAutoRevealed(clue, scenario, room.meta?.playerCount)
+          const statusLabel = finder ? `${finder} 발견` : autoRevealed ? '자동 공개' : '미발견'
           return (
             <div key={clue.id} className="card" style={{ marginBottom: 0 }}>
               <div className="row" style={{ justifyContent: 'space-between' }}>
                 <strong style={{ fontSize: 13 }}>{clue.title}</strong>
-                <span className={`pill ${finder ? 'pill-solid' : 'pill-muted'}`}>{finder ? `${finder} 발견` : '미발견'}</span>
+                <span className={`pill ${finder || autoRevealed ? 'pill-solid' : 'pill-muted'}`}>{statusLabel}</span>
               </div>
               <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.6 }}>{clue.content}</p>
             </div>

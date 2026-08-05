@@ -4,7 +4,8 @@ import { isClueVisibleTo } from '../engine/visibility.js'
 export default function MyCluesPanel({ scenario, room, uid, myCharacterId }) {
   const allClues = [...scenario.clues.phase1.items, ...scenario.clues.phase2.items]
   const clueStates = room.clues ?? {}
-  const mine = allClues.filter((clue) => isClueVisibleTo(clue, clueStates[clue.id], uid, myCharacterId))
+  const playerCount = room.meta?.playerCount
+  const mine = allClues.filter((clue) => isClueVisibleTo(clue, clueStates[clue.id], uid, myCharacterId, scenario, playerCount))
 
   if (mine.length === 0) {
     return <p className="dim" style={{ fontSize: 13, margin: 0 }}>아직 확보한 단서가 없습니다.</p>

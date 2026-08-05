@@ -28,5 +28,6 @@ export async function loadRegistry() {
     estimatedMinutes: s.meta?.estimatedMinutes,
     difficulty: s.difficulty,
     published: !!s.published,
+    thumbnailDataUrl: s.thumbnailDataUrl ?? null,
   }))
 }

@@ -18,14 +18,17 @@ function DetailInner({ scenario }) {
   const [joinCode, setJoinCode] = useState('')
   const [schoolAuthOpen, setSchoolAuthOpen] = useState(false)
   const [schoolCode, setSchoolCode] = useState('')
+  const [studentName, setStudentName] = useState('')
+  const [studentId, setStudentId] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
   const handleVerifySchoolCode = async () => {
+    if (!studentName.trim() || !studentId.trim()) return setError('이름과 학번을 입력해주세요')
     setBusy(true)
     setError(null)
     try {
-      await verifySchoolCode(schoolCode)
+      await verifySchoolCode(schoolCode, studentName, studentId)
       setSchoolAuthOpen(false)
     } catch (e) {
       setError(e.message)
@@ -182,6 +185,10 @@ function DetailInner({ scenario }) {
             <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
           ) : schoolAuthOpen ? (
             <div className="card col">
+              <label className="dim" style={{ fontSize: 12 }}>이름</label>
+              <input placeholder="예: 홍길동" value={studentName} onChange={(e) => setStudentName(e.target.value)} />
+              <label className="dim" style={{ fontSize: 12 }}>학번</label>
+              <input placeholder="예: 30215" value={studentId} onChange={(e) => setStudentId(e.target.value)} />
               <label className="dim" style={{ fontSize: 12 }}>학교 코드</label>
               <div className="row">
                 <input
@@ -194,6 +201,9 @@ function DetailInner({ scenario }) {
                   인증하기
                 </button>
               </div>
+              <p className="dim" style={{ fontSize: 11, margin: 0 }}>
+                이름/학번은 나중에 "예전 결과 다시 보기"에서 본인 확인용으로 사용돼요.
+              </p>
             </div>
           ) : (
             <button
