@@ -26,7 +26,7 @@ function WaitingRoomInner() {
   const canStart = players.length === room.meta.playerCount
 
   return (
-    <div>
+    <div className="page">
       <Masthead showBack />
       <StepProgress activeIndex={1} />
 

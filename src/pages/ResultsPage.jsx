@@ -90,7 +90,7 @@ function ResultsInner({ scenario }) {
   }
 
   return (
-    <div>
+    <div className="page">
       <Masthead />
       <StepProgress activeIndex={4} />
 

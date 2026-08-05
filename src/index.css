@@ -14,6 +14,9 @@
   --font-head: 'Nanum Myeongjo', serif;
   --font-body: 'Noto Sans KR', sans-serif;
   --font-mono: 'Special Elite', monospace;
+  --radius: 12px;
+  --radius-sm: 7px;
+  --glow: 0 0 0 1px rgba(201, 162, 39, 0.12), 0 10px 30px rgba(0, 0, 0, 0.45);
 }
 
 * { box-sizing: border-box; }
@@ -34,31 +37,34 @@ a:hover { color: var(--gold); }
 ::selection { background: rgba(201, 162, 39, 0.35); }
 
 #root {
-  max-width: 720px;
-  margin: 0 auto;
   padding: 24px 18px 60px;
 }
+.page { max-width: 720px; margin: 0 auto; }
+.page-wide { max-width: 1080px; margin: 0 auto; }
 
 /* ---- base controls ---- */
 button {
   font: inherit;
   cursor: pointer;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   border: 1px solid var(--gold-dark);
   background: transparent;
   color: var(--gold-light);
   font-weight: 700;
   padding: 10px 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
+button:not(:disabled):hover { transform: translateY(-1px); }
 
 button.primary {
-  background: var(--gold);
-  color: var(--bg);
+  background: linear-gradient(135deg, var(--gold-light), var(--gold));
+  color: #1a1409;
   border: none;
   font-family: var(--font-head);
   font-weight: 800;
   letter-spacing: 0.02em;
+  box-shadow: 0 6px 20px rgba(201, 162, 39, 0.28);
 }
 
 input, select, textarea {
@@ -66,8 +72,8 @@ input, select, textarea {
   background: var(--panel2);
   border: 1px solid var(--line);
   color: var(--ink);
-  border-radius: 3px;
-  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
 }
 textarea { resize: vertical; }
 
@@ -127,12 +133,12 @@ textarea { resize: vertical; }
 /* ---- case card (tape-corner card) ---- */
 .card {
   position: relative;
-  background: var(--panel);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.02), transparent 40%), var(--panel);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius);
   padding: 16px;
   margin-bottom: 14px;
-  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.35);
+  box-shadow: var(--glow);
 }
 .tape::before {
   content: '';
@@ -151,14 +157,25 @@ textarea { resize: vertical; }
   padding: 3px 10px;
   font-size: 11px;
   font-weight: 700;
-  border-radius: 3px;
+  border-radius: 999px;
   display: inline-flex;
+  align-items: center;
+  gap: 4px;
   letter-spacing: 0.01em;
   white-space: nowrap;
 }
 .pill-solid { background: var(--gold); color: var(--bg); }
 .pill-outline { background: transparent; color: var(--gold-light); border: 1px solid var(--gold-dark); }
 .pill-muted { background: var(--panel2); color: var(--ink-dim); }
+.pill-dot { width: 6px; height: 6px; border-radius: 50%; flex: none; }
+.pill-blue { background: rgba(94, 145, 224, 0.14); color: #9db8e8; }
+.pill-blue .pill-dot { background: #5e91e0; }
+.pill-rose { background: rgba(196, 92, 122, 0.14); color: #e39cb3; }
+.pill-rose .pill-dot { background: #c45c7a; }
+.pill-slate { background: rgba(154, 160, 176, 0.14); color: #b7bccb; }
+.pill-slate .pill-dot { background: #9aa0b0; }
+.pill-violet { background: rgba(155, 122, 214, 0.14); color: #c3aeea; }
+.pill-violet .pill-dot { background: #9b7ad6; }
 
 .stamp {
   display: inline-block;
@@ -168,7 +185,7 @@ textarea { resize: vertical; }
   text-transform: uppercase;
   color: var(--blood-light);
   border: 2px solid var(--blood-light);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   padding: 3px 10px;
   transform: rotate(-6deg);
 }
@@ -183,7 +200,7 @@ textarea { resize: vertical; }
   color: var(--gold-light);
   background: rgba(201, 162, 39, 0.14);
   padding: 5px 10px;
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
 }
 
 /* ---- step progress ---- */
@@ -257,7 +274,7 @@ textarea { resize: vertical; }
   background: var(--panel2);
   color: var(--ink-dim);
   border: 1px solid var(--line);
-  border-radius: 3px;
+  border-radius: var(--radius-sm);
   font-size: 11px;
   white-space: nowrap;
 }
@@ -280,7 +297,7 @@ textarea { resize: vertical; }
   padding: 22px;
   background: var(--panel);
   border: 1px solid var(--line);
-  border-radius: 4px;
+  border-radius: var(--radius-sm);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.5);
 }
 .modal-title {
@@ -290,10 +307,10 @@ textarea { resize: vertical; }
   color: var(--gold-light);
 }
 
-/* ---- thumbnail placeholder ---- */
+/* ---- thumbnail / mood art placeholder ---- */
 .thumb {
   height: 100px;
-  border-radius: 3px 3px 0 0;
+  border-radius: var(--radius) var(--radius) 0 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -302,6 +319,137 @@ textarea { resize: vertical; }
   font-size: 11px;
   letter-spacing: 0.04em;
   overflow: hidden;
+}
+
+.mood-art {
+  position: relative;
+  height: 150px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  overflow: hidden;
+  display: flex;
+  align-items: flex-end;
+  padding: 12px;
+}
+.mood-art::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 40%, rgba(10, 7, 4, 0.75) 100%);
+}
+.mood-art svg { position: absolute; opacity: 0.16; }
+.mood-art-label { position: relative; z-index: 1; font-size: 10px; letter-spacing: 0.08em; color: var(--gold-light); text-transform: uppercase; }
+
+.mood-1 { background: radial-gradient(circle at 30% 20%, rgba(201, 162, 39, 0.35), transparent 55%), linear-gradient(160deg, #2b2216, #15100a); }
+.mood-2 { background: radial-gradient(circle at 70% 20%, rgba(124, 42, 31, 0.4), transparent 55%), linear-gradient(160deg, #241611, #15100a); }
+.mood-3 { background: radial-gradient(circle at 40% 30%, rgba(94, 145, 224, 0.22), transparent 55%), linear-gradient(160deg, #1a1d24, #15100a); }
+
+/* ---- corner badge stack (베타테스트/신규/인기 style ribbons) ---- */
+.badge-stack {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  z-index: 2;
+}
+.corner-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  padding: 4px 9px 4px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(10, 7, 4, 0.72);
+  backdrop-filter: blur(2px);
+  border-left: 3px solid var(--gold);
+  color: var(--ink);
+}
+.corner-badge.new { border-left-color: #c45c7a; }
+.corner-badge.hot { border-left-color: #e3c25c; }
+
+.free-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 11px;
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: rgba(10, 7, 4, 0.72);
+  border: 1px solid var(--gold);
+  color: var(--gold-light);
+}
+
+/* ---- stat chips (인원/시간/난이도) ---- */
+.stat-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  color: var(--ink-dim);
+}
+.stat-chip svg { flex: none; }
+
+/* ---- hero banner (scenario detail) ---- */
+.hero-banner {
+  position: relative;
+  border-radius: var(--radius);
+  padding: 60px 24px 24px;
+  margin-bottom: 20px;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse 500px 260px at 30% 0%, rgba(201, 162, 39, 0.22), transparent 60%),
+    linear-gradient(165deg, #2b2216, #15100a 70%);
+  border: 1px solid var(--line);
+  box-shadow: var(--glow);
+}
+.hero-banner-icon {
+  position: absolute;
+  right: -20px;
+  top: -20px;
+  opacity: 0.08;
+  transform: rotate(8deg);
+}
+
+/* ---- ornamental divider ---- */
+.divider-orn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 26px 0;
+  color: var(--gold-dark);
+}
+.divider-orn::before, .divider-orn::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--line);
+}
+.divider-orn-diamond {
+  width: 6px;
+  height: 6px;
+  background: var(--gold);
+  transform: rotate(45deg);
+  flex: none;
+}
+
+/* ---- character avatar ---- */
+.avatar-circle {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-head);
+  font-weight: 800;
+  font-size: 18px;
+  background: radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold-dark));
+  color: #1a1409;
+  border: 2px solid var(--line);
+  flex: none;
 }
 
 @keyframes pulseDot { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: 0.3; transform: scale(0.75); } }

@@ -42,7 +42,7 @@ function ResolutionInner({ scenario }) {
   const moralStep = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')
 
   return (
-    <div>
+    <div className="page">
       <Masthead />
       <StepProgress activeIndex={3} />
 

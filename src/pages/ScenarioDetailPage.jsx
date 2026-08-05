@@ -5,7 +5,9 @@ import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 
-function LobbyInner({ scenario }) {
+const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
+
+function DetailInner({ scenario }) {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
   const { tier, verifySchoolCode } = useAuth()
@@ -33,7 +35,7 @@ function LobbyInner({ scenario }) {
   }
 
   const handleCreate = async () => {
-    if (!displayName) return setError('이름을 입력해주세요')
+    if (!displayName) return setError('닉네임을 입력해주세요')
     setBusy(true)
     setError(null)
     try {
@@ -47,7 +49,7 @@ function LobbyInner({ scenario }) {
   }
 
   const handleJoin = async () => {
-    if (!displayName) return setError('이름을 입력해주세요')
+    if (!displayName) return setError('닉네임을 입력해주세요')
     if (!joinCode) return setError('방 코드를 입력해주세요')
     setBusy(true)
     setError(null)
@@ -62,23 +64,80 @@ function LobbyInner({ scenario }) {
   }
 
   return (
-    <div>
+    <div className="page">
       <Masthead showBack />
+
+      <div className="hero-banner">
+        <svg className="hero-banner-icon" width="220" height="220" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="1">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        <span className="pill pill-outline" style={{ position: 'relative', marginBottom: 10 }}>
+          {scenario.meta.supportedPlayerCounts.join('/')}인용 · 약 {scenario.meta.estimatedMinutes}분
+        </span>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 28, margin: '0 0 8px', position: 'relative' }}>
+          {scenario.meta.title}
+        </h1>
+        <p className="dim" style={{ margin: '0 0 12px', position: 'relative' }}>{scenario.meta.subtitle}</p>
+        <div className="row" style={{ position: 'relative' }}>
+          {scenario.meta.themes?.map((t, idx) => (
+            <span key={t} className={`pill ${TAG_TONES[idx % TAG_TONES.length]}`}>
+              <span className="pill-dot" />
+              {t}
+            </span>
+          ))}
+        </div>
+      </div>
 
       <div className="kicker">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
-          <circle cx="12" cy="8" r="4" />
-          <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+          <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+          <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
         </svg>
-        PARTY SETUP
+        사건 개요
       </div>
-      <h1 className="page-title">{scenario.meta.title}</h1>
-      <div className="page-title-rule" />
-      <p className="dim" style={{ marginBottom: 20 }}>{scenario.meta.subtitle}</p>
+      <p style={{ fontSize: 14, lineHeight: 1.85, color: 'var(--ink)', opacity: 0.9 }}>{scenario.prologue.sharedText}</p>
+      <p style={{ fontSize: 13, lineHeight: 1.8, color: 'var(--gold-light)', fontStyle: 'italic' }}>
+        {scenario.meta.learningObjective}
+      </p>
+
+      <div className="divider-orn">
+        <span className="divider-orn-diamond" />
+      </div>
+
+      <div className="kicker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+        </svg>
+        용의선상 인물
+      </div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 8 }}>
+        {scenario.characters.map((c) => (
+          <div key={c.id} className="card row" style={{ marginBottom: 0 }}>
+            <div className="avatar-circle">{c.name[0]}</div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
+              <div className="dim" style={{ fontSize: 12 }}>{c.role}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      <div className="divider-orn">
+        <span className="divider-orn-diamond" />
+      </div>
+
+      <div className="kicker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
+          <path d="M4 4h16v16H4z" />
+        </svg>
+        수사 참가하기
+      </div>
 
       <div className="card col">
-        <label className="dim" style={{ fontSize: 12 }}>내 이름</label>
-        <input placeholder="닉네임" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+        <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
+        <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
       </div>
 
       <div className="card col">
@@ -117,7 +176,7 @@ function LobbyInner({ scenario }) {
         <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
       ) : schoolAuthOpen ? (
         <div className="card col">
-          <label className="dim" style={{ fontSize: 12 }}>학교 코드 (선택)</label>
+          <label className="dim" style={{ fontSize: 12 }}>학교 코드</label>
           <div className="row">
             <input
               placeholder="학교에서 안내받은 코드"
@@ -147,7 +206,7 @@ function LobbyInner({ scenario }) {
   )
 }
 
-export default function LobbyPage() {
+export default function ScenarioDetailPage() {
   const { scenarioId } = useParams()
-  return <RoomPageShell scenarioId={scenarioId}>{(scenario) => <LobbyInner scenario={scenario} />}</RoomPageShell>
+  return <RoomPageShell scenarioId={scenarioId}>{(scenario) => <DetailInner scenario={scenario} />}</RoomPageShell>
 }

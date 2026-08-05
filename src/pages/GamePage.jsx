@@ -50,7 +50,7 @@ function GameInner({ scenario }) {
   }
 
   return (
-    <div>
+    <div className="page">
       <Masthead />
       <StepProgress activeIndex={2} />
 

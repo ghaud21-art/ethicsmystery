@@ -6,6 +6,7 @@
     "themes": ["기게스의 반지", "홉스의 자연상태"],
     "supportedPlayerCounts": [3, 4],
     "estimatedMinutes": 30,
+    "difficulty": "보통",
     "status": "설계 완료"
   }
 ]
