@@ -214,7 +214,7 @@ function ScenarioListSection({ scenarios, onChanged }) {
 }
 
 export default function AdminPage() {
-  const { uid, isAdmin, ready, signInWithGoogle, signOutAdmin } = useAuth()
+  const { email, isAdmin, ready, signInWithGoogle, signOutAdmin } = useAuth()
   const [scenarios, setScenarios] = useState(null)
   const [authError, setAuthError] = useState(null)
 
@@ -246,7 +246,7 @@ export default function AdminPage() {
           <p style={{ margin: 0 }}>관리자 계정으로 Google 로그인이 필요합니다.</p>
           <button className="primary" onClick={handleSignIn} style={{ alignSelf: 'flex-start' }}>Google로 로그인</button>
           {authError && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{authError}</p>}
-          {uid && <p className="dim" style={{ fontSize: 12 }}>로그인은 됐지만 관리자 계정이 아닙니다.</p>}
+          {email && <p className="dim" style={{ fontSize: 12 }}>{email} 계정으로 로그인됐지만 관리자 계정이 아닙니다.</p>}
         </div>
       ) : (
         <div className="col">

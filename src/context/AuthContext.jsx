@@ -10,6 +10,7 @@ const ADMIN_EMAIL = 'ghaud21@gmail.com'
 
 export function AuthProvider({ children }) {
   const [uid, setUid] = useState(null)
+  const [email, setEmail] = useState(null)
   const [tier, setTier] = useState('guest')
   const [isAdmin, setIsAdmin] = useState(false)
   const [ready, setReady] = useState(false)
@@ -36,6 +37,7 @@ export function AuthProvider({ children }) {
         return
       }
       setUid(user.uid)
+      setEmail(user.email ?? null) // 익명 로그인이면 null — 실제 Google 로그인 시도 여부 판단에 사용
       setIsAdmin(user.email === ADMIN_EMAIL && user.emailVerified)
       await refreshTier(user)
       setReady(true)
@@ -58,7 +60,7 @@ export function AuthProvider({ children }) {
     await signOut(auth) // onAuthStateChanged가 자동으로 다시 익명 로그인시킨다
   }, [])
 
-  const value = { uid, tier, isAdmin, ready, error, verifySchoolCode, signInWithGoogle, signOutAdmin }
+  const value = { uid, email, tier, isAdmin, ready, error, verifySchoolCode, signInWithGoogle, signOutAdmin }
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
 }
 
