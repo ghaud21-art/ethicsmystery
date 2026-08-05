@@ -12,6 +12,11 @@
             ".write": "auth != null && auth.uid === $uid"
           }
         },
+        "characterClaims": {
+          "$characterId": {
+            ".write": "auth != null && root.child('rooms').child($roomCode).child('players').child(auth.uid).exists() && (!data.exists() || data.val() === auth.uid)"
+          }
+        },
         "clues": {
           "$clueId": {
             ".write": "auth != null && root.child('rooms').child($roomCode).child('players').child(auth.uid).exists() && (!data.child('claimedBy').exists() || data.child('claimedBy').val() === auth.uid)"
@@ -31,9 +36,9 @@
           }
         },
         "meta": {
-          ".write": "auth != null && (!data.exists() || root.child('rooms').child($roomCode).child('players').child(auth.uid).exists())"
+          ".write": "auth != null && (!data.exists() || auth.uid === data.child('hostUid').val())"
         },
-        ".write": "auth != null"
+        ".write": "auth != null && (!data.exists() || auth.uid === data.child('meta').child('hostUid').val())"
       }
     }
   }

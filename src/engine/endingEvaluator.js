@@ -8,8 +8,8 @@
 //   cluesFound: 이 단서들이 모두 확보(claimedBy 존재)되어 있어야 매치
 //   cluesNotFound: 이 단서들이 모두 확보되어 있지 않아야 매치
 //   moralChoiceMajority: 'reveal_all' | 'conceal_some' 다수결과 일치해야 매치
-//   fallback: 지목이 만장일치가 아니거나(또는 'unknown') 다른 엔딩이 하나도 매치하지
-//             않을 때 사용되는 기본 엔딩 — 시나리오당 정확히 하나 있어야 한다.
+//   fallback: 다수결 지목이 동점이거나 1위가 'unknown'이거나, 다른 엔딩이 하나도
+//             매치하지 않을 때 사용되는 기본 엔딩 — 시나리오당 정확히 하나 있어야 한다.
 //
 // 같은 accused에 대해 여러 엔딩이 매치 가능하도록 설계됐다면(예: 확보 단서 유무로
 // 갈리는 4가지 조합), endings 배열에 등장하는 순서대로 첫 매치를 채택한다 — 저작자가
@@ -35,11 +35,23 @@ export function evaluateEndings(scenario, metrics) {
   return fallback.id
 }
 
+// 지목은 만장일치가 아니라 다수결로 정한다 — 득표 1위가 단독이면 그 인물로 확정,
+// 동점이면(1위가 여럿) 팀이 결론을 못 낸 것으로 보고 fallback 엔딩으로 보낸다.
+function pickMajorityAccusation(accusationValues) {
+  if (accusationValues.length === 0) return null
+  const counts = new Map()
+  for (const v of accusationValues) counts.set(v, (counts.get(v) ?? 0) + 1)
+  const max = Math.max(...counts.values())
+  const topOptions = [...counts.entries()].filter(([, c]) => c === max).map(([k]) => k)
+  if (topOptions.length !== 1) return null // 동점
+  const winner = topOptions[0]
+  return winner === 'unknown' ? null : winner
+}
+
 // room.resolution의 원시 상태로부터 evaluateEndings가 쓰는 metrics를 계산한다.
 export function computeResolutionMetrics({ accusations, moralChoices, roomClues }) {
   const accusationValues = Object.values(accusations ?? {})
-  const unanimous = accusationValues.length > 0 && accusationValues.every((v) => v === accusationValues[0])
-  const accused = unanimous && accusationValues[0] !== 'unknown' ? accusationValues[0] : null
+  const accused = pickMajorityAccusation(accusationValues)
 
   const choiceValues = Object.values(moralChoices ?? {})
   const concealCount = choiceValues.filter((v) => v === 'conceal_some').length

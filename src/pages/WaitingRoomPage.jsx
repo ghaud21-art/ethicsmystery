@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
@@ -6,12 +6,14 @@ import StepProgress from '../components/StepProgress.jsx'
 import NarrationScript from '../components/NarrationScript.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
+import { getPlayableCharacters } from '../engine/characterAssignment.js'
 
 function WaitingRoomInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
   const { uid } = useAuth()
-  const { room, loading, startGame } = useRoom()
+  const { room, loading, selectCharacter, startGame } = useRoom()
+  const [selectError, setSelectError] = useState(null)
 
   useEffect(() => {
     if (room?.meta?.phase === 'phase1') {
@@ -24,7 +26,20 @@ function WaitingRoomInner({ scenario }) {
 
   const players = Object.entries(room.players ?? {})
   const isHost = room.meta.hostUid === uid
-  const canStart = players.length === room.meta.playerCount
+  const roomFull = players.length === room.meta.playerCount
+  const allSelected = players.every(([, p]) => !!p.characterId)
+  const canStart = roomFull && allSelected
+  const myCharacterId = room.players?.[uid]?.characterId
+  const characters = getPlayableCharacters(scenario, room.meta.playerCount)
+
+  const handleSelect = async (characterId) => {
+    setSelectError(null)
+    try {
+      await selectCharacter(characterId)
+    } catch (e) {
+      setSelectError(e.message)
+    }
+  }
 
   return (
     <div className="page">
@@ -45,26 +60,32 @@ function WaitingRoomInner({ scenario }) {
       </p>
 
       <div className="card col">
-        {players.map(([pUid, p]) => (
-          <div key={pUid} className="row" style={{ justifyContent: 'space-between', padding: '8px 10px', background: 'var(--panel2)', borderRadius: 3 }}>
-            <div className="row">
-              <div
-                style={{
-                  width: 30, height: 30, borderRadius: '50%',
-                  background: 'rgba(201,162,39,.16)', color: 'var(--gold-light)',
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontWeight: 800, fontSize: 12,
-                }}
-              >
-                {p.name?.[0] ?? '?'}
+        {players.map(([pUid, p]) => {
+          const pCharacter = characters.find((c) => c.id === p.characterId)
+          return (
+            <div key={pUid} className="row" style={{ justifyContent: 'space-between', padding: '8px 10px', background: 'var(--panel2)', borderRadius: 3 }}>
+              <div className="row">
+                <div
+                  style={{
+                    width: 30, height: 30, borderRadius: '50%',
+                    background: 'rgba(201,162,39,.16)', color: 'var(--gold-light)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontWeight: 800, fontSize: 12,
+                  }}
+                >
+                  {p.name?.[0] ?? '?'}
+                </div>
+                <strong>{p.name}</strong>
+                <span className="dim" style={{ fontSize: 12 }}>
+                  {pUid === room.meta.hostUid ? '(방장)' : ''}{pUid === uid ? ' (나)' : ''}
+                </span>
               </div>
-              <strong>{p.name}</strong>
+              <span className={`pill ${pCharacter ? 'pill-solid' : 'pill-muted'}`}>
+                {pCharacter ? pCharacter.name : '캐릭터 선택 중...'}
+              </span>
             </div>
-            <span className="pill pill-outline">
-              {pUid === room.meta.hostUid ? '방장' : '참가자'}{pUid === uid ? ' · 나' : ''}
-            </span>
-          </div>
-        ))}
+          )
+        })}
         <p className="dim" style={{ fontSize: 12, margin: 0 }}>
           {players.length}/{room.meta.playerCount}명 모임
         </p>
@@ -74,12 +95,63 @@ function WaitingRoomInner({ scenario }) {
         <NarrationScript title="오프닝 내레이션" lines={scenario.narration.opening} characters={scenario.characters} />
       )}
 
+      <div className="kicker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+        </svg>
+        캐릭터 선택
+      </div>
+      <p className="dim" style={{ marginBottom: 14 }}>맡고 싶은 캐릭터를 선택하세요. 한 사람당 한 명씩만 선택할 수 있어요.</p>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 8 }}>
+        {characters.map((c) => {
+          const takenByUid = players.find(([, p]) => p.characterId === c.id)?.[0]
+          const takenByName = takenByUid ? room.players[takenByUid]?.name : null
+          const isMine = takenByUid === uid
+          return (
+            <div
+              key={c.id}
+              className="card col"
+              style={{
+                marginBottom: 0,
+                borderColor: isMine ? 'var(--gold)' : 'var(--line)',
+                boxShadow: isMine ? '0 0 0 1px var(--gold), var(--glow)' : undefined,
+              }}
+            >
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <strong style={{ fontFamily: 'var(--font-head)' }}>{c.name}</strong>
+                {takenByUid && !isMine && <span className="pill pill-muted">{takenByName} 선택함</span>}
+                {isMine && <span className="pill pill-solid">내 캐릭터</span>}
+              </div>
+              <span className="dim" style={{ fontSize: 12 }}>{c.role}</span>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>{c.publicInfo}</p>
+              <button
+                className={isMine ? '' : 'primary'}
+                onClick={() => handleSelect(c.id)}
+                disabled={!!takenByUid && !isMine}
+                style={{ alignSelf: 'flex-start' }}
+              >
+                {isMine ? '선택함' : takenByUid ? '이미 선택됨' : '이 캐릭터 선택'}
+              </button>
+            </div>
+          )
+        })}
+      </div>
+      {selectError && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{selectError}</p>}
+
       {isHost ? (
-        <button className="primary" onClick={startGame} disabled={!canStart} style={{ width: '100%', textAlign: 'left' }}>
-          {canStart ? '게임 시작' : `인원이 다 모이면 시작할 수 있어요 (${players.length}/${room.meta.playerCount})`}
+        <button className="primary" onClick={startGame} disabled={!canStart} style={{ width: '100%', textAlign: 'left', marginTop: 14 }}>
+          {!roomFull
+            ? `인원이 다 모이면 시작할 수 있어요 (${players.length}/${room.meta.playerCount})`
+            : !allSelected
+              ? '모두 캐릭터를 선택하면 시작할 수 있어요'
+              : '게임 시작'}
         </button>
       ) : (
-        <p className="dim">방장이 시작하기를 기다리는 중...</p>
+        <p className="dim" style={{ marginTop: 14 }}>
+          {myCharacterId ? '방장이 시작하기를 기다리는 중...' : '캐릭터를 선택해주세요.'}
+        </p>
       )}
     </div>
   )

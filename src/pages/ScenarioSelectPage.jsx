@@ -90,6 +90,12 @@ export default function ScenarioSelectPage() {
           </Link>
         ))}
       </div>
+
+      <div style={{ textAlign: 'center', marginTop: 40 }}>
+        <Link to="/admin" className="dim" style={{ fontSize: 12, textDecoration: 'none' }}>
+          관리자이신가요? →
+        </Link>
+      </div>
     </div>
   )
 }

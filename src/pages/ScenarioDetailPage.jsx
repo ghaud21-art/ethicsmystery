@@ -114,11 +114,12 @@ function DetailInner({ scenario }) {
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 8 }}>
         {scenario.characters.map((c) => (
-          <div key={c.id} className="card row" style={{ marginBottom: 0 }}>
+          <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
             <div className="avatar-circle">{c.name[0]}</div>
             <div>
               <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
-              <div className="dim" style={{ fontSize: 12 }}>{c.role}</div>
+              <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
+              <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
             </div>
           </div>
         ))}
@@ -146,34 +147,33 @@ function DetailInner({ scenario }) {
             <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
           </div>
 
-          <div className="card col">
-            <div className="row" style={{ justifyContent: 'space-between' }}>
-              <strong>새 방 만들기</strong>
-              <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
-                {scenario.meta.supportedPlayerCounts.map((n) => (
-                  <option key={n} value={n}>
-                    {n}인
-                  </option>
-                ))}
-              </select>
-            </div>
-            <button className="primary" onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
-              방 만들기
-            </button>
-          </div>
-
-          <div className="card col">
-            <strong>방 코드로 참가</strong>
-            <div className="row">
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+            <div className="card col" style={{ marginBottom: 0 }}>
+              <strong>방 코드로 참가</strong>
               <input
                 placeholder="예: A3F9"
                 value={joinCode}
                 onChange={(e) => setJoinCode(e.target.value)}
                 maxLength={4}
-                style={{ flex: 1 }}
               />
-              <button onClick={handleJoin} disabled={busy}>
-                참가하기
+              <button className="primary" onClick={handleJoin} disabled={busy} style={{ textAlign: 'left' }}>
+                방 입장하기
+              </button>
+            </div>
+
+            <div className="card col" style={{ marginBottom: 0 }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <strong>새 방 만들기</strong>
+                <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
+                  {scenario.meta.supportedPlayerCounts.map((n) => (
+                    <option key={n} value={n}>
+                      {n}인
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <button onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
+                방 만들기
               </button>
             </div>
           </div>

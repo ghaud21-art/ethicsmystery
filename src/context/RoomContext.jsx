@@ -1,10 +1,9 @@
 import { createContext, useContext, useEffect, useState, useCallback, useMemo } from 'react'
-import { ref, onValue, set, update, remove, onDisconnect, get } from 'firebase/database'
+import { ref, onValue, set, update, remove, onDisconnect, get, runTransaction } from 'firebase/database'
 import { db } from '../firebase/firebaseConfig'
 import { useAuth } from './AuthContext'
 import { getPhaseApBudget, claimClue as claimClueEngine } from '../engine/apEngine'
 import { publishClue as publishClueEngine } from '../engine/manualReveal'
-import { assignCharactersToPlayers } from '../engine/characterAssignment'
 import { saveActiveRoom, clearActiveRoom } from '../utils/activeRoom'
 
 const RoomContext = createContext(null)
@@ -80,14 +79,31 @@ export function RoomProvider({ scenario, roomCode, children }) {
     [scenario, uid, registerPresence],
   )
 
+  // 캐릭터는 방장이 배정하지 않고 각 플레이어가 직접 고른다. characterClaims/{charId}로
+  // 중복 선택을 막고(트랜잭션), 이전에 고른 캐릭터가 있으면 그 선점을 풀어준다.
+  const selectCharacter = useCallback(
+    async (characterId) => {
+      const prevCharacterId = room?.players?.[uid]?.characterId
+      const claimResult = await runTransaction(ref(db, `rooms/${roomCode}/characterClaims/${characterId}`), (current) => {
+        if (current && current !== uid) return current // 이미 다른 사람이 선점
+        return uid
+      })
+      if (!claimResult.committed || claimResult.snapshot.val() !== uid) {
+        throw new Error('이미 다른 플레이어가 선택한 캐릭터입니다')
+      }
+      if (prevCharacterId && prevCharacterId !== characterId) {
+        await remove(ref(db, `rooms/${roomCode}/characterClaims/${prevCharacterId}`))
+      }
+      await set(ref(db, `rooms/${roomCode}/players/${uid}/characterId`), characterId)
+    },
+    [room, roomCode, uid],
+  )
+
   const startGame = useCallback(async () => {
     if (!room) return
-    const playerUids = Object.keys(room.players)
-    const assignment = assignCharactersToPlayers(scenario, room.meta.playerCount, playerUids)
     const apBudget = getPhaseApBudget(scenario, 'phase1', room.meta.playerCount)
-    const updates = { 'meta/phase': 'phase1' }
-    playerUids.forEach((pUid) => {
-      updates[`players/${pUid}/characterId`] = assignment[pUid]
+    const updates = { 'meta/phase': 'phase1', 'meta/phaseStartedAt': Date.now() }
+    Object.keys(room.players).forEach((pUid) => {
       updates[`players/${pUid}/ap/phase1`] = apBudget
     })
     await update(ref(db, `rooms/${roomCode}`), updates)
@@ -95,7 +111,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
 
   const advanceToPhase2 = useCallback(async () => {
     const apBudget = getPhaseApBudget(scenario, 'phase2', room.meta.playerCount)
-    const updates = { 'meta/phase': 'phase2' }
+    const updates = { 'meta/phase': 'phase2', 'meta/phaseStartedAt': Date.now() }
     Object.keys(room.players).forEach((pUid) => {
       updates[`players/${pUid}/ap/phase2`] = apBudget
     })
@@ -103,12 +119,17 @@ export function RoomProvider({ scenario, roomCode, children }) {
   }, [room, roomCode, scenario])
 
   const advanceToResolution = useCallback(async () => {
-    await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'resolution' })
+    await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'resolution', phaseStartedAt: Date.now() })
   }, [roomCode])
 
   // targetPhase: 'phase2' | 'resolution' — 다음 단계로 넘어가는 데 동의했음을 표시.
   const markReady = useCallback(
     (targetPhase) => set(ref(db, `rooms/${roomCode}/ready/${targetPhase}/${uid}`), true),
+    [roomCode, uid],
+  )
+
+  const markBriefingSeen = useCallback(
+    () => set(ref(db, `rooms/${roomCode}/players/${uid}/briefingSeen`), true),
     [roomCode, uid],
   )
 
@@ -137,8 +158,14 @@ export function RoomProvider({ scenario, roomCode, children }) {
     await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'ended' })
   }, [roomCode])
 
+  // 방 삭제 권한은 방장에게만 있다(보안 규칙). 방장이 아닌 플레이어가 눌러도 최소한
+  // 자기 화면은 정상적으로 메인으로 돌아가야 하므로 삭제 실패는 조용히 무시한다.
   const leaveAndCleanupRoom = useCallback(async () => {
-    await remove(ref(db, `rooms/${roomCode}`))
+    try {
+      await remove(ref(db, `rooms/${roomCode}`))
+    } catch {
+      // 방장이 아니면 삭제 권한이 없다 — 정상적인 상황이므로 무시
+    }
     clearActiveRoom()
   }, [roomCode])
 
@@ -148,10 +175,12 @@ export function RoomProvider({ scenario, roomCode, children }) {
       loading,
       createRoom,
       joinRoom,
+      selectCharacter,
       startGame,
       advanceToPhase2,
       advanceToResolution,
       markReady,
+      markBriefingSeen,
       claimClue,
       publishClue,
       submitAccusation,
@@ -164,10 +193,12 @@ export function RoomProvider({ scenario, roomCode, children }) {
       loading,
       createRoom,
       joinRoom,
+      selectCharacter,
       startGame,
       advanceToPhase2,
       advanceToResolution,
       markReady,
+      markBriefingSeen,
       claimClue,
       publishClue,
       submitAccusation,

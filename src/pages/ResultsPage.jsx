@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { useParams } from 'react-router-dom'
+import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
@@ -13,8 +13,14 @@ import { getAiFeedback } from '../firebase/functionsApi.js'
 
 function ResultsInner({ scenario }) {
   const { roomCode } = useParams()
+  const navigate = useNavigate()
   const { uid, tier } = useAuth()
   const { room, loading, leaveAndCleanupRoom } = useRoom()
+
+  const handleEndGame = async () => {
+    await leaveAndCleanupRoom()
+    navigate('/')
+  }
 
   const exportRef = useRef(null)
   const [answers, setAnswers] = useState({})
@@ -82,7 +88,12 @@ function ResultsInner({ scenario }) {
         `결말: ${ending.title} — ${ending.message}`,
         '학생의 성찰 답변:',
         ...scenario.reflectionPrompts.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${answers[i] ?? '(무응답)'}`),
-        '위 성찰 답변에 대해 윤리 교사 관점에서 따뜻하고 구체적인 피드백을 3~4문장으로 한국어로 작성해줘.',
+        '',
+        '위 성찰 답변을 읽고 윤리 교사 관점에서 학생에게 줄 피드백을 한국어로 작성해줘. 다음 세 가지를 자연스러운 문단으로 포함해줘(소제목 없이):',
+        '1) 답변에서 구체적으로 칭찬할 점 — 학생이 실제로 쓴 표현을 인용하며 무엇이 좋았는지',
+        '2) 더 깊이 생각해보면 좋을 점 — 다그치지 않고 다음에 고민해볼 질문 형태로',
+        '3) 이 학생이 앞으로 더 성장했을 때에 대한 기대와 격려의 말',
+        '전체 5~6문장, 따뜻하고 진심 어린 톤으로.',
       ].join('\n')
       const { feedback } = await getAiFeedback({ reflectionLogId, prompt })
       setAiFeedback(feedback)
@@ -263,7 +274,7 @@ function ResultsInner({ scenario }) {
       </div>
 
       <hr className="divider" />
-      <button onClick={leaveAndCleanupRoom}>게임 종료 (방 삭제)</button>
+      <button onClick={handleEndGame}>게임 종료 (메인 화면으로)</button>
     </div>
   )
 }

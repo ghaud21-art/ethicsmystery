@@ -5,27 +5,3 @@ export function getPlayableCharacters(scenario, playerCount) {
   if (playerCount >= 4) return scenario.characters
   return scenario.characters.filter((c) => c.threePlayerVariant?.included !== false)
 }
-
-function shuffle(arr) {
-  const copy = [...arr]
-  for (let i = copy.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1))
-    ;[copy[i], copy[j]] = [copy[j], copy[i]]
-  }
-  return copy
-}
-
-export function assignCharactersToPlayers(scenario, playerCount, playerUids) {
-  const characters = shuffle(getPlayableCharacters(scenario, playerCount))
-  if (characters.length !== playerUids.length) {
-    throw new Error(
-      `인원(${playerUids.length})과 캐릭터 수(${characters.length})가 일치하지 않습니다`,
-    )
-  }
-  // 방장이 호출하며 RTDB에 그대로 기록되는 배정 결과를 반환한다.
-  const assignment = {}
-  playerUids.forEach((uid, i) => {
-    assignment[uid] = characters[i].id
-  })
-  return assignment
-}
