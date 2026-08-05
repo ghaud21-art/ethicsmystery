@@ -6,6 +6,7 @@ import GamePage from './pages/GamePage.jsx'
 import ResolutionPage from './pages/ResolutionPage.jsx'
 import ResultsPage from './pages/ResultsPage.jsx'
 import AdminPage from './pages/AdminPage.jsx'
+import AdminPreviewPage from './pages/AdminPreviewPage.jsx'
 import StudentResultsPage from './pages/StudentResultsPage.jsx'
 import SoloGamePage from './pages/SoloGamePage.jsx'
 import SoloResultsPage from './pages/SoloResultsPage.jsx'
@@ -20,6 +21,7 @@ export default function App() {
       <Route path="/scenario/:scenarioId/room/:roomCode/resolve" element={<ResolutionPage />} />
       <Route path="/scenario/:scenarioId/room/:roomCode/results" element={<ResultsPage />} />
       <Route path="/admin" element={<AdminPage />} />
+      <Route path="/admin/preview/:scenarioId" element={<AdminPreviewPage />} />
       <Route path="/my-results" element={<StudentResultsPage />} />
       <Route path="/scenario/:scenarioId/solo/play" element={<SoloGamePage />} />
       <Route path="/scenario/:scenarioId/solo/results" element={<SoloResultsPage />} />

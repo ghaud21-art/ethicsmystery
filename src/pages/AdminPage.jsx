@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { Link } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
@@ -215,6 +216,7 @@ function ScenarioListSection({ scenarios, onChanged }) {
             <button onClick={() => handleTogglePublished(s)} disabled={busy}>
               {s.published ? '준비 중으로 전환' : '플레이 가능으로 전환'}
             </button>
+            <Link to={`/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>
             <button onClick={() => startEdit(s)} disabled={busy}>JSON 편집</button>
             <button onClick={() => handleDelete(s)} disabled={busy}>삭제</button>
           </div>
