@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
+import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 
@@ -13,6 +14,7 @@ function LobbyInner({ scenario }) {
   const [displayName, setDisplayName] = useState('')
   const [playerCount, setPlayerCount] = useState(scenario.meta.supportedPlayerCounts[0])
   const [joinCode, setJoinCode] = useState('')
+  const [schoolAuthOpen, setSchoolAuthOpen] = useState(false)
   const [schoolCode, setSchoolCode] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
@@ -22,6 +24,7 @@ function LobbyInner({ scenario }) {
     setError(null)
     try {
       await verifySchoolCode(schoolCode)
+      setSchoolAuthOpen(false)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -60,37 +63,27 @@ function LobbyInner({ scenario }) {
 
   return (
     <div>
-      <h2>{scenario.meta.title}</h2>
-      <p className="dim">{scenario.meta.subtitle}</p>
+      <Masthead showBack />
 
-      <div className="card">
-        <h4>등급</h4>
-        {tier === 'homeSchoolStudent' ? (
-          <p>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
-        ) : (
-          <div className="row">
-            <input
-              placeholder="학교 코드 (선택)"
-              value={schoolCode}
-              onChange={(e) => setSchoolCode(e.target.value)}
-            />
-            <button onClick={handleVerifySchoolCode} disabled={busy || !schoolCode}>
-              인증하기
-            </button>
-            <span className="dim">입력하지 않으면 게스트로 진행됩니다 (기록은 이 기기에만 저장)</span>
-          </div>
-        )}
+      <div className="kicker">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+        </svg>
+        PARTY SETUP
       </div>
+      <h1 className="page-title">{scenario.meta.title}</h1>
+      <div className="page-title-rule" />
+      <p className="dim" style={{ marginBottom: 20 }}>{scenario.meta.subtitle}</p>
 
       <div className="card col">
-        <h4>내 이름</h4>
+        <label className="dim" style={{ fontSize: 12 }}>내 이름</label>
         <input placeholder="닉네임" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
       </div>
 
       <div className="card col">
-        <h4>새 방 만들기</h4>
-        <div className="row">
-          <label>인원수</label>
+        <div className="row" style={{ justifyContent: 'space-between' }}>
+          <strong>새 방 만들기</strong>
           <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
             {scenario.meta.supportedPlayerCounts.map((n) => (
               <option key={n} value={n}>
@@ -98,20 +91,21 @@ function LobbyInner({ scenario }) {
               </option>
             ))}
           </select>
-          <button className="primary" onClick={handleCreate} disabled={busy}>
-            방 만들기
-          </button>
         </div>
+        <button className="primary" onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
+          방 만들기
+        </button>
       </div>
 
       <div className="card col">
-        <h4>방 코드로 참가</h4>
+        <strong>방 코드로 참가</strong>
         <div className="row">
           <input
             placeholder="예: A3F9"
             value={joinCode}
             onChange={(e) => setJoinCode(e.target.value)}
             maxLength={4}
+            style={{ flex: 1 }}
           />
           <button onClick={handleJoin} disabled={busy}>
             참가하기
@@ -119,7 +113,36 @@ function LobbyInner({ scenario }) {
         </div>
       </div>
 
-      {error && <p style={{ color: 'var(--warn)' }}>{error}</p>}
+      {tier === 'homeSchoolStudent' ? (
+        <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
+      ) : schoolAuthOpen ? (
+        <div className="card col">
+          <label className="dim" style={{ fontSize: 12 }}>학교 코드 (선택)</label>
+          <div className="row">
+            <input
+              placeholder="학교에서 안내받은 코드"
+              value={schoolCode}
+              onChange={(e) => setSchoolCode(e.target.value)}
+              style={{ flex: 1 }}
+            />
+            <button onClick={handleVerifySchoolCode} disabled={busy || !schoolCode}>
+              인증하기
+            </button>
+          </div>
+        </div>
+      ) : (
+        <button
+          onClick={() => setSchoolAuthOpen(true)}
+          style={{ border: 'none', background: 'none', padding: '4px 0', fontSize: 12 }}
+        >
+          우리 학교 학생인가요? 학교 코드 인증하기 →
+        </button>
+      )}
+      <p className="dim" style={{ fontSize: 12 }}>
+        인증 없이도 바로 플레이할 수 있어요. 게스트는 결과가 이 기기에만 저장되고 AI 피드백은 제공되지 않습니다.
+      </p>
+
+      {error && <p style={{ color: 'var(--blood-light)' }}>{error}</p>}
     </div>
   )
 }

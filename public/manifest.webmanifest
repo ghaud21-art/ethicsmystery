@@ -1,0 +1,14 @@
+{
+  "name": "윤리미스터리 — EthicsMystery",
+  "short_name": "윤리미스터리",
+  "description": "고등학교 윤리문제 탐구 수업용 온라인 딜레마 추리게임",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#15100a",
+  "theme_color": "#15100a",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png" }
+  ]
+}

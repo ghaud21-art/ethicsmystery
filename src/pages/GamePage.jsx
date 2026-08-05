@@ -1,9 +1,10 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
+import Masthead from '../components/Masthead.jsx'
+import StepProgress from '../components/StepProgress.jsx'
 import ClueBoard from '../components/ClueBoard.jsx'
-import CharacterSheet from '../components/CharacterSheet.jsx'
-import SecretLayerPanel from '../components/SecretLayerPanel.jsx'
+import RoleInfoTabs from '../components/RoleInfoTabs.jsx'
 import APBar from '../components/APBar.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
@@ -15,6 +16,7 @@ function GameInner({ scenario }) {
   const navigate = useNavigate()
   const { uid } = useAuth()
   const { room, loading, claimClue, publishClue, advanceToPhase2, advanceToResolution } = useRoom()
+  const [roleOpen, setRoleOpen] = useState(false)
 
   useEffect(() => {
     if (room?.meta?.phase === 'resolution') {
@@ -49,13 +51,31 @@ function GameInner({ scenario }) {
 
   return (
     <div>
-      <h2>{phase === 'phase1' ? scenario.clues.phase1.label : scenario.clues.phase2.label}</h2>
-      <APBar current={myAp} max={maxAp} />
+      <Masthead />
+      <StepProgress activeIndex={2} />
 
-      <CharacterSheet character={myCharacter} />
-      <SecretLayerPanel layers={getVisibleSecretLayers(scenario, myCharacterId)} />
+      <div className="card row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 13 }}>
+          <span className="dim">{myCharacter?.role}</span> · <strong>{myCharacter?.name}</strong>
+        </div>
+        <APBar current={myAp} max={maxAp} />
+      </div>
 
-      <h3>단서</h3>
+      <div className="icon-nav">
+        <button className="icon-nav-button" onClick={() => setRoleOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+          </svg>
+          내 역할
+        </button>
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 20 }}>
+        {phase === 'phase1' ? scenario.clues.phase1.label : scenario.clues.phase2.label}
+      </h2>
+      <div className="page-title-rule" />
+
       <ClueBoard
         scenario={scenario}
         phase={phase}
@@ -70,9 +90,22 @@ function GameInner({ scenario }) {
         <button
           className="primary"
           onClick={phase === 'phase1' ? advanceToPhase2 : advanceToResolution}
+          style={{ width: '100%', textAlign: 'left', marginTop: 18 }}
         >
-          {phase === 'phase1' ? '심층 대질 단계로' : '결론으로'}
+          {phase === 'phase1' ? '심층 대질 단계로 →' : '결론으로 →'}
         </button>
+      )}
+
+      {roleOpen && (
+        <div className="modal-overlay" onClick={() => setRoleOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">내 역할</div>
+            <RoleInfoTabs character={myCharacter} secretLayers={getVisibleSecretLayers(scenario, myCharacterId)} />
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setRoleOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
+import Masthead from '../components/Masthead.jsx'
+import StepProgress from '../components/StepProgress.jsx'
 import ResultExportButton from '../components/ResultExportButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
@@ -88,21 +90,36 @@ function ResultsInner({ scenario }) {
   }
 
   return (
-    <div ref={exportRef}>
-      <h2>{ending.title}</h2>
-      <p>{ending.message}</p>
-      <p className="dim">{ending.themeTag}</p>
+    <div>
+      <Masthead />
+      <StepProgress activeIndex={4} />
 
-      <div className="card">
-        <h4>내 캐릭터: {myCharacter?.name}</h4>
-        <p className="dim">진범: {culprit?.name}</p>
+      <div ref={exportRef} className="card" style={{ borderTop: '2px solid var(--gold)', position: 'relative', padding: '26px 20px' }}>
+        <div className="thumb" style={{ margin: '-26px -20px 16px', height: 150, borderRadius: 0 }}>{ending.title} 이미지</div>
+        <span className="stamp" style={{ position: 'absolute', top: 20, right: 20 }}>수사 종결</span>
+        <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: 10 }}>
+          수사 종결
+        </div>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 23, margin: '0 0 12px' }}>{ending.title}</h1>
+        <p style={{ fontSize: 14, lineHeight: 1.85, color: 'var(--ink-dim)', margin: 0 }}>{ending.message}</p>
+        <p className="dim" style={{ fontSize: 12, marginTop: 10 }}>{ending.themeTag}</p>
+        <div className="row" style={{ marginTop: 14 }}>
+          <span className="pill pill-outline">내 캐릭터: {myCharacter?.name}</span>
+          <span className="pill pill-muted">진범: {culprit?.name}</span>
+        </div>
       </div>
 
-      <div className="card col">
-        <h4>성찰</h4>
+      <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-result.png`} />
+
+      <hr className="divider" />
+
+      <h2 className="page-title" style={{ fontSize: 19 }}>성찰 기록</h2>
+      <p className="dim" style={{ marginBottom: 16 }}>오늘의 딜레마를 돌아보며 답해보세요.</p>
+
+      <div className="col" style={{ marginBottom: 18 }}>
         {scenario.reflectionPrompts.map((q, i) => (
-          <div key={i} className="col">
-            <label>{q}</label>
+          <div key={i} className="col" style={{ gap: 5 }}>
+            <label className="dim" style={{ fontSize: 12 }}>{q}</label>
             <textarea
               rows={2}
               value={answers[i] ?? ''}
@@ -110,27 +127,25 @@ function ResultsInner({ scenario }) {
             />
           </div>
         ))}
-
-        {tier === 'homeSchoolStudent' ? (
-          <button className="primary" onClick={handleReflectionSubmit} disabled={aiBusy}>
-            {aiBusy ? 'AI 피드백 생성 중...' : '성찰 저장 + AI 피드백 받기'}
-          </button>
-        ) : (
-          <p className="dim">게스트 모드에서는 이 기기에만 결과가 저장되며 AI 피드백은 제공되지 않습니다.</p>
-        )}
-        {aiError && <p style={{ color: 'var(--warn)' }}>{aiError}</p>}
-        {aiFeedback && (
-          <div className="card">
-            <strong>AI 피드백</strong>
-            <p>{aiFeedback}</p>
-          </div>
-        )}
       </div>
 
-      <div className="row">
-        <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-result.png`} />
-        <button onClick={leaveAndCleanupRoom}>게임 종료 (방 삭제)</button>
-      </div>
+      {tier === 'homeSchoolStudent' ? (
+        <button className="primary" onClick={handleReflectionSubmit} disabled={aiBusy} style={{ width: '100%', textAlign: 'left' }}>
+          {aiBusy ? 'AI 피드백 생성 중...' : '성찰 기록 제출하기'}
+        </button>
+      ) : (
+        <p className="dim" style={{ fontSize: 12 }}>게스트 모드에서는 이 기기에만 결과가 저장되며 AI 피드백은 제공되지 않습니다.</p>
+      )}
+      {aiError && <p style={{ color: 'var(--blood-light)' }}>{aiError}</p>}
+      {aiFeedback && (
+        <div className="card">
+          <strong>AI 피드백</strong>
+          <p style={{ marginBottom: 0 }}>{aiFeedback}</p>
+        </div>
+      )}
+
+      <hr className="divider" />
+      <button onClick={leaveAndCleanupRoom}>게임 종료 (방 삭제)</button>
     </div>
   )
 }

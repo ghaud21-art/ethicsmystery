@@ -7,7 +7,7 @@ export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, o
   const myAp = room.players?.[uid]?.ap?.[phase] ?? 0
 
   return (
-    <div className="col">
+    <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10 }}>
       {items.map((clue) => {
         const clueState = clueStates[clue.id]
         const visible = isClueVisibleTo(clue, clueState, uid, myCharacterId)

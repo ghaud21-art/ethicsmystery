@@ -1,6 +1,8 @@
 import { useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
+import Masthead from '../components/Masthead.jsx'
+import StepProgress from '../components/StepProgress.jsx'
 import AccusationForm from '../components/AccusationForm.jsx'
 import MoralChoiceForm from '../components/MoralChoiceForm.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -41,7 +43,12 @@ function ResolutionInner({ scenario }) {
 
   return (
     <div>
-      <h2>결론</h2>
+      <Masthead />
+      <StepProgress activeIndex={3} />
+
+      <h1 className="page-title">{accusationStep?.prompt ?? '범인 지목'}</h1>
+      <div className="page-title-rule" />
+      <p className="dim" style={{ marginBottom: 16 }}>확보한 단서를 바탕으로 진짜 책임자를 지목하세요.</p>
 
       <AccusationForm
         characters={characters}
@@ -49,24 +56,25 @@ function ResolutionInner({ scenario }) {
         onChange={submitAccusation}
         disabled={!!selfConfess[uid]}
       />
-      <p className="dim">{accusationStep?.prompt}</p>
+
+      <hr className="divider" />
 
       <MoralChoiceForm prompt={moralStep?.prompt} value={moralChoices[uid]} onChange={submitMoralChoice} />
 
       {myCharacter?.isCulprit && !selfConfess[uid] && (
         <div className="card">
-          <p>당신은 진범입니다. 아직 들키지 않았다면, 스스로 밝힐 수도 있습니다.</p>
-          <button onClick={triggerSelfConfess}>자백하기</button>
+          <p style={{ margin: 0 }}>당신은 진범입니다. 아직 들키지 않았다면, 스스로 밝힐 수도 있습니다.</p>
+          <button onClick={triggerSelfConfess} style={{ marginTop: 10 }}>자백하기</button>
         </div>
       )}
 
-      <p className="dim">
+      <p className="dim" style={{ fontSize: 12 }}>
         {players.filter((p) => accusations[p]).length}/{players.length}명 지목 완료 ·{' '}
         {players.filter((p) => moralChoices[p]).length}/{players.length}명 응답 완료
       </p>
 
       {isHost && (
-        <button className="primary" onClick={finishGame} disabled={!canFinish}>
+        <button className="primary" onClick={finishGame} disabled={!canFinish} style={{ width: '100%', textAlign: 'left' }}>
           결과 확인하기
         </button>
       )}
