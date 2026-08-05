@@ -1,0 +1,34 @@
+{
+  "rules": {
+    "rooms": {
+      "$roomCode": {
+        ".read": "auth != null",
+        "players": {
+          "$uid": {
+            ".write": "auth != null && auth.uid === $uid"
+          }
+        },
+        "clues": {
+          "$clueId": {
+            ".write": "auth != null && root.child('rooms').child($roomCode).child('players').child(auth.uid).exists() && (!data.child('claimedBy').exists() || data.child('claimedBy').val() === auth.uid)"
+          }
+        },
+        "resolution": {
+          "accusations": {
+            "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          },
+          "moralChoices": {
+            "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          },
+          "selfConfess": {
+            "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          }
+        },
+        "meta": {
+          ".write": "auth != null && (!data.exists() || root.child('rooms').child($roomCode).child('players').child(auth.uid).exists())"
+        },
+        ".write": "auth != null"
+      }
+    }
+  }
+}

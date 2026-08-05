@@ -1,0 +1,11 @@
+[
+  {
+    "scenarioId": "blackout_envelope_01",
+    "title": "정전된 밤, 사라진 봉투",
+    "unit": "I. 윤리문제 탐구의 이해 — 01. 도덕이 없는 사회는 문제가 될까",
+    "themes": ["기게스의 반지", "홉스의 자연상태"],
+    "supportedPlayerCounts": [3, 4],
+    "estimatedMinutes": 30,
+    "status": "설계 완료"
+  }
+]

@@ -1,0 +1,112 @@
+{
+  "_comment": "이 파일은 실행되는 시나리오가 아니라 '틀'입니다. 새 딜레마 시나리오를 만들 때 이 구조를 복사해서 채우세요. app_schema.json의 scenarioRegistry에 항목을 추가하는 것도 잊지 마세요.",
+
+  "scenarioId": "",
+  "schemaVersion": "1.0",
+
+  "meta": {
+    "title": "",
+    "subtitle": "",
+    "unit": "",
+    "learningObjective": "",
+    "themes": [],
+    "supportedPlayerCounts": [3, 4],
+    "estimatedMinutes": 30,
+    "language": "ko"
+  },
+
+  "prologue": {
+    "sharedText": "",
+    "incidentStart": "",
+    "incidentEnd": "",
+    "durationMinutes": 0
+  },
+
+  "characters": [
+    {
+      "id": "",
+      "role": "",
+      "name": "",
+      "isCulprit": false,
+      "personalityType": "",
+      "personalityDescription": "",
+      "publicInfo": "",
+      "detailInfo": "",
+      "secretLayers": [
+        { "layer": 1, "type": "", "content": "" },
+        { "layer": 2, "type": "", "content": "" }
+      ],
+      "cooperationIncentive": "",
+      "competitionIncentive": "",
+      "ownedPhase2Clues": [],
+      "threePlayerVariant": { "included": true, "notes": "" }
+    }
+  ],
+
+  "clues": {
+    "phase1": {
+      "label": "현장 수색",
+      "apPerPlayer": 2,
+      "apBonusFor3Players": 1,
+      "items": [
+        { "id": "", "title": "", "location": "", "owner": null, "content": "", "implication": "", "apCost": 1 }
+      ]
+    },
+    "phase2": {
+      "label": "심층 대질",
+      "apPerPlayer": 2,
+      "apBonusFor3Players": 1,
+      "unlockCondition": "phase1_completed",
+      "items": [
+        {
+          "id": "",
+          "title": "",
+          "owner": "",
+          "content": "",
+          "implication": "",
+          "apCost": 1,
+          "isCriticalClue": false,
+          "unlockType": "auto",
+          "unlockNote": ""
+        }
+      ]
+    }
+  },
+
+  "clueDesignNote": "핵심 단서는 인물별로 분산 배치하여 한 플레이어가 조사만으로 전체 그림을 완성하지 못하게 설계할 것. 최소 1개 이상은 unlockType: manual_reveal_by_player로 두어 대화를 통한 협상/공개를 유도할 것.",
+
+  "resolutionPhase": {
+    "steps": [
+      {
+        "id": "accusation",
+        "prompt": "범인을 지목하세요.",
+        "type": "single_select",
+        "options": []
+      },
+      {
+        "id": "moral_choice",
+        "prompt": "",
+        "type": "single_select",
+        "options": ["reveal_all", "conceal_some"]
+      }
+    ],
+    "trackedMetrics": ["cluesSharedCount", "cluesConcealedCount", "accusationCorrect"]
+  },
+
+  "endings": [
+    {
+      "id": "",
+      "title": "",
+      "condition": "",
+      "message": "",
+      "themeTag": ""
+    }
+  ],
+
+  "reflectionPrompts": [
+    "",
+    "",
+    "",
+    ""
+  ]
+}

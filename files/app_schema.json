@@ -1,0 +1,93 @@
+{
+  "appName": "윤리미스터리",
+  "appNameEn": "EthicsMystery",
+  "version": "0.1.0",
+  "description": "고등학교 윤리문제 탐구 수업용 온라인 딜레마 추리게임 플랫폼. 여러 시나리오(딜레마)를 선택해 플레이할 수 있는 구조.",
+
+  "infrastructure": {
+    "hosting": {
+      "provider": "GitHub Pages 또는 Vercel (무료 플랜)",
+      "note": "정적 프론트엔드 배포. 커스텀 도메인 연결 전까지 무료 서브도메인 사용 (예: ethicsmystery.vercel.app, username.github.io/ethicsmystery)",
+      "repo": "GitHub 저장소로 코드 관리 (public 또는 private 선택 가능, 시나리오 공개 배포는 public 권장)"
+    },
+    "backend": {
+      "provider": "Firebase",
+      "plan": "Spark(무료) 플랜",
+      "services": {
+        "realtimeDatabase": "게임 룸 상태(참가자, AP, 단서 선점, 선택지) 실시간 동기화용",
+        "firestore": "성찰 기록·결과 영구 저장용 (우리 학교 학생 데이터만)",
+        "anonymousAuth": "로그인 없는 게스트 플레이를 위한 익명 인증 — 방 코드 입장 시 자동 발급"
+      },
+      "freeTierWatch": [
+        "Realtime DB: 동시 접속 100 커넥션, 1GB 저장 — 게임 종료 시 룸 데이터 자동 삭제(TTL) 필요",
+        "Firestore: 일 50,000 읽기 / 20,000 쓰기 무료 — 우리 학교 학생 수 기준으로는 충분히 여유"
+      ]
+    },
+    "ai": {
+      "provider": "Google Gemini API",
+      "usageScope": "homeSchoolStudent 등급에게만 활성화",
+      "note": "무료 티어 rate limit(분당 요청수) 존재 — 수업 시간대 동시 요청이 몰릴 수 있으므로 배치/큐잉 고려. API 키는 서버 사이드(Firebase Functions 또는 별도 프록시)에서만 사용, 프론트엔드에 노출 금지."
+    },
+    "domain": {
+      "current": "무료 서브도메인 (호스팅 제공자 기본 도메인)",
+      "planned": "가비아에서 구매 예정, 예: ethicsmystery.kr",
+      "migrationNote": "도메인 구매 후 DNS만 교체하면 되므로 지금 무료 도메인으로 구조/코드 먼저 완성해도 무방"
+    }
+  },
+
+  "accessTiers": {
+    "guest": {
+      "label": "비로그인 게스트 (타학교 포함 누구나)",
+      "loginRequired": false,
+      "canPlayScenario": true,
+      "aiFeedback": false,
+      "dataPersistence": "로컬(브라우저 localStorage)에만 저장, 페이지 이탈 시 소멸",
+      "resultImageExport": true,
+      "note": "멀티플레이 방 자체는 Firebase Realtime DB를 거치지만(실시간 동기화 위해 불가피), 게임 종료 시 방 데이터는 자동 삭제되어 우리 DB에 남지 않음"
+    },
+    "homeSchoolStudent": {
+      "label": "우리 학교 학생 (학교 코드 입력)",
+      "loginRequired": "학교 코드(또는 간단 인증)",
+      "canPlayScenario": true,
+      "aiFeedback": true,
+      "dataPersistence": "Firestore에 영구 저장 (성찰 기록, 플레이 로그)",
+      "resultImageExport": true
+    }
+  },
+
+  "scenarioRegistry": [
+    {
+      "scenarioId": "blackout_envelope_01",
+      "title": "정전된 밤, 사라진 봉투",
+      "unit": "I. 윤리문제 탐구의 이해 — 01. 도덕이 없는 사회는 문제가 될까",
+      "themes": ["기게스의 반지", "홉스의 자연상태"],
+      "supportedPlayerCounts": [3, 4],
+      "status": "설계 완료",
+      "filePath": "/scenarios/blackout_envelope_01.json",
+      "schemaVersion": "1.0"
+    }
+  ],
+
+  "scenarioSchemaVersion": "1.0",
+  "scenarioSchemaFile": "/scenarios/_template.json",
+
+  "sharedSystems": {
+    "reflectionLog": {
+      "description": "모든 시나리오 공통 — 게임 종료 후 성찰 프롬프트에 학생이 답하는 시스템",
+      "storagePolicy": "guest: local only / homeSchoolStudent: Firestore"
+    },
+    "resultImageExport": {
+      "description": "전체 결과 페이지를 이미지로 저장 (html2canvas 등 클라이언트 라이브러리 사용, 서버 비용 없음)",
+      "availableToAllTiers": true
+    },
+    "roomSystem": {
+      "description": "3~4인(추후 1~2인, 다인용 포함) 방 코드 기반 실시간 게임",
+      "roomLifecycle": "생성 → 진행 → 종료 시 Realtime DB에서 방 데이터 삭제(성찰 기록만 별도 보존)"
+    }
+  },
+
+  "futureExpansion": {
+    "plannedPlayerCounts": [1, 2, "다인용(5인 이상)"],
+    "note": "인원별로 캐릭터 역할 통합/분리 로직이 필요 — blackout_envelope_01의 threePlayerVariant 설계 방식을 표준 패턴으로 재사용"
+  }
+}
