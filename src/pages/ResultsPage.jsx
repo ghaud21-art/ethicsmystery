@@ -83,8 +83,14 @@ function ResultsInner({ scenario }) {
         scenarioId: scenario.scenarioId,
         roomCode,
         characterId: myCharacterId,
+        reflectionPrompts: scenario.reflectionPrompts,
         answers,
-        resultSummary: { endingId: ending.id, endingTitle: ending.title },
+        resultSummary: {
+          endingId: ending.id,
+          endingTitle: ending.title,
+          accusedLabel: myAccusedLabel,
+          moralChoiceLabel: myMoralChoiceLabel,
+        },
       })
       const prompt = [
         `시나리오: ${scenario.meta.title}`,

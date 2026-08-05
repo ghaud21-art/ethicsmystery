@@ -7,23 +7,31 @@ import { evaluateEndings } from '../engine/endingEvaluator.js'
 import { computeSoloMetrics, evaluateSoloEnding } from '../engine/soloEndingEvaluator.js'
 import { resizeImageToDataUrl } from '../utils/fileHelpers.js'
 
-function Field({ label, value, onChange, editMode, multiline, small }) {
+function Field({ label, value, onChange, editMode, multiline, small, grow }) {
+  const wrapStyle = { marginBottom: 10, display: 'block', flex: grow ? 1 : undefined, minWidth: grow ? 160 : undefined }
+  const controlStyle = { display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 4 }
+
   if (!editMode) {
     if (!value) return null
     return (
-      <div style={{ marginBottom: 6 }}>
+      <div style={wrapStyle}>
         {label && <div className="dim" style={{ fontSize: 11 }}>{label}</div>}
         <div style={{ fontSize: multiline ? 13 : 14, lineHeight: 1.6, whiteSpace: 'pre-wrap' }}>{value}</div>
       </div>
     )
   }
   return (
-    <div style={{ marginBottom: 6 }}>
-      {label && <label className="dim" style={{ fontSize: 11 }}>{label}</label>}
+    <div style={wrapStyle}>
+      {label && <label className="dim" style={{ fontSize: 11, display: 'block' }}>{label}</label>}
       {multiline ? (
-        <textarea rows={small ? 2 : 3} value={value ?? ''} onChange={(e) => onChange(e.target.value)} style={{ fontSize: 13 }} />
+        <textarea
+          rows={small ? 2 : 4}
+          value={value ?? ''}
+          onChange={(e) => onChange(e.target.value)}
+          style={{ ...controlStyle, fontSize: 13, lineHeight: 1.5 }}
+        />
       ) : (
-        <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} />
+        <input value={value ?? ''} onChange={(e) => onChange(e.target.value)} style={controlStyle} />
       )}
     </div>
   )
@@ -66,14 +74,15 @@ function ScenarioInfoSection({ draft, editMode, onChange }) {
           </div>
         )}
       </div>
-      <div className="row" style={{ gap: 10 }}>
-        <Field label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
-        <Field label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
+        <Field grow label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
       </div>
-      <div className="row" style={{ gap: 10 }}>
-        <Field label="단원명" value={draft.unit} editMode={editMode} onChange={(v) => onChange({ ...draft, unit: v })} />
-        <Field label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="단원명" value={draft.unit} editMode={editMode} onChange={(v) => onChange({ ...draft, unit: v })} />
+        <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
         <Field
+          grow
           label="예상 소요시간(분)"
           value={draft.meta?.estimatedMinutes}
           editMode={editMode}
@@ -105,10 +114,10 @@ function CharacterEditCard({ character, editMode, onChange }) {
   }
   return (
     <div className="card col">
-      <div className="row" style={{ gap: 10 }}>
-        <Field label="이름" value={character.name} editMode={editMode} onChange={(v) => onChange({ ...character, name: v })} />
-        <Field label="역할" value={character.role} editMode={editMode} onChange={(v) => onChange({ ...character, role: v })} />
-        {character.isCulprit && <span className="pill pill-solid" style={{ alignSelf: 'flex-start' }}>진범</span>}
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="이름" value={character.name} editMode={editMode} onChange={(v) => onChange({ ...character, name: v })} />
+        <Field grow label="역할" value={character.role} editMode={editMode} onChange={(v) => onChange({ ...character, role: v })} />
+        {character.isCulprit && <span className="pill pill-solid" style={{ marginTop: 18 }}>진범</span>}
       </div>
       <Field label="공개 정보" value={character.publicInfo} editMode={editMode} multiline onChange={(v) => onChange({ ...character, publicInfo: v })} />
       <Field label="상세 정보" value={character.detailInfo} editMode={editMode} multiline onChange={(v) => onChange({ ...character, detailInfo: v })} />

@@ -85,8 +85,17 @@ export default function StudentResultsPage() {
                 {openId === r.id && (
                   <div className="col" style={{ marginTop: 4 }}>
                     <hr className="divider" style={{ margin: '4px 0 10px' }} />
+                    {(r.resultSummary?.accusedLabel || r.resultSummary?.moralChoiceLabel) && (
+                      <div className="row" style={{ marginBottom: 6 }}>
+                        {r.resultSummary?.accusedLabel && <span className="pill pill-outline">지목: {r.resultSummary.accusedLabel}</span>}
+                        {r.resultSummary?.moralChoiceLabel && <span className="pill pill-outline">{r.resultSummary.moralChoiceLabel}</span>}
+                      </div>
+                    )}
                     {Object.entries(r.answers ?? {}).map(([i, a]) => (
-                      <p key={i} style={{ fontSize: 13, lineHeight: 1.6, margin: '0 0 8px', whiteSpace: 'pre-wrap' }}>{a}</p>
+                      <div key={i} style={{ marginBottom: 8 }}>
+                        <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>{r.reflectionPrompts?.[i] ?? `질문 ${Number(i) + 1}`}</p>
+                        <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{a}</p>
+                      </div>
                     ))}
                     {r.aiFeedback && (
                       <>

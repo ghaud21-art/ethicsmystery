@@ -34,10 +34,33 @@ function ClueRow({ clue, viewed, unlocked, apRemaining, onView }) {
   )
 }
 
+function MyCluesPanel({ scenario, run }) {
+  const allClues = [...scenario.clues.phase1.items, ...scenario.clues.phase2.items]
+  const mine = allClues.filter((c) => run.viewedClueIds.includes(c.id))
+  if (mine.length === 0) {
+    return <p className="dim" style={{ fontSize: 13, margin: 0 }}>아직 확보한 단서가 없습니다.</p>
+  }
+  return (
+    <div className="col" style={{ maxHeight: 420, overflowY: 'auto' }}>
+      {mine.map((clue) => (
+        <div key={clue.id} className="card" style={{ marginBottom: 0 }}>
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <strong style={{ fontSize: 13 }}>{clue.title}</strong>
+            {clue.isCriticalClue && <span className="pill pill-solid">핵심 단서</span>}
+          </div>
+          <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.6 }}>{clue.content}</p>
+        </div>
+      ))}
+    </div>
+  )
+}
+
 function GameInner({ scenario, run, setRun }) {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
   const [error, setError] = useState(null)
+  const [roleOpen, setRoleOpen] = useState(false)
+  const [cluesOpen, setCluesOpen] = useState(false)
 
   const handleView = (clueId) => {
     setError(null)
@@ -54,6 +77,54 @@ function GameInner({ scenario, run, setRun }) {
   const moralStep = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')
 
   const totalAp = scenario.clues.phase1.totalActionPoints ?? 10
+
+  const iconNav = (
+    <div className="icon-nav">
+      <button className="icon-nav-button" onClick={() => setRoleOpen(true)}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="12" cy="8" r="4" />
+          <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+        </svg>
+        내 역할
+      </button>
+      <button className="icon-nav-button" onClick={() => setCluesOpen(true)}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+        내 단서
+      </button>
+    </div>
+  )
+
+  const modals = (
+    <>
+      {roleOpen && (
+        <div className="modal-overlay" onClick={() => setRoleOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">내 역할</div>
+            <strong style={{ fontFamily: 'var(--font-head)' }}>{scenario.playerCharacter.name}</strong>
+            <p className="dim" style={{ fontSize: 12, margin: '2px 0 10px' }}>{scenario.playerCharacter.role}</p>
+            <p style={{ fontSize: 13, lineHeight: 1.7 }}>{scenario.playerCharacter.description}</p>
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setRoleOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {cluesOpen && (
+        <div className="modal-overlay" onClick={() => setCluesOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">내 단서</div>
+            <MyCluesPanel scenario={scenario} run={run} />
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setCluesOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
 
   if (run.step === 'briefing') {
     return (
@@ -92,6 +163,7 @@ function GameInner({ scenario, run, setRun }) {
           <h1 className="page-title" style={{ margin: 0, fontSize: 20 }}>{phase1.label}</h1>
           <APBar current={run.apRemaining} max={totalAp} />
         </div>
+        {iconNav}
         <div className="page-title-rule" />
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 18 }}>
           {phase1.items.map((clue) => (
@@ -109,6 +181,7 @@ function GameInner({ scenario, run, setRun }) {
         <button className="primary" onClick={() => goToStep('phase2')} style={{ width: '100%', textAlign: 'left' }}>
           심층 대질로 →
         </button>
+        {modals}
       </div>
     )
   }
@@ -122,6 +195,7 @@ function GameInner({ scenario, run, setRun }) {
           <h1 className="page-title" style={{ margin: 0, fontSize: 20 }}>{scenario.clues.phase2.label}</h1>
           <APBar current={run.apRemaining} max={totalAp} />
         </div>
+        {iconNav}
         <div className="page-title-rule" />
         <div className="col" style={{ marginBottom: 18 }}>
           {scenario.characters.map((character) => {
@@ -163,6 +237,7 @@ function GameInner({ scenario, run, setRun }) {
         <button className="primary" onClick={() => goToStep('resolution')} style={{ width: '100%', textAlign: 'left' }}>
           결론으로 →
         </button>
+        {modals}
       </div>
     )
   }

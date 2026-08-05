@@ -6,7 +6,97 @@ import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
 import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario } from '../firebase/scenariosApi.js'
 import { parseScenarioDoc } from '../firebase/functionsApi.js'
 import { getAdminConfig, saveAdminConfig } from '../firebase/adminConfigApi.js'
+import { listAllReflectionLogs, deleteReflectionLog } from '../firebase/reflectionApi.js'
 import { fileToBase64, resizeImageToDataUrl } from '../utils/fileHelpers.js'
+
+function formatDate(ms) {
+  if (!ms) return ''
+  const d = new Date(ms)
+  return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
+}
+
+function StudentLogsSection({ scenarios }) {
+  const [logs, setLogs] = useState(null)
+  const [openId, setOpenId] = useState(null)
+  const [busyId, setBusyId] = useState(null)
+  const [error, setError] = useState(null)
+
+  const titleMap = Object.fromEntries((scenarios ?? []).map((s) => [s.scenarioId, s.meta?.title ?? s.scenarioId]))
+
+  const refresh = () => listAllReflectionLogs().then(setLogs).catch((e) => setError(e.message))
+
+  useEffect(() => {
+    refresh()
+  }, [])
+
+  const handleDelete = async (id) => {
+    if (!confirm('이 학생 기록을 삭제할까요? 되돌릴 수 없습니다.')) return
+    setBusyId(id)
+    setError(null)
+    try {
+      await deleteReflectionLog(id)
+      setLogs((prev) => prev.filter((l) => l.id !== id))
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusyId(null)
+    }
+  }
+
+  return (
+    <div className="col">
+      <h2 className="page-title" style={{ fontSize: 19 }}>학생 기록 (학번순)</h2>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+      {!logs ? (
+        error ? null : <div className="dim">불러오는 중...</div>
+      ) : logs.length === 0 ? (
+        <p className="dim">아직 저장된 학생 기록이 없어요.</p>
+      ) : (
+        logs.map((log) => (
+          <div key={log.id} className="card col">
+            <div className="row" style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpenId(openId === log.id ? null : log.id)}>
+              <div>
+                <strong>{log.studentId}</strong>
+                <span style={{ marginLeft: 8 }}>{log.studentName}</span>
+                <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>
+                  {titleMap[log.scenarioId] ?? log.scenarioId} · {formatDate(log.createdAt)}
+                </span>
+              </div>
+              <span className="pill pill-outline">{log.resultSummary?.endingTitle ?? '결말 정보 없음'}</span>
+            </div>
+
+            {openId === log.id && (
+              <div className="col">
+                <hr className="divider" style={{ margin: '4px 0 10px' }} />
+                {(log.resultSummary?.accusedLabel || log.resultSummary?.moralChoiceLabel) && (
+                  <div className="row">
+                    {log.resultSummary?.accusedLabel && <span className="pill pill-outline">지목: {log.resultSummary.accusedLabel}</span>}
+                    {log.resultSummary?.moralChoiceLabel && <span className="pill pill-outline">{log.resultSummary.moralChoiceLabel}</span>}
+                  </div>
+                )}
+                {Object.entries(log.answers ?? {}).map(([i, a]) => (
+                  <div key={i}>
+                    <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>{log.reflectionPrompts?.[i] ?? `질문 ${Number(i) + 1}`}</p>
+                    <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{a}</p>
+                  </div>
+                ))}
+                {log.aiFeedback && (
+                  <>
+                    <p className="dim" style={{ fontSize: 12, margin: '4px 0 3px' }}>AI 피드백</p>
+                    <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0 }}>{log.aiFeedback}</p>
+                  </>
+                )}
+                <button onClick={() => handleDelete(log.id)} disabled={busyId === log.id} style={{ alignSelf: 'flex-start', marginTop: 6 }}>
+                  {busyId === log.id ? '삭제 중...' : '이 기록 삭제'}
+                </button>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  )
+}
 
 function ApiConfigSection() {
   const [config, setConfig] = useState(null)
@@ -369,6 +459,8 @@ export default function AdminPage() {
 
           <h2 className="page-title" style={{ fontSize: 19 }}>시나리오 관리</h2>
           {!scenarios ? <div className="dim">불러오는 중...</div> : <ScenarioListSection scenarios={scenarios} onChanged={refreshScenarios} />}
+
+          <StudentLogsSection scenarios={scenarios} />
         </div>
       )}
     </div>

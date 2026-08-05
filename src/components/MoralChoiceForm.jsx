@@ -1,7 +1,7 @@
 export default function MoralChoiceForm({ prompt, value, onChange, disabled }) {
   const options = [
-    { id: 'reveal_all', label: '모두 공개했다' },
-    { id: 'conceal_some', label: '일부는 덮었다' },
+    { id: 'reveal_all', label: '모두 공개하겠다' },
+    { id: 'conceal_some', label: '일부는 덮겠다' },
   ]
   return (
     <div>

@@ -80,8 +80,9 @@ export default function SoloResultsPage() {
         scenarioId: scenario.scenarioId,
         roomCode: null,
         characterId: scenario.playerCharacter.id,
+        reflectionPrompts: scenario.reflectionPrompts,
         answers,
-        resultSummary: { endingId: ending.id, endingTitle: ending.title },
+        resultSummary: { endingId: ending.id, endingTitle: ending.title, accusedLabel, moralChoiceLabel },
       })
       const prompt = [
         `시나리오: ${scenario.meta.title} (1인용)`,

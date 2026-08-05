@@ -1,34 +1,38 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
-    // 성찰 기록 — homeSchoolStudent 등급만 생성 가능, 본인 것만 열람 가능.
+    function isAdmin() {
+      return request.auth != null
+             && request.auth.token.email == 'ghaud21@gmail.com'
+             && request.auth.token.email_verified == true;
+    }
+
+    // 성찰 기록 — homeSchoolStudent 등급만 생성 가능, 본인 것 또는 관리자만 열람 가능.
     // aiFeedback 필드는 Cloud Function(Admin SDK)만 채워넣으므로 클라이언트 update는 전면 금지.
+    // 삭제는 관리자만 가능(학생 기록 관리 화면에서 사용).
     match /reflectionLogs/{docId} {
-      allow read: if request.auth != null && request.auth.uid == resource.data.uid;
+      allow read: if request.auth != null && (request.auth.uid == resource.data.uid || isAdmin());
       allow create: if request.auth != null
                     && request.auth.token.homeSchoolStudent == true
                     && request.resource.data.uid == request.auth.uid
                     && request.resource.data.studentName is string && request.resource.data.studentName.size() > 0
                     && request.resource.data.studentId is string && request.resource.data.studentId.size() > 0;
-      allow update, delete: if false;
+      allow update: if false;
+      allow delete: if isAdmin();
     }
 
     // 시나리오 — 누구나 읽기(게스트도 시나리오 소개는 볼 수 있어야 함),
     // 쓰기는 관리자 계정(Google 로그인, 지정된 이메일)만 가능.
     match /scenarios/{scenarioId} {
       allow read: if true;
-      allow write: if request.auth != null
-                   && request.auth.token.email == 'ghaud21@gmail.com'
-                   && request.auth.token.email_verified == true;
+      allow write: if isAdmin();
     }
 
     // API 키/학교 코드 등 서버 전용 설정. 관리자만 읽고 쓸 수 있다 — 값 자체는
     // 클라이언트에서 절대 직접 쓰지 않고(Gemini 호출은 여전히 Cloud Functions만
     // 수행), 관리자가 값을 확인/변경하는 용도로만 읽기를 허용한다.
     match /config/{docId} {
-      allow read, write: if request.auth != null
-                          && request.auth.token.email == 'ghaud21@gmail.com'
-                          && request.auth.token.email_verified == true;
+      allow read, write: if isAdmin();
     }
 
     // 학생 이름/학번(학교 코드 인증 시 저장) — 관리자만 조회 가능. 학생 결과 조회는
