@@ -43,6 +43,11 @@ function ResultsInner({ scenario }) {
 
   const myCharacterId = room?.players?.[uid]?.characterId
   const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
+  const myAccusedId = accusations[uid]
+  const myAccusedCharacter = scenario.characters.find((c) => c.id === myAccusedId)
+  const myAccusedLabel = myAccusedId === 'unknown' ? '모르겠다' : myAccusedId ? myAccusedCharacter?.name : '미응답'
+  const myMoralChoiceLabel =
+    moralChoices[uid] === 'reveal_all' ? '모두 공개했다' : moralChoices[uid] === 'conceal_some' ? '일부는 덮었다' : '미응답'
 
   useEffect(() => {
     if (!room || !ending || saved) return
@@ -94,7 +99,7 @@ function ResultsInner({ scenario }) {
       <Masthead />
       <StepProgress activeIndex={4} />
 
-      <div ref={exportRef} className="card" style={{ borderTop: '2px solid var(--gold)', position: 'relative', padding: '26px 20px' }}>
+      <div className="card" style={{ borderTop: '2px solid var(--gold)', position: 'relative', padding: '26px 20px' }}>
         <div className="thumb" style={{ margin: '-26px -20px 16px', height: 150, borderRadius: 0 }}>{ending.title} 이미지</div>
         <span className="stamp" style={{ position: 'absolute', top: 20, right: 20 }}>수사 종결</span>
         <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: 10 }}>
@@ -109,12 +114,84 @@ function ResultsInner({ scenario }) {
         </div>
       </div>
 
-      <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-result.png`} />
+      <div className="divider-orn"><span className="divider-orn-diamond" /></div>
+
+      <h2 className="page-title" style={{ fontSize: 19 }}>다른 결말들</h2>
+      <p className="dim" style={{ marginBottom: 16 }}>같은 사건도 선택에 따라 다른 결말로 이어집니다.</p>
+      <div className="col" style={{ marginBottom: 8 }}>
+        {scenario.endings.map((e) => (
+          <div
+            key={e.id}
+            className="card"
+            style={
+              e.id === ending.id
+                ? { borderColor: 'var(--gold)', boxShadow: '0 0 0 1px var(--gold), var(--glow)' }
+                : { opacity: 0.75 }
+            }
+          >
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <strong style={{ fontFamily: 'var(--font-head)' }}>{e.title}</strong>
+              {e.id === ending.id && <span className="pill pill-solid">이번 결말</span>}
+            </div>
+            <p className="dim" style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.6 }}>{e.message}</p>
+            <span className="dim" style={{ fontSize: 11 }}>{e.themeTag}</span>
+          </div>
+        ))}
+      </div>
+
+      <div className="divider-orn"><span className="divider-orn-diamond" /></div>
+
+      <h2 className="page-title" style={{ fontSize: 19 }}>참가자들의 선택</h2>
+      <div className="col" style={{ marginBottom: 8 }}>
+        {Object.entries(room.players ?? {}).map(([pUid, p]) => {
+          const pCharacter = scenario.characters.find((c) => c.id === p.characterId)
+          const accusedId = accusations[pUid]
+          const accusedCharacter = scenario.characters.find((c) => c.id === accusedId)
+          const accusedLabel = accusedId === 'unknown' ? '모르겠다' : accusedId ? accusedCharacter?.name : '미응답'
+          const wasCorrect = accusedId && accusedId !== 'unknown' && accusedId === culprit?.id
+          return (
+            <div key={pUid} className="card row" style={{ justifyContent: 'space-between' }}>
+              <div className="row">
+                <div className="avatar-circle" style={{ width: 40, height: 40, fontSize: 14 }}>{p.name?.[0] ?? '?'}</div>
+                <div>
+                  <div style={{ fontWeight: 700 }}>{p.name} {pUid === uid && <span className="dim">(나)</span>}</div>
+                  <div className="dim" style={{ fontSize: 12 }}>{pCharacter?.name} · {pCharacter?.role}</div>
+                </div>
+              </div>
+              <div className="col" style={{ gap: 4, alignItems: 'flex-end' }}>
+                <span className={`pill ${wasCorrect ? 'pill-solid' : 'pill-muted'}`}>지목: {accusedLabel}</span>
+                <span className="pill pill-outline">
+                  {moralChoices[pUid] === 'reveal_all' ? '모두 공개' : moralChoices[pUid] === 'conceal_some' ? '일부 은폐' : '미응답'}
+                </span>
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      <div className="divider-orn"><span className="divider-orn-diamond" /></div>
+
+      <h2 className="page-title" style={{ fontSize: 19 }}>모든 단서</h2>
+      <div className="col" style={{ marginBottom: 18 }}>
+        {[...scenario.clues.phase1.items, ...scenario.clues.phase2.items].map((clue) => {
+          const clueState = room.clues?.[clue.id]
+          const finder = clueState?.claimedBy ? room.players?.[clueState.claimedBy]?.name : null
+          return (
+            <div key={clue.id} className="card" style={{ marginBottom: 0 }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <strong style={{ fontSize: 13 }}>{clue.title}</strong>
+                <span className={`pill ${finder ? 'pill-solid' : 'pill-muted'}`}>{finder ? `${finder} 발견` : '미발견'}</span>
+              </div>
+              <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.6 }}>{clue.content}</p>
+            </div>
+          )
+        })}
+      </div>
 
       <hr className="divider" />
 
       <h2 className="page-title" style={{ fontSize: 19 }}>성찰 기록</h2>
-      <p className="dim" style={{ marginBottom: 16 }}>오늘의 딜레마를 돌아보며 답해보세요.</p>
+      <p className="dim" style={{ marginBottom: 16 }}>오늘의 딜레마를 돌아보며 답해보세요. 작성한 내용은 아래 "나의 플레이 기록"에 자동으로 반영됩니다.</p>
 
       <div className="col" style={{ marginBottom: 18 }}>
         {scenario.reflectionPrompts.map((q, i) => (
@@ -130,19 +207,49 @@ function ResultsInner({ scenario }) {
       </div>
 
       {tier === 'homeSchoolStudent' ? (
-        <button className="primary" onClick={handleReflectionSubmit} disabled={aiBusy} style={{ width: '100%', textAlign: 'left' }}>
+        <button className="primary" onClick={handleReflectionSubmit} disabled={aiBusy} style={{ width: '100%', textAlign: 'left', marginBottom: 18 }}>
           {aiBusy ? 'AI 피드백 생성 중...' : '성찰 기록 제출하기'}
         </button>
       ) : (
-        <p className="dim" style={{ fontSize: 12 }}>게스트 모드에서는 이 기기에만 결과가 저장되며 AI 피드백은 제공되지 않습니다.</p>
+        <p className="dim" style={{ fontSize: 12, marginBottom: 18 }}>게스트 모드에서는 이 기기에만 결과가 저장되며 AI 피드백은 제공되지 않습니다.</p>
       )}
       {aiError && <p style={{ color: 'var(--blood-light)' }}>{aiError}</p>}
-      {aiFeedback && (
-        <div className="card">
-          <strong>AI 피드백</strong>
-          <p style={{ marginBottom: 0 }}>{aiFeedback}</p>
+
+      <div className="divider-orn"><span className="divider-orn-diamond" /></div>
+
+      {/* html2canvas는 <textarea>/<input> 내부 값을 그리지 못하므로, 저장용 요약은
+          별도의 일반 텍스트 블록으로 렌더링한다(입력 폼과 분리). */}
+      <div ref={exportRef} className="card" style={{ padding: '22px 20px' }}>
+        <div className="kicker" style={{ marginBottom: 4 }}>나의 플레이 기록</div>
+        <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: '0 0 4px' }}>{scenario.meta.title}</h2>
+        <p className="dim" style={{ fontSize: 12, margin: '0 0 14px' }}>{ending.title} · {myCharacter?.name} ({myCharacter?.role})</p>
+
+        <div className="row" style={{ marginBottom: 14 }}>
+          <span className="pill pill-outline">나의 지목: {myAccusedLabel}</span>
+          <span className="pill pill-outline">나의 선택: {myMoralChoiceLabel}</span>
         </div>
-      )}
+
+        <div className="col">
+          {scenario.reflectionPrompts.map((q, i) => (
+            <div key={i}>
+              <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>{q}</p>
+              <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{answers[i] || '(무응답)'}</p>
+            </div>
+          ))}
+        </div>
+
+        {aiFeedback && (
+          <>
+            <hr className="divider" style={{ margin: '16px 0' }} />
+            <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>AI 피드백</p>
+            <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0 }}>{aiFeedback}</p>
+          </>
+        )}
+      </div>
+
+      <div style={{ marginTop: 12, marginBottom: 18 }}>
+        <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-my-record.png`} />
+      </div>
 
       <hr className="divider" />
       <button onClick={leaveAndCleanupRoom}>게임 종료 (방 삭제)</button>
