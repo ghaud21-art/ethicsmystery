@@ -8,9 +8,10 @@ const admin = require('firebase-admin')
 // 있게 하기 위한 식별자다(익명 인증 uid는 기기마다 달라 재사용할 수 없음).
 // 클라이언트 신뢰 입력이라 위조 가능하지만, 학교 코드까지 함께 아는 사람만
 // 조회 가능하므로 교실 규모에서는 충분한 방어 수준이다.
-async function verifySchoolCode(req, schoolCodeSecret) {
+async function verifySchoolCode(req, expectedCode) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
-  if (!req.data?.code || req.data.code !== schoolCodeSecret.value()) {
+  if (!expectedCode) throw new HttpsError('failed-precondition', '관리자가 아직 학교 코드를 설정하지 않았습니다')
+  if (!req.data?.code || req.data.code !== expectedCode) {
     throw new HttpsError('permission-denied', '학교 코드가 올바르지 않습니다')
   }
   const name = (req.data.name ?? '').trim()
@@ -26,9 +27,10 @@ async function verifySchoolCode(req, schoolCodeSecret) {
 
 // 이름+학번(+학교 코드)만으로 이 학생의 과거 성찰 기록을 모두 찾아 돌려준다.
 // 익명 인증 uid가 기기마다 달라져도, 이 세 값만 기억하면 어떤 기기에서든 조회할 수 있다.
-async function getMyResults(req, schoolCodeSecret) {
+async function getMyResults(req, expectedCode) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
-  if (!req.data?.code || req.data.code !== schoolCodeSecret.value()) {
+  if (!expectedCode) throw new HttpsError('failed-precondition', '관리자가 아직 학교 코드를 설정하지 않았습니다')
+  if (!req.data?.code || req.data.code !== expectedCode) {
     throw new HttpsError('permission-denied', '학교 코드가 올바르지 않습니다')
   }
   const name = (req.data.name ?? '').trim()

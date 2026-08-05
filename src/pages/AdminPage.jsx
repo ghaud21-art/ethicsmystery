@@ -5,7 +5,88 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
 import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario } from '../firebase/scenariosApi.js'
 import { parseScenarioDoc } from '../firebase/functionsApi.js'
+import { getAdminConfig, saveAdminConfig } from '../firebase/adminConfigApi.js'
 import { fileToBase64, resizeImageToDataUrl } from '../utils/fileHelpers.js'
+
+function ApiConfigSection() {
+  const [config, setConfig] = useState(null)
+  const [schoolCode, setSchoolCode] = useState('')
+  const [geminiApiKey, setGeminiApiKey] = useState('')
+  const [geminiModelPrimary, setGeminiModelPrimary] = useState('')
+  const [geminiModelFallback, setGeminiModelFallback] = useState('')
+  const [showKey, setShowKey] = useState(false)
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [saved, setSaved] = useState(false)
+
+  useEffect(() => {
+    getAdminConfig()
+      .then((c) => {
+        setConfig(c)
+        setSchoolCode(c.schoolCode ?? '')
+        setGeminiApiKey(c.geminiApiKey ?? '')
+        setGeminiModelPrimary(c.geminiModelPrimary ?? 'gemini-3.5-flash-lite')
+        setGeminiModelFallback(c.geminiModelFallback ?? 'gemini-3.1-flash-lite')
+      })
+      .catch((err) => setError(err.message))
+  }, [])
+
+  const handleSave = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await saveAdminConfig({ schoolCode, geminiApiKey, geminiModelPrimary, geminiModelFallback })
+      setSaved(true)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  if (!config) return error ? <div className="card"><p style={{ color: 'var(--blood-light)', fontSize: 12, margin: 0 }}>{error}</p></div> : null
+
+  return (
+    <div className="card col">
+      <strong>학교 코드 / Gemini API 설정</strong>
+      <p className="dim" style={{ fontSize: 12, margin: 0 }}>
+        학생 인증에 쓰는 학교 코드와, AI 피드백·시나리오 자동 분석에 쓰는 Gemini API 키를 여기서 직접 관리할 수 있습니다.
+        Gemini API 키는 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noreferrer">Google AI Studio</a>에서 발급받을 수 있어요.
+      </p>
+
+      <label className="dim" style={{ fontSize: 12 }}>학교 코드</label>
+      <input placeholder="학생들에게 안내할 코드" value={schoolCode} onChange={(e) => { setSchoolCode(e.target.value); setSaved(false) }} />
+
+      <label className="dim" style={{ fontSize: 12 }}>Gemini API 키</label>
+      <div className="row">
+        <input
+          type={showKey ? 'text' : 'password'}
+          placeholder="AIza..."
+          value={geminiApiKey}
+          onChange={(e) => { setGeminiApiKey(e.target.value); setSaved(false) }}
+          style={{ flex: 1 }}
+        />
+        <button onClick={() => setShowKey((v) => !v)}>{showKey ? '숨기기' : '표시'}</button>
+      </div>
+
+      <div className="row">
+        <div className="col" style={{ flex: 1 }}>
+          <label className="dim" style={{ fontSize: 12 }}>기본 모델</label>
+          <input value={geminiModelPrimary} onChange={(e) => { setGeminiModelPrimary(e.target.value); setSaved(false) }} />
+        </div>
+        <div className="col" style={{ flex: 1 }}>
+          <label className="dim" style={{ fontSize: 12 }}>폴백 모델</label>
+          <input value={geminiModelFallback} onChange={(e) => { setGeminiModelFallback(e.target.value); setSaved(false) }} />
+        </div>
+      </div>
+
+      <button className="primary" onClick={handleSave} disabled={busy} style={{ alignSelf: 'flex-start' }}>
+        {busy ? '저장 중...' : saved ? '저장됨' : '저장'}
+      </button>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+    </div>
+  )
+}
 
 function MainImageSection() {
   const siteConfig = useSiteConfig()
@@ -282,6 +363,7 @@ export default function AdminPage() {
             <button onClick={signOutAdmin}>로그아웃</button>
           </div>
 
+          <ApiConfigSection />
           <MainImageSection />
           <ScenarioUploadSection onSaved={refreshScenarios} />
 

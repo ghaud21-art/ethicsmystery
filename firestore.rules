@@ -22,6 +22,21 @@ service cloud.firestore {
                    && request.auth.token.email_verified == true;
     }
 
+    // API 키/학교 코드 등 서버 전용 설정. 관리자만 읽고 쓸 수 있다 — 값 자체는
+    // 클라이언트에서 절대 직접 쓰지 않고(Gemini 호출은 여전히 Cloud Functions만
+    // 수행), 관리자가 값을 확인/변경하는 용도로만 읽기를 허용한다.
+    match /config/{docId} {
+      allow read, write: if request.auth != null
+                          && request.auth.token.email == 'ghaud21@gmail.com'
+                          && request.auth.token.email_verified == true;
+    }
+
+    // 학생 이름/학번(학교 코드 인증 시 저장) — 관리자만 조회 가능. 학생 결과 조회는
+    // 이름+학번을 직접 아는 사람만 되므로 별도 클라이언트 접근이 필요 없다.
+    match /students/{uid} {
+      allow read, write: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }
