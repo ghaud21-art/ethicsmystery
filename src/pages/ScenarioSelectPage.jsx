@@ -29,14 +29,14 @@ export default function ScenarioSelectPage() {
       <div className="row" style={{ marginBottom: 18 }}>
         <div style={{ width: 4, height: 20, background: 'var(--gold)', borderRadius: 2 }} />
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: 0 }}>
-          당신을 기다리는 미스터리
+          현재 경험 가능한 시나리오
         </h2>
       </div>
 
       {error && <div className="card">시나리오 목록을 불러오지 못했습니다.</div>}
       {!scenarios && !error && <div className="dim">불러오는 중...</div>}
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: 18 }}>
+      <div className="scenario-grid">
         {scenarios?.map((s, i) => (
           <Link
             to={s.status === '설계 완료' ? `/scenario/${s.scenarioId}` : '#'}
