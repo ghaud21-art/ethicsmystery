@@ -4,6 +4,7 @@ import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
+import { newSoloRun, saveSoloRun } from '../utils/soloRun.js'
 
 const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
 
@@ -12,6 +13,7 @@ function DetailInner({ scenario }) {
   const navigate = useNavigate()
   const { tier, verifySchoolCode } = useAuth()
   const { createRoom, joinRoom } = useRoom()
+  const isSolo = !!scenario.playerCharacter
 
   const [displayName, setDisplayName] = useState('')
   const [playerCount, setPlayerCount] = useState(scenario.meta.supportedPlayerCounts[0])
@@ -49,6 +51,12 @@ function DetailInner({ scenario }) {
     } finally {
       setBusy(false)
     }
+  }
+
+  const handleStartSolo = () => {
+    const run = newSoloRun(scenario, displayName || '나')
+    saveSoloRun(scenarioId, run)
+    navigate(`/scenario/${scenarioId}/solo/play`)
   }
 
   const handleJoin = async () => {
@@ -104,6 +112,29 @@ function DetailInner({ scenario }) {
         {scenario.meta.learningObjective}
       </p>
 
+      {isSolo && (
+        <>
+          <div className="divider-orn">
+            <span className="divider-orn-diamond" />
+          </div>
+          <div className="kicker">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
+              <circle cx="12" cy="8" r="4" />
+              <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+            </svg>
+            당신의 역할
+          </div>
+          <div className="card row" style={{ alignItems: 'flex-start' }}>
+            <div className="avatar-circle">{scenario.playerCharacter.name[0]}</div>
+            <div>
+              <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 15 }}>{scenario.playerCharacter.name}</div>
+              <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{scenario.playerCharacter.role}</div>
+              <div style={{ fontSize: 13, lineHeight: 1.6 }}>{scenario.playerCharacter.description}</div>
+            </div>
+          </div>
+        </>
+      )}
+
       <div className="divider-orn">
         <span className="divider-orn-diamond" />
       </div>
@@ -113,7 +144,7 @@ function DetailInner({ scenario }) {
           <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
           <circle cx="9" cy="7" r="4" />
         </svg>
-        용의선상 인물
+        {isSolo ? '등장인물' : '용의선상 인물'}
       </div>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: 10, marginBottom: 8 }}>
         {scenario.characters.map((c) => (
@@ -136,7 +167,7 @@ function DetailInner({ scenario }) {
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
           <path d="M4 4h16v16H4z" />
         </svg>
-        수사 참가하기
+        {isSolo ? '조사 시작하기' : '수사 참가하기'}
       </div>
 
       {!scenario.published ? (
@@ -145,41 +176,53 @@ function DetailInner({ scenario }) {
         </div>
       ) : (
         <>
-          <div className="card col">
-            <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
-            <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-          </div>
-
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
-            <div className="card col" style={{ marginBottom: 0 }}>
-              <strong>방 코드로 참가</strong>
-              <input
-                placeholder="예: A3F9"
-                value={joinCode}
-                onChange={(e) => setJoinCode(e.target.value)}
-                maxLength={4}
-              />
-              <button className="primary" onClick={handleJoin} disabled={busy} style={{ textAlign: 'left' }}>
-                방 입장하기
+          {isSolo ? (
+            <div className="card col">
+              <label className="dim" style={{ fontSize: 12 }}>닉네임 (선택)</label>
+              <input placeholder="결과 기록에 표시할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+              <button className="primary" onClick={handleStartSolo} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                혼자 조사 시작하기 →
               </button>
             </div>
-
-            <div className="card col" style={{ marginBottom: 0 }}>
-              <div className="row" style={{ justifyContent: 'space-between' }}>
-                <strong>새 방 만들기</strong>
-                <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
-                  {scenario.meta.supportedPlayerCounts.map((n) => (
-                    <option key={n} value={n}>
-                      {n}인
-                    </option>
-                  ))}
-                </select>
+          ) : (
+            <>
+              <div className="card col">
+                <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
+                <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
               </div>
-              <button onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
-                방 만들기
-              </button>
-            </div>
-          </div>
+
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 14 }}>
+                <div className="card col" style={{ marginBottom: 0 }}>
+                  <strong>방 코드로 참가</strong>
+                  <input
+                    placeholder="예: A3F9"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value)}
+                    maxLength={4}
+                  />
+                  <button className="primary" onClick={handleJoin} disabled={busy} style={{ textAlign: 'left' }}>
+                    방 입장하기
+                  </button>
+                </div>
+
+                <div className="card col" style={{ marginBottom: 0 }}>
+                  <div className="row" style={{ justifyContent: 'space-between' }}>
+                    <strong>새 방 만들기</strong>
+                    <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
+                      {scenario.meta.supportedPlayerCounts.map((n) => (
+                        <option key={n} value={n}>
+                          {n}인
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <button onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
+                    방 만들기
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
 
           {tier === 'homeSchoolStudent' ? (
             <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
