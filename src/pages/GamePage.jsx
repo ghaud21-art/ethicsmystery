@@ -73,6 +73,7 @@ function GameInner({ scenario }) {
   } = useRoom()
   const [roleOpen, setRoleOpen] = useState(false)
   const [cluesOpen, setCluesOpen] = useState(false)
+  const [castOpen, setCastOpen] = useState(false)
   const [timeUpNoticeOpen, setTimeUpNoticeOpen] = useState(false)
   const [timeUp, setTimeUp] = useState(false)
 
@@ -165,6 +166,15 @@ function GameInner({ scenario }) {
           </svg>
           내 단서
         </button>
+        <button className="icon-nav-button" onClick={() => setCastOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          등장인물
+        </button>
       </div>
 
       <h2 className="page-title" style={{ fontSize: 20 }}>
@@ -238,6 +248,31 @@ function GameInner({ scenario }) {
             <MyCluesPanel scenario={scenario} room={room} uid={uid} myCharacterId={myCharacterId} />
             <div className="row" style={{ justifyContent: 'flex-end' }}>
               <button onClick={() => setCluesOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {castOpen && (
+        <div className="modal-overlay" onClick={() => setCastOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">등장인물</div>
+            <div className="col">
+              {scenario.characters
+                .filter((c) => c.id !== myCharacterId)
+                .map((c) => (
+                  <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
+                    <div className="avatar-circle">{c.name[0]}</div>
+                    <div>
+                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
+                      <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
+                      <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
+                    </div>
+                  </div>
+                ))}
+            </div>
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setCastOpen(false)}>닫기</button>
             </div>
           </div>
         </div>

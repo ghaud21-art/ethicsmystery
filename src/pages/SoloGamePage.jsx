@@ -61,6 +61,7 @@ function GameInner({ scenario, run, setRun }) {
   const [error, setError] = useState(null)
   const [roleOpen, setRoleOpen] = useState(false)
   const [cluesOpen, setCluesOpen] = useState(false)
+  const [castOpen, setCastOpen] = useState(false)
 
   const handleView = (clueId) => {
     setError(null)
@@ -94,6 +95,15 @@ function GameInner({ scenario, run, setRun }) {
         </svg>
         내 단서
       </button>
+      <button className="icon-nav-button" onClick={() => setCastOpen(true)}>
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+          <circle cx="9" cy="7" r="4" />
+          <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+          <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+        </svg>
+        등장인물
+      </button>
     </div>
   )
 
@@ -119,6 +129,28 @@ function GameInner({ scenario, run, setRun }) {
             <MyCluesPanel scenario={scenario} run={run} />
             <div className="row" style={{ justifyContent: 'flex-end' }}>
               <button onClick={() => setCluesOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {castOpen && (
+        <div className="modal-overlay" onClick={() => setCastOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">등장인물</div>
+            <div className="col">
+              {scenario.characters.map((c) => (
+                <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
+                  <div className="avatar-circle">{c.name[0]}</div>
+                  <div>
+                    <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
+                    <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
+                    <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setCastOpen(false)}>닫기</button>
             </div>
           </div>
         </div>

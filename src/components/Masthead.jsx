@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 
 export default function Masthead({ showBack, onBack }) {
   const navigate = useNavigate()
@@ -17,7 +17,9 @@ export default function Masthead({ showBack, onBack }) {
               </svg>
             </button>
           )}
-          <div className="masthead-title">윤리미스터리 · ETHICSMYSTERY</div>
+          <Link to="/" className="masthead-title" style={{ textDecoration: 'none', color: 'inherit' }}>
+            윤리미스터리 · ETHICSMYSTERY
+          </Link>
         </div>
       </div>
       <div className="masthead-rule" />
