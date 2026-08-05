@@ -8,7 +8,8 @@ async function verifySchoolCode(req, schoolCodeSecret) {
   if (!req.data?.code || req.data.code !== schoolCodeSecret.value()) {
     throw new HttpsError('permission-denied', '학교 코드가 올바르지 않습니다')
   }
-  await admin.auth().setCustomUserClaims(req.auth.uid, { homeSchoolStudent: true })
+  const user = await admin.auth().getUser(req.auth.uid)
+  await admin.auth().setCustomUserClaims(req.auth.uid, { ...user.customClaims, homeSchoolStudent: true })
   return { ok: true }
 }
 

@@ -1,5 +1,9 @@
 {
   "rules": {
+    "siteConfig": {
+      ".read": true,
+      ".write": "auth != null && auth.token.admin === true"
+    },
     "rooms": {
       "$roomCode": {
         ".read": "auth != null",
@@ -18,9 +22,6 @@
             "$uid": { ".write": "auth != null && auth.uid === $uid" }
           },
           "moralChoices": {
-            "$uid": { ".write": "auth != null && auth.uid === $uid" }
-          },
-          "selfConfess": {
             "$uid": { ".write": "auth != null && auth.uid === $uid" }
           }
         },

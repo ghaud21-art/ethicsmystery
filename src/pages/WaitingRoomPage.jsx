@@ -3,10 +3,11 @@ import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
+import NarrationScript from '../components/NarrationScript.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 
-function WaitingRoomInner() {
+function WaitingRoomInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
   const { uid } = useAuth()
@@ -69,6 +70,10 @@ function WaitingRoomInner() {
         </p>
       </div>
 
+      {scenario.narration?.opening && (
+        <NarrationScript title="오프닝 내레이션" lines={scenario.narration.opening} characters={scenario.characters} />
+      )}
+
       {isHost ? (
         <button className="primary" onClick={startGame} disabled={!canStart} style={{ width: '100%', textAlign: 'left' }}>
           {canStart ? '게임 시작' : `인원이 다 모이면 시작할 수 있어요 (${players.length}/${room.meta.playerCount})`}
@@ -84,7 +89,7 @@ export default function WaitingRoomPage() {
   const { scenarioId, roomCode } = useParams()
   return (
     <RoomPageShell scenarioId={scenarioId} roomCode={roomCode}>
-      {() => <WaitingRoomInner />}
+      {(scenario) => <WaitingRoomInner scenario={scenario} />}
     </RoomPageShell>
   )
 }

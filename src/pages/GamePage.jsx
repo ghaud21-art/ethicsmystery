@@ -5,6 +5,7 @@ import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
 import ClueBoard from '../components/ClueBoard.jsx'
 import RoleInfoTabs from '../components/RoleInfoTabs.jsx'
+import NarrationScript from '../components/NarrationScript.jsx'
 import APBar from '../components/APBar.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
@@ -75,6 +76,21 @@ function GameInner({ scenario }) {
         {phase === 'phase1' ? scenario.clues.phase1.label : scenario.clues.phase2.label}
       </h2>
       <div className="page-title-rule" />
+
+      {phase === 'phase1' && scenario.narration?.phase1Intro && (
+        <NarrationScript
+          title={scenario.narration.phase1Intro.title}
+          lines={scenario.narration.phase1Intro.lines}
+          characters={scenario.characters}
+        />
+      )}
+      {phase === 'phase2' && scenario.narration?.phase2Intro && (
+        <NarrationScript
+          title={scenario.narration.phase2Intro.title}
+          lines={scenario.narration.phase2Intro.lines}
+          characters={scenario.characters}
+        />
+      )}
 
       <ClueBoard
         scenario={scenario}

@@ -3,7 +3,6 @@
 export function isClueVisibleTo(clue, clueState, uid, myCharacterId) {
   if (clueState?.claimedBy === uid) return true // 직접 조사함
   if (clueState?.publishedToRoom) return true // 누군가 공개함
-  if (clue.owner && clue.owner === myCharacterId) return true // 내 캐릭터가 원래 알고 있는 phase2 단서
   return false
 }
 

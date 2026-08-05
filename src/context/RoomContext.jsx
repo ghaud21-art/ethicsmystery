@@ -124,11 +124,6 @@ export function RoomProvider({ scenario, roomCode, children }) {
     [roomCode, uid],
   )
 
-  const triggerSelfConfess = useCallback(
-    () => set(ref(db, `rooms/${roomCode}/resolution/selfConfess/${uid}`), true),
-    [roomCode, uid],
-  )
-
   const finishGame = useCallback(async () => {
     await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'ended' })
   }, [roomCode])
@@ -150,7 +145,6 @@ export function RoomProvider({ scenario, roomCode, children }) {
       publishClue,
       submitAccusation,
       submitMoralChoice,
-      triggerSelfConfess,
       finishGame,
       leaveAndCleanupRoom,
     }),
@@ -166,7 +160,6 @@ export function RoomProvider({ scenario, roomCode, children }) {
       publishClue,
       submitAccusation,
       submitMoralChoice,
-      triggerSelfConfess,
       finishGame,
       leaveAndCleanupRoom,
     ],

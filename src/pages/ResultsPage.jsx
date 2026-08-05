@@ -26,20 +26,16 @@ function ResultsInner({ scenario }) {
   const culprit = scenario.characters.find((c) => c.isCulprit)
   const accusations = room?.resolution?.accusations ?? {}
   const moralChoices = room?.resolution?.moralChoices ?? {}
-  const selfConfess = room?.resolution?.selfConfess ?? {}
 
   const ending = useMemo(() => {
     if (!room) return null
-    const accusationValues = Object.values(accusations)
-    const metrics = {
-      accusationCorrect: accusationValues[0] === culprit?.id,
+    const endingId = evaluateScenarioEndings(scenario.scenarioId, {
       accusations,
       moralChoices,
-      selfConfessTriggeredBy: Object.keys(selfConfess)[0] ?? null,
-    }
-    const endingId = evaluateScenarioEndings(scenario.scenarioId, metrics)
+      roomClues: room.clues ?? {},
+    })
     return scenario.endings.find((e) => e.id === endingId)
-  }, [room, scenario, culprit])
+  }, [room, scenario, accusations, moralChoices])
 
   const myCharacterId = room?.players?.[uid]?.characterId
   const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
@@ -48,6 +44,12 @@ function ResultsInner({ scenario }) {
   const myAccusedLabel = myAccusedId === 'unknown' ? '모르겠다' : myAccusedId ? myAccusedCharacter?.name : '미응답'
   const myMoralChoiceLabel =
     moralChoices[uid] === 'reveal_all' ? '모두 공개했다' : moralChoices[uid] === 'conceal_some' ? '일부는 덮었다' : '미응답'
+
+  const myEpilogue = useMemo(() => {
+    if (!myCharacter?.epilogueCard || !myCharacter.secretRevealClueId) return null
+    const revealed = !!room?.clues?.[myCharacter.secretRevealClueId]?.publishedToRoom
+    return { revealed, text: revealed ? myCharacter.epilogueCard.revealed : myCharacter.epilogueCard.hidden }
+  }, [myCharacter, room])
 
   useEffect(() => {
     if (!room || !ending || saved) return
@@ -107,12 +109,24 @@ function ResultsInner({ scenario }) {
         </div>
         <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 23, margin: '0 0 12px' }}>{ending.title}</h1>
         <p style={{ fontSize: 14, lineHeight: 1.85, color: 'var(--ink-dim)', margin: 0 }}>{ending.message}</p>
+        {ending.insight && (
+          <p style={{ fontSize: 13, lineHeight: 1.7, color: 'var(--gold-light)', margin: '12px 0 0', fontStyle: 'italic' }}>
+            {ending.insight}
+          </p>
+        )}
         <p className="dim" style={{ fontSize: 12, marginTop: 10 }}>{ending.themeTag}</p>
         <div className="row" style={{ marginTop: 14 }}>
           <span className="pill pill-outline">내 캐릭터: {myCharacter?.name}</span>
           <span className="pill pill-muted">진범: {culprit?.name}</span>
         </div>
       </div>
+
+      {myEpilogue && (
+        <div className="card" style={{ borderLeft: '2px solid var(--gold)' }}>
+          <div className="kicker" style={{ marginBottom: 6 }}>나만 보는 개인 에필로그</div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{myEpilogue.text}</p>
+        </div>
+      )}
 
       <div className="divider-orn"><span className="divider-orn-diamond" /></div>
 

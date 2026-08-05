@@ -1,133 +1,157 @@
 {
   "scenarioId": "blackout_envelope_01",
-  "schemaVersion": "1.0",
+  "schemaVersion": "1.1",
   "meta": {
     "title": "정전된 밤, 사라진 봉투",
-    "subtitle": "오리엔테이션 시나리오 — 기게스의 반지 / 홉스의 자연상태",
-    "learningObjective": "도덕이 없는 사회는 문제가 될까? 윤리문제가 왜 발생하는지 이해한다.",
-    "themes": ["기게스의 반지", "홉스의 자연상태", "감시와 도덕성"],
-    "supportedPlayerCounts": [3, 4],
-    "estimatedMinutes": 30,
+    "subtitle": "정온장학금 최종 심사 봉투 실종 사건 — 기게스의 반지 / 홉스의 자연상태",
+    "learningObjective": "윤리문제가 왜 생겨났고 왜 필요하며 그것이 과연 무엇인지 이해한다.",
+    "themes": ["기게스의 반지", "홉스의 자연상태"],
+    "supportedPlayerCounts": [4],
+    "estimatedMinutes": 35,
     "language": "ko"
   },
 
   "prologue": {
-    "sharedText": "2026년 11월, ○○고 학생회실. 다음 주 열릴 동아리 박람회 지원금 300만 원이 든 봉투가 학생회 금고에 보관되어 있었다. 저녁 7시, 갑작스러운 정전이 학교 전체를 덮쳤다. 복도 CCTV와 출입기록 시스템이 정확히 7시 12분부터 7시 46분까지, 34분간 멈췄다. 정전이 복구되고 담당 교사가 금고를 열었을 때, 봉투는 사라져 있었다. 그 시각 학생회실 근처에 있었다고 확인된 사람은 단 4명(3인 플레이 시 3명). 전기가 나간 34분, 아무도 서로를 보지 못했다고 말한다.",
-    "blackoutStart": "19:12",
-    "blackoutEnd": "19:46",
+    "sharedText": "무대는 OO고등학교, 저녁 자율학습 시간. 오후 8시 2분, 교내에 정전이 발생해 8시 36분까지 34분간 이어졌다. 정전 원인은 변전실 노후 배선 사고로, 사람의 개입은 없었음(사실문제로 확정). 다음 날 아침 8시, 교무실에 제출되어야 할 '정온장학금' 최종 후보 3인 심사 코멘트 및 잠정 순위표가 든 봉투가 학생회실에서 사라진 것이 발견됐다. 조사 결과 봉투는 도난된 것이 아니라, 낙하 후 옮겨진 흔적이 있었다.",
+    "blackoutStart": "20:02",
+    "blackoutEnd": "20:36",
     "durationMinutes": 34
+  },
+
+  "narration": {
+    "opening": [
+      { "speaker": "내레이션", "line": "8시 2분, 학교 전체가 어둠에 잠겼다. 정확히 34분 후, 불은 다시 켜졌다. 그런데 다음 날 아침, 학생회실 담당 선생님이 소리쳤다. '정온장학금 심사 봉투가 없어졌어!' 그 34분 동안 무슨 일이 있었을까 — 아니, 그보다 먼저 물어야 할 게 있다. 아무도 보지 않는 34분 동안, 당신이라면 어떻게 행동했을까?" },
+      { "speaker": "시스템 안내", "line": "행동력(AP)을 사용해 현장을 조사하세요. 한 번 열람한 단서는 그 사람의 것이 됩니다 — 그것을 친구들과 나눌지, 혼자 간직할지는 여러분의 선택입니다." }
+    ],
+    "phase1Intro": {
+      "title": "1차 조사 전 낭독 대본 — \"우리가 모인 이유\"",
+      "lines": [
+        { "speaker": "harin", "line": "(당황한 얼굴로) 다들 봤어? 게시판에 붙은 거…" },
+        { "speaker": "seoyeon", "line": "(팔짱을 끼며) 봤어. 정온장학금 심사 봉투가 없어졌다는 거잖아. 근데 그게 왜 우리랑 상관있는데?" },
+        { "speaker": "junhyeok", "line": "(조용히) 우리 넷 다 어제 그 시간에 학교에 있었잖아. 정전 났을 때." },
+        { "speaker": "dohyun", "line": "(심드렁하게) 난 그냥 지나가다 말려든 거야. 상관없다고." },
+        { "speaker": "harin", "line": "(책임감 있는 톤으로) 아니… 그 봉투, 원래 내가 관리하던 거였어. 그러니까 나도 이 일 그냥 넘길 수가 없어." },
+        { "speaker": "seoyeon", "line": "(날카롭게) 그럼 왜 뭔가 아는 거야?" },
+        { "speaker": "harin", "line": "(당황) 아니! 그냥… 책임감 때문에 그런 거야." },
+        { "speaker": "junhyeok", "line": "(담담하게) 어쨌든, 누가 옮겼는지 밝혀지기 전까지 우리 넷 다 의심받는 처지 아니야?" },
+        { "speaker": "dohyun", "line": "(한숨) …그러니까 결국 우리가 직접 알아봐야 한다는 거네." },
+        { "speaker": "seoyeon", "line": "(마지못해) …그래, 좋아. 어제 8시 2분부터 34분 동안 무슨 일이 있었는지, 우리가 직접 확인하자." }
+      ]
+    },
+    "phase2Intro": {
+      "title": "2차 조사 전 낭독 대본 — \"맞지 않는 조각들\"",
+      "lines": [
+        { "speaker": "harin", "line": "(초조하게) 다들 뭘 알아냈어? 나는… 정전이 그냥 사고였다는 거, 그리고 문이 열려 있었다는 것까지는 확인했어." },
+        { "speaker": "junhyeok", "line": "(조심스럽게) 나도 이상한 걸 봤어. 근데 말하기 전에… 다들 알아낸 거 먼저 공유할래, 아니면 각자 갖고 있을래?" },
+        { "speaker": "seoyeon", "line": "(경계하며) 다 말하면 나만 손해 보는 거 아니야? …근데 이대로는 아무것도 못 풀 것 같긴 하네." },
+        { "speaker": "dohyun", "line": "(팔짱을 끼고) 나는 그림자 봤다고 이미 말했잖아. 그거 말고는 딱히 할 말 없어." },
+        { "speaker": "harin", "line": "(애써 침착하게) 아무튼 확실한 건, 우리 각자의 진술에 서로 안 맞는 부분이 있다는 거야. 누군가는 거짓말을 하고 있거나, 뭔가를 숨기고 있어." },
+        { "speaker": "junhyeok", "line": "(낮은 목소리로) 그러니까 이제부터 서로 얼굴 보고 캐물어야 할 것 같은데." },
+        { "speaker": "seoyeon", "line": "(한숨) …좋아. 이번엔 서로의 알리바이를, 진짜 제대로 확인해보자." }
+      ]
+    }
   },
 
   "characters": [
     {
-      "id": "kim_doyoon",
-      "role": "총무부장",
-      "name": "김도윤",
+      "id": "seoyeon",
+      "role": "정온장학금 후보",
+      "name": "서연",
+      "isCulprit": false,
+      "personalityType": "defensive_logical",
+      "personalityDescription": "우등생, 방어적 — 자존심이 강하고 논리적으로 반박하지만, 속으로는 불안함을 감추고 있음.",
+      "publicInfo": "3학년, 정온장학금 후보 중 한 명. 의심받는 상황 자체를 아주 싫어한다.",
+      "detailInfo": "성적도 활동도 흠잡을 데 없는 우등생이지만, 이번 심사 코멘트에 자신의 과거 부정행위 논란이 언급되어 있다는 사실을 정전이 있던 그날 밤, 이미 알고 있었다.",
+      "secretLayers": [
+        { "layer": 1, "type": "witness_alibi", "content": "정전 당시 학생회실 근처에서 목격됨(화장실行 진술) — 왕복 소요 시간은 말하지 않는다." },
+        { "layer": 2, "type": "knowledge", "content": "심사평에 실린 자신의 과거 부정행위 논란을 이미 알고 있었다 — 공개되면 후보 자격 박탈과 평판 훼손으로 이어진다." }
+      ],
+      "cooperationIncentive": "결백을 증명하려면 타인의 알리바이가 필요하다.",
+      "competitionIncentive": "준혁이 장학금을 받으면 자신은 못 받는 제로섬 경쟁자다.",
+      "ownedPhase2Clues": ["p2_seoyeon_1", "p2_seoyeon_2"],
+      "threePlayerVariant": { "included": true, "notes": "이 시나리오는 4인 전용으로 설계되어 3인 변형이 없다." },
+      "adlibIntro": "안녕, 나는 3학년 서연이야. 다들 알다시피 정온장학금 후보 중 한 명이고… 솔직히 이런 자리 별로 안 좋아해. 의심받는 거, 딱 질색이거든.",
+      "adlibLines": [
+        { "trigger": "정전 당시를 회상할 때", "line": "그날? 나는… 화장실에 갔었어. 그게 다야. 왜 자꾸 캐물어?" },
+        { "trigger": "Phase 1 — 의심받을 때", "line": "내가 뭘 숨긴다는 듯이 말하지 마. 나도 이 상황 자체가 짜증나." },
+        { "trigger": "자신이 논란을 미리 알고 있었다는 단서가 공개됐을 때", "line": "…그래, 알고 있었어. 근데 그게 봉투 사라진 거랑 무슨 상관인데?" },
+        { "trigger": "오지목당했을 때", "line": "나야? 진심이야? 증거 있어? 없잖아." }
+      ]
+    },
+    {
+      "id": "junhyeok",
+      "role": "정온장학금 후보",
+      "name": "준혁",
+      "isCulprit": false,
+      "personalityType": "earnest_defensive",
+      "personalityDescription": "성실형, 절박함을 누르는 — 담담하고 조용하지만, 장학금 얘기가 나오면 순간적으로 날카로워짐.",
+      "publicInfo": "3학년, 정온장학금 후보 중 한 명. 형편이 어려워 이번 장학금이 절실하다.",
+      "detailInfo": "정전 중 손전등을 찾으러 다녔다고 진술했지만, 비품 대장 기록과 맞지 않는다. 사실 그는 서연의 과거 부정행위 논란을 익명으로 제보한 당사자다.",
+      "secretLayers": [
+        { "layer": 1, "type": "alibi_inconsistency", "content": "정전 중 손전등을 찾으러 다녔다는데, 비품 대장상 그날 손전등 반출 기록이 없다(모순)." },
+        { "layer": 2, "type": "whistleblower", "content": "서연의 부정행위 논란을 익명으로 제보한 당사자다 — 정당한 내부고발인지, 경쟁자 제거를 위한 행동인지는 판단이 갈린다." }
+      ],
+      "cooperationIncentive": "자신도 결백 증명이 필요해 협조할 동기가 있다.",
+      "competitionIncentive": "서연이 탈락하면 자신에게 유리하다.",
+      "ownedPhase2Clues": ["p2_junhyeok_1", "p2_junhyeok_2"],
+      "threePlayerVariant": { "included": true, "notes": "이 시나리오는 4인 전용으로 설계되어 3인 변형이 없다." },
+      "adlibIntro": "난 준혁이야. 이 장학금, 나한테는 그냥 '있으면 좋은 것'이 아니라서… 그래서 좀 예민하게 굴 수도 있어. 미리 양해 구할게.",
+      "adlibLines": [
+        { "trigger": "정전 당시를 회상할 때", "line": "손전등 찾으러 갔었어. 그게 단데, 왜 다들 나를 그렇게 봐?" },
+        { "trigger": "익명 제보자로 의심받을 때(초기 부인)", "line": "내가 신고자인 걸 알아내려는 거면 헛수고야. 난 그런 사람 아니야." },
+        { "trigger": "제보자였음이 밝혀졌을 때", "line": "그래, 내가 했어. 근데… 그게 잘못이야? 난 그냥 사실을 말했을 뿐이야." },
+        { "trigger": "오지목당했을 때", "line": "내가 봉투를 훔쳤다고? 웃기지 마. 난 그냥 내 자리를 지키고 싶었을 뿐이야." }
+      ]
+    },
+    {
+      "id": "harin",
+      "role": "학생회 임원 (봉투 관리 책임자)",
+      "name": "하린",
       "isCulprit": true,
-      "personalityType": "cooperative_facade",
-      "personalityDescription": "협력형(위장) — 겉으론 협조적이지만 특정 단서 근처에서만 화제를 돌린다.",
-      "publicInfo": "학생회 총무부장. 금고 비밀번호를 아는 유일한 인물. 평소 성실하고 조용한 편.",
-      "detailInfo": "두 달 전부터 사채성 사교모임(선배가 소개한 급전 계모임)에서 소액을 빌려 썼고, 이번 주까지 갚지 않으면 학년 전체에 소문이 퍼진다는 압박을 받고 있다. 정전 당시 학생회실 안에 혼자 있었다.",
+      "personalityType": "principled_wavering",
+      "personalityDescription": "모범생, 완벽주의 — 초반엔 침착하고 책임감 있는 리더처럼 보이지만, 결정적 단서 앞에서는 미묘하게 흔들려야 함.",
+      "publicInfo": "학생회 임원. 정온장학금 심사 봉투의 관리 책임자다.",
+      "detailInfo": "정전 중 잠시 자리를 비웠다가 캐비닛에 부딪혀 봉투를 떨어뜨렸다(사고). 이 시나리오의 진범.",
       "secretLayers": [
-        {
-          "layer": 1,
-          "type": "action",
-          "content": "정전이 시작되자마자 금고를 열어 봉투에서 갚을 돈만큼만 빼내려 했다. 암흑 속에서 봉투를 통째로 떨어뜨렸고, 다시 찾지 못한 채 인기척에 놀라 빈손으로 나왔다. 남은 돈이 어디 있는지는 본인도 모른다."
-        },
-        {
-          "layer": 2,
-          "type": "relationship",
-          "content": "사채모임을 소개한 사람이 이한결의 사촌 선배다. 자백하면 한결의 가족까지 곤란해진다 — 침묵을 '한결을 위한 배려'로 합리화한다."
-        }
+        { "layer": 1, "type": "action", "content": "정전 중 잠시 자리를 비웠다가 캐비닛에 부딪혀 봉투를 떨어뜨렸다 — 여기까지는 순수한 사고였다." },
+        { "layer": 2, "type": "action", "content": "떨어진 봉투를 주운 순간, 어차피 안 보인다는 생각에 봉투를 열어 순위를 미리 읽어버렸다 — 그리고 몰래 재봉인했다." }
       ],
-      "cooperationIncentive": "그럴듯한 알리바이가 필요해 다른 사람과 알리바이를 짜맞추고 싶은 유혹이 있다.",
-      "competitionIncentive": "손의 상처(clue P2-01)가 발각되면 끝이므로 그 단서를 누가 먼저 확보하는지 필사적으로 감시해야 한다.",
-      "ownedPhase2Clues": ["p2_01", "p2_02"],
-      "threePlayerVariant": { "included": true, "notes": "역할 변경 없음" }
+      "cooperationIncentive": "책임자로서 사건을 해결해야 자신의 책임도 가벼워진다.",
+      "competitionIncentive": "친구를 보호하려는 마음과 공정성 사이에서 내적 갈등을 겪는다.",
+      "ownedPhase2Clues": ["p2_harin_1", "p2_harin_2"],
+      "threePlayerVariant": { "included": true, "notes": "이 시나리오는 4인 전용으로 설계되어 3인 변형이 없다." },
+      "adlibIntro": "학생회 하린이야. 이 봉투, 원래 내가 책임지고 관리하던 거였어. 그러니까… 이 중에 내가 제일 미안해해야 할 사람일지도 몰라.",
+      "adlibLines": [
+        { "trigger": "정전 당시를 회상할 때", "line": "어두웠어. 정말 아무것도 안 보였어. 그냥… 넘어질 뻔했을 뿐이야." },
+        { "trigger": "Phase 1 — 대수롭지 않게 넘기려 할 때", "line": "나 잘못한 거 없어. 그냥 사고였다고." },
+        { "trigger": "증거(휴대폰 메모)로 몰렸을 때, 실토 분기", "line": "…그래. 봉투가 떨어졌고, 나는… 그 순간 궁금해서 열어봤어. 아무도 안 볼 줄 알았거든." },
+        { "trigger": "같은 순간, 부인·은닉을 시도하는 분기", "line": "메모장? 그건… 그냥 낙서야. 아무 의미 없어." },
+        { "trigger": "엔딩 — 스스로 밝히는 경우", "line": "미안해. 아무도 안 본다고 생각하니까… 나도 내가 어떤 사람인지 잘 몰랐던 것 같아." }
+      ]
     },
     {
-      "id": "park_seoyeon",
-      "role": "동아리연합회장",
-      "name": "박서연",
+      "id": "dohyun",
+      "role": "우연히 지나가던 목격자",
+      "name": "도현",
       "isCulprit": false,
-      "personalityType": "competitive_strategic",
-      "personalityDescription": "경쟁형 — 정보를 전략적 자산으로 다룬다. 감정이 아니라 '이걸로 뭘 얻을 수 있는가'로 판단.",
-      "publicInfo": "동아리연합회장. 지원금이 늦어지자 총무부에 여러 번 항의한 기록이 있음.",
-      "detailInfo": "작년, 서연이 맡았던 동아리가 예산 배정에서 부당하게 밀렸다는 걸 최근에 알게 됐다 — 당시 총무부(전임자)가 친한 동아리에 몰아줬다는 증거를 우연히 손에 넣었다.",
+      "personalityType": "aloof_defensive",
+      "personalityDescription": "무심한 듯 방어적 — 처음엔 무심하고 귀찮다는 태도지만, 자기 사물함 이야기가 나오면 말을 아낌.",
+      "publicInfo": "정전 당시 우연히 학생회실 근처를 지나가던 목격자.",
+      "detailInfo": "'이상한 그림자를 봤다'는 애매한 증언을 제공했다. 사실은 자신도 그 틈에 자기 사물함을 몰래 열어보려다 그만둔 적이 있다.",
       "secretLayers": [
-        {
-          "layer": 1,
-          "type": "witness",
-          "content": "정전 중 문틈으로 금고 쪽에서 웅크린 실루엣을 봤다. 도윤이라 확신하지만 100%는 아니다."
-        },
-        {
-          "layer": 2,
-          "type": "motive_shadow",
-          "content": "이번 기회에 총무부 전체의 부실 운영을 터뜨리고 싶다는 마음이 있다. 정의감과 사적 복수심이 뒤섞인 상태."
-        }
+        { "layer": 1, "type": "witness_vague", "content": "'그림자를 봤다'는 애매한 증언을 제공했다." },
+        { "layer": 2, "type": "self_interest", "content": "사실은 자신도 그 틈에 자기 사물함을 몰래 열어보려다 그만둔 적이 있다 — 그 사실을 숨기려 증언을 흐릿하게 왜곡했다." }
       ],
-      "cooperationIncentive": "목격담을 공유하면 사건이 빨리 풀리고 지원금도 빨리 나올 수 있다.",
-      "competitionIncentive": "목격담을 아껴뒀다가 '총무부 전체 감사'라는 더 큰 요구를 관철시키는 데 쓰고 싶다.",
-      "ownedPhase2Clues": ["p2_03", "p2_04"],
-      "threePlayerVariant": {
-        "included": true,
-        "notes": "4인 버전의 이한결 secretLayer 2(가족 얽힘/방관자적 침묵)를 이식받음. 추가 내용: '작년에 서연도 도윤의 급전 문제를 어렴풋이 눈치챘지만 자기 일이 아니라 모른 척했다.'"
-      }
-    },
-    {
-      "id": "lee_hangyeol",
-      "role": "방송부원",
-      "name": "이한결",
-      "isCulprit": false,
-      "personalityType": "observational_evasive",
-      "personalityDescription": "관찰형 — 사실에는 정직하되, 질문이 자신의 책임 쪽으로 향하면 대답을 흐린다.",
-      "publicInfo": "방송부 소속. 학교 전기·통신 설비에 능숙해 종종 관리 업무를 돕는다.",
-      "detailInfo": "정전 직후 배전반이 있는 창고 쪽에서 목격됨. '정전 원인을 확인하러 갔다'고 진술.",
-      "secretLayers": [
-        {
-          "layer": 1,
-          "type": "responsibility_avoidance",
-          "content": "배전반이 곧 나갈 거라는 걸 며칠 전부터 알고도 담당 선생님께 보고했지만 무시당해 방치했다."
-        },
-        {
-          "layer": 2,
-          "type": "relationship",
-          "content": "도윤에게 급전을 소개한 선배가 자신의 사촌이라는 걸 알고 있다. 도윤이 힘들어하는 걸 눈치챘지만 모른 척해왔다."
-        }
-      ],
-      "cooperationIncentive": "배전반 결백 증거(clue P2-06)를 공개하면 자신의 혐의를 빨리 벗을 수 있다.",
-      "competitionIncentive": "증거를 공개하는 과정에서 '왜 진작 말 안 했냐'는 질문이 따라오면 secretLayer 1, 2가 함께 드러날 위험이 있어 결백 증거조차 아끼게 된다.",
-      "ownedPhase2Clues": ["p2_05", "p2_06"],
-      "threePlayerVariant": { "included": true, "notes": "역할 변경 없음, secretLayer 1 유지" }
-    },
-    {
-      "id": "choi_yuna",
-      "role": "학생회 서기",
-      "name": "최유나",
-      "isCulprit": false,
-      "personalityType": "swing_mirroring",
-      "personalityDescription": "스윙형 — 다른 플레이어가 정직하게 나올수록 유나도 정직해지고, 남들이 숨기거나 공격적으로 나오면 감정적으로 되갚는 미러링 타입.",
-      "publicInfo": "서기. 정전 5분 전 음료를 사러 매점에 갔다가 정전 중 돌아왔다고 진술.",
-      "detailInfo": "매점 CCTV(정전 영향 없음)에 실제로 찍혀 있어 알리바이는 확실. 학생회실로 돌아오는 길에 복도에서 서성이던 박서연을 목격했다.",
-      "secretLayers": [
-        {
-          "layer": 1,
-          "type": "witness_with_bias",
-          "content": "박서연을 목격한 것은 사실이지만, 작년에 서연에게 공개적으로 무시당한 적이 있어 이번 기회에 본때를 보여주고 싶은 마음이 있다."
-        },
-        {
-          "layer": 2,
-          "type": "self_awareness",
-          "content": "지금 자신이 정확한 목격담이 아니라 감정으로 서연을 찌르려 한다는 걸 스스로도 안다. 이 자각이 계속 망설이게 만든다."
-        }
-      ],
-      "cooperationIncentive": "목격담을 정확히 전달하면 사건이 빨리 풀린다는 걸 안다.",
-      "competitionIncentive": "조금만 과장하면 서연에게 확실한 타격을 줄 수 있다는 유혹이 있다.",
-      "ownedPhase2Clues": [],
-      "threePlayerVariant": {
-        "included": false,
-        "notes": "3인 버전에서 제외. layer 1/2는 park_seoyeon에게 이식(threePlayerVariant.notes 참고), 목격담의 신뢰도 모호성은 clue p1_05의 텍스트(화질/각도)로 대체 구현."
-      }
+      "cooperationIncentive": "협조하면 신뢰받는 목격자 지위를 얻는다.",
+      "competitionIncentive": "자기 비밀을 숨기려는 유혹이 정보를 왜곡하는 동기가 된다.",
+      "ownedPhase2Clues": ["p2_dohyun_1", "p2_dohyun_2"],
+      "threePlayerVariant": { "included": true, "notes": "이 시나리오는 4인 전용으로 설계되어 3인 변형이 없다." },
+      "adlibIntro": "나 도현이야. 그냥 지나가다가 이상한 거 봤어. 근데… 사실 나도 그날 좀 켕기는 게 있긴 해.",
+      "adlibLines": [
+        { "trigger": "정전 당시를 회상할 때", "line": "그림자를 봤어. 근데 정확히는… 나도 내 사물함 쪽을 보고 있었을 뿐이라." },
+        { "trigger": "Phase 1 — 진술의 신빙성을 의심받을 때", "line": "나보고 거짓말한다고 하지 마. 본 대로 말한 거야. 대충은." },
+        { "trigger": "Phase 2 — 자신의 사물함 개폐 기록이 드러났을 때", "line": "그래, 나도 내 사물함 좀 열어보려고 했어. 근데… 그게 이 사건이랑 무슨 상관인데?" }
+      ]
     }
   ],
 
@@ -135,43 +159,86 @@
     "phase1": {
       "label": "현장 수색",
       "apPerPlayer": 2,
-      "apBonusFor3Players": 1,
+      "apBonusFor3Players": 0,
       "items": [
-        { "id": "p1_01", "title": "금고 주변 바닥", "location": "학생회실", "owner": null, "content": "봉투 파편(찢긴 모서리) 발견", "implication": "봉투가 거칠게 다뤄짐", "apCost": 1 },
-        { "id": "p1_02", "title": "학생회실 문 손잡이", "location": "학생회실", "owner": null, "content": "지문 얼룩, 최근에 여러 번 여닫힘", "implication": "누군가 여러 번 드나듦", "apCost": 1 },
-        { "id": "p1_03", "title": "매점 CCTV 캡처", "location": "매점", "owner": "choi_yuna", "content": "최유나가 정전 시각 매점에 있었음 확인", "implication": "유나 알리바이 일부 확정", "apCost": 1, "threePlayerNote": "3인 버전에서는 서연의 약한 알리바이 관련 단서로 대체 가능" },
-        { "id": "p1_04", "title": "배전반실 출입기록(수기)", "location": "배전반실", "owner": "lee_hangyeol", "content": "이한결이 정전 3일 전 '배전반 이상 있음'이라 적어놓은 메모", "implication": "정전이 우연이 아닐 수도 있다는 오도용 떡밥", "apCost": 1 },
-        { "id": "p1_05", "title": "복도 CCTV 마지막 프레임(정전 직전)", "location": "복도", "owner": null, "content": "정전 12분 전, 박서연이 학생회실 쪽으로 걸어가는 모습(화질 낮음, 확신도 낮음)", "implication": "박서연의 최초 진술과 모순", "apCost": 1 },
-        { "id": "p1_06", "title": "금고 비밀번호 변경 이력", "location": "학생회실 서류함", "owner": null, "content": "작년에 총무부장이 실수로 번호를 유출한 기록 존재", "implication": "박서연도 번호를 알고 있었을 가능성", "apCost": 1 }
+        { "id": "p1_1", "title": "변전실 점검 로그", "location": "변전실", "owner": null, "content": "노후 배선 사고, 인위적 개입 흔적 없음 — 정전은 '사고'로 확정된다.", "implication": "정전 자체는 사실문제로 종결", "apCost": 1 },
+        { "id": "p1_2", "title": "CCTV 사각 시간표", "location": "학생회실 인근 CCTV", "owner": null, "content": "8시 2분~8시 36분, 정확히 34분간 전 구역 녹화가 중단됐다.", "implication": "정전 시간과 정확히 일치", "apCost": 1 },
+        { "id": "p1_3", "title": "학생회실 바닥 낙하 흔적", "location": "학생회실", "owner": null, "content": "봉투가 떨어졌던 지점으로 추정되는 위치(캐비닛 옆)의 흔적.", "implication": "봉투가 물리적으로 낙하했음을 시사", "apCost": 1 },
+        { "id": "p1_4", "title": "봉투 겉면 클로즈업", "location": "학생회실", "owner": null, "content": "봉인 테두리에 미세한 재접착 흔적이 있다(단독으로는 의미 파악이 어렵다).", "implication": "단독으로는 판단 불가 — 다른 단서와 조합 필요", "apCost": 1 },
+        { "id": "p1_5", "title": "도현의 최초 진술서", "location": "복도", "owner": null, "content": "'그림자를 봤다'는 애매한 증언, 시각은 8시 15분으로 기재되어 있다.", "implication": "목격 시각이 기록으로 남음", "apCost": 1 },
+        { "id": "p1_6", "title": "관리 아저씨 메모", "location": "관리실", "owner": null, "content": "정전 복구 직후 학생회실 문이 열려 있었다는 기록.", "implication": "복구 직후 누군가 드나들었을 가능성", "apCost": 1 },
+        { "id": "p1_7", "title": "서연의 동선 진술", "location": "학생회실", "owner": null, "content": "'화장실에 다녀왔다'고 진술 — 왕복 소요 시간은 언급하지 않는다.", "implication": "알리바이가 느슨함", "apCost": 1 },
+        { "id": "p1_8", "title": "준혁의 동선 진술", "location": "복도", "owner": null, "content": "'손전등을 찾으러 복도에 나갔다'고 진술 — 비품 대장상 그날 손전등 반출 기록이 없다(모순).", "implication": "진술과 기록이 어긋남", "apCost": 1 },
+        {
+          "id": "p1_specialA",
+          "title": "특별시트 A — 봉투 재봉인 흔적의 의미",
+          "location": "조합 단서",
+          "owner": null,
+          "content": "봉투는 낙하 후 다시 봉인되었다 — 그 사이 누군가 봉투를 만졌고, 문이 열려 있었다는 건 그 인물이 몰래 다시 드나들었다는 뜻이다.",
+          "implication": "사고와 은닉은 별개의 사건임을 최초로 암시",
+          "apCost": 1,
+          "unlockType": "combo",
+          "requiresClueIds": ["p1_4", "p1_6"],
+          "unlockNote": "단서 '봉투 겉면 클로즈업'과 '관리 아저씨 메모'를 팀원 누군가가 먼저 확보해야 조합할 수 있습니다."
+        },
+        {
+          "id": "p1_specialB",
+          "title": "특별시트 B — 엇갈리는 시각과 동선",
+          "location": "조합 단서",
+          "owner": null,
+          "content": "도현이 그림자를 본 시각(8시 15분)과 준혁의 모순된 진술 시각이 겹친다.",
+          "implication": "레드헤링 — 준혁을 의심하게 만드는 함정 단서. 실제로는 준혁이 자기 사물함 앞에서 서성인 것뿐이다.",
+          "apCost": 1,
+          "unlockType": "combo",
+          "requiresClueIds": ["p1_5", "p1_8"],
+          "unlockNote": "단서 '도현의 최초 진술서'와 '준혁의 동선 진술'을 팀원 누군가가 먼저 확보해야 조합할 수 있습니다.",
+          "isRedHerring": true
+        }
       ]
     },
     "phase2": {
       "label": "심층 대질",
       "apPerPlayer": 2,
-      "apBonusFor3Players": 1,
+      "apBonusFor3Players": 0,
       "unlockCondition": "phase1_completed",
       "items": [
-        { "id": "p2_01", "title": "김도윤의 손(관찰)", "owner": "kim_doyoon", "content": "오른손 검지에 옅게 베인 상처 — 봉투 모서리에 긁힌 흔적과 일치", "implication": "도윤이 봉투를 직접 만졌다는 강한 물증", "apCost": 1, "isCriticalClue": true },
-        { "id": "p2_02", "title": "김도윤의 알리바이 진술 심화", "owner": "kim_doyoon", "content": "'나는 계속 자리에 앉아만 있었다'는 최초 진술과 p2_01이 모순", "implication": "거짓말 확정(범행 확정은 아님, 접촉만 확정)", "apCost": 1, "isCriticalClue": true },
-        { "id": "p2_03", "title": "박서연의 가방", "owner": "park_seoyeon", "content": "지원금 관련 항의 메모 여러 장, '이번엔 내가 직접 확인한다'는 메모", "implication": "서연의 동기와 결심을 암시(실행은 안 함)", "apCost": 1 },
+        { "id": "p2_seoyeon_1", "title": "심사 코멘트 유출본 일부", "owner": "seoyeon", "content": "자신의 과거 부정행위 논란이 이미 언급돼 있음을 알고 있었다는 증거.", "implication": "서연이 논란을 사전에 인지하고 있었음", "apCost": 1 },
+        { "id": "p2_seoyeon_2", "title": "준혁과의 문자 기록", "owner": "seoyeon", "content": "'네가 신고한 거 다 알아' 뉘앙스의 메시지 — 상호 의심이 심화된다.", "implication": "서연과 준혁 사이의 갈등 확인", "apCost": 1 },
+        { "id": "p2_junhyeok_1", "title": "익명 제보 캡처 원본", "owner": "junhyeok", "content": "자신이 서연을 신고한 사람이라는 증거.", "implication": "준혁이 익명 제보자였음이 드러남", "apCost": 1 },
+        { "id": "p2_junhyeok_2", "title": "형편 관련 정황 서류 일부", "owner": "junhyeok", "content": "동기의 절박함을 보여준다 — 정상참작 요소이자 동시에 의심을 강화하는 요소.", "implication": "준혁의 절박한 사정 확인", "apCost": 1 },
+        { "id": "p2_harin_1", "title": "개인 메모(동선)", "owner": "harin", "content": "'캐비닛에 부딪혔다'까지만 적혀 있고 그 이후는 비어 있다(불완전).", "implication": "하린의 기록이 의도적으로 끊김", "apCost": 1 },
+        { "id": "p2_harin_2", "title": "휴대폰 메모장 삭제 흔적", "owner": "harin", "content": "순위 관련 단어(1순위/2순위)를 적었다가 지운 흔적 — 결정적 증거.", "implication": "하린이 순위 내용을 알고 있었다는 강한 정황", "apCost": 1 },
+        { "id": "p2_dohyun_1", "title": "목격 진술 재검토", "owner": "dohyun", "content": "사실은 자기 사물함 쪽을 보고 있었다는 세부사항이 추가된다.", "implication": "도현의 증언이 처음보다 구체화됨", "apCost": 1 },
+        { "id": "p2_dohyun_2", "title": "사물함 개폐 기록", "owner": "dohyun", "content": "그날 밤 자기 사물함을 열려다 만 흔적 — 스스로도 작은 유혹 앞에 있었음을 인정해야 하는 단서.", "implication": "도현 역시 완전히 결백하지는 않음", "apCost": 1 },
         {
-          "id": "p2_04",
-          "title": "박서연의 목격 재진술",
-          "owner": "park_seoyeon",
-          "content": "P1-05로 추궁당하면 실토: '문틈으로 도윤이 금고 쪽에서 웅크린 걸 봤다'",
-          "implication": "목격 증언 확보",
-          "apCost": 0,
+          "id": "p2_specialC",
+          "title": "특별시트 C — 부딪힌 뒤 순위 단어를 메모장에 실수로 남겼다",
+          "owner": null,
+          "content": "하린이 봉투를 열어 내용을 읽었다는 확정적 결론.",
+          "implication": "이 조합에 도달하지 못하면 '사고'까지는 알아도 '열람' 사실은 끝내 밝혀지지 않는다.",
+          "apCost": 1,
           "isCriticalClue": true,
-          "unlockType": "manual_reveal_by_player",
-          "unlockNote": "시스템이 자동으로 공개하지 않음. 대화 중 박서연 역할 플레이어가 직접 '공개하기' 액션을 선택해야만 다른 플레이어에게 노출됨."
+          "unlockType": "combo",
+          "requiresClueIds": ["p2_harin_1", "p2_harin_2"],
+          "unlockNote": "하린의 개인 단서 2개를 팀원 누군가가 먼저 확보해야 조합할 수 있습니다."
         },
-        { "id": "p2_05", "title": "이한결의 메모 수첩", "owner": "lee_hangyeol", "content": "'이걸 말하면 내가 방치한 책임 진다'라는 낙서", "implication": "한결이 뭔가 숨기고 있다는 정황(범행 아님, 책임회피)", "apCost": 1 },
-        { "id": "p2_06", "title": "배전반함 내부", "owner": "lee_hangyeol", "content": "인위적 조작 흔적 없음 — 완전한 노후 고장", "implication": "정전은 사고였음을 최종 확정(한결 혐의 해소)", "apCost": 1 }
+        {
+          "id": "p2_specialD",
+          "title": "특별시트 D — 문을 열고 나간 사람은 도현이 아니다",
+          "owner": null,
+          "content": "도현은 그 시각 자기 사물함 앞에 있었을 뿐이다.",
+          "implication": "준혁에 대한 누명을 벗기는 결정적 반증.",
+          "apCost": 1,
+          "isCriticalClue": true,
+          "unlockType": "combo",
+          "requiresClueIds": ["p1_specialA", "p2_dohyun_2"],
+          "unlockNote": "특별시트 A와 '사물함 개폐 기록'을 팀원 누군가가 먼저 확보해야 조합할 수 있습니다."
+        }
       ]
     }
   },
 
-  "clueDesignNote": "phase2의 핵심 물증(p2_01, p2_02)은 kim_doyoon에게, 핵심 증언(p2_03, p2_04)은 park_seoyeon에게, 결백 증거(p2_05, p2_06)는 lee_hangyeol에게 분산 배치. 한 플레이어가 조사만으로는 전체 그림을 완성할 수 없고, 반드시 대화로 정보를 교환해야 결론에 도달하도록 설계됨.",
+  "clueDesignNote": "공용 단서 8개(1AP씩)에 특별시트 2개(각 1AP)를 더하면 phase당 10AP가 필요하지만 실제 가용 AP는 4인×2AP=8AP뿐이다 — 팀은 무엇을 포기할지 반드시 선택해야 한다. 특별시트는 2개의 선행 단서가 '팀 누군가에 의해' 확보되어야만 조합 가능해지며, 조합에 성공하면 자동으로 방 전체에 공개된다(개인 소유 단서가 아니라 팀의 공동 추론이기 때문).",
 
   "resolutionPhase": {
     "steps": [
@@ -179,66 +246,89 @@
         "id": "accusation",
         "prompt": "범인을 지목하세요.",
         "type": "single_select",
-        "options": ["kim_doyoon", "park_seoyeon", "lee_hangyeol", "unknown"]
+        "options": ["harin", "junhyeok", "seoyeon", "dohyun", "unknown"]
       },
       {
         "id": "moral_choice",
-        "prompt": "당신은 게임 중 확보한 단서 중 하나를 끝까지 공개하지 않았다(혹은 모두 공개했다). 지금, 학생회 전체 앞에서 진실을 다 말할 것인가, 일부는 덮을 것인가?",
+        "prompt": "당신은 게임 중 확보한 단서 중 하나를 끝까지 공개하지 않았다(혹은 모두 공개했다). 지금, 모두 앞에서 진실을 다 말할 것인가, 일부는 덮을 것인가?",
         "type": "single_select",
         "options": ["reveal_all", "conceal_some"]
       }
     ],
-    "trackedMetrics": [
-      "cluesSharedCount",
-      "cluesConcealedCount",
-      "p2_04_wasRevealed",
-      "accusationCorrect"
-    ]
+    "trackedMetrics": ["accusationCorrect", "specialC_found", "specialD_found", "moralChoiceMajority"]
   },
 
   "endings": [
     {
-      "id": "ending_a_full_truth",
-      "title": "완전한 진실",
-      "condition": "accusationCorrect == true AND cluesConcealedCount(all players) == 0",
-      "message": "정전 속에서도 아무도 반지의 유혹에 넘어가지 않았다.",
-      "themeTag": "협력의 힘"
+      "id": "ending_honest_reconstruction",
+      "title": "정직의 재구성",
+      "condition": "accused == harin AND specialC_found == true AND moralChoiceMajority == 'reveal_all'",
+      "message": "팀은 '낙하 사고'뿐 아니라 하린이 그 틈에 봉투를 열어 순위를 읽었다는 사실까지 밝혀냈고, 이를 전체에 공개했다. 하린은 스스로 그 사실을 인정한다.",
+      "insight": "아무도 감시하지 않는 상황에서도 하린은 결국 진실을 선택했다. 도덕이 외부의 감시나 처벌 때문에만 존재하는 것은 아니라는 것을 보여주는 사례.",
+      "themeTag": "정직과 자기 폭로"
     },
     {
-      "id": "ending_b_silent_complicity",
-      "title": "침묵의 공모",
-      "condition": "accusationCorrect == true AND majority_choice == 'conceal_some'",
-      "message": "너희는 진실을 알았지만, 감시가 없다면 정의도 타협 가능한가?",
-      "themeTag": "정의와 타협"
+      "id": "ending_our_own_morality",
+      "title": "우리끼리 만든 도덕",
+      "condition": "accused == harin AND specialC_found == true AND moralChoiceMajority == 'conceal_some'",
+      "message": "팀은 하린이 봉투를 열어봤다는 사실까지 완전히 알아냈다. 그러나 아무에게도 말하지 않기로 합의했다.",
+      "insight": "감시자가 없을 때, 우리 스스로 세운 기준이 '용서'였는지 '담합'이었는지는 오직 그 선택을 한 사람들만이 안다.",
+      "themeTag": "용서와 담합 사이"
     },
     {
-      "id": "ending_c_wrong_stigma",
-      "title": "오판의 낙인",
-      "condition": "accusationCorrect == false",
-      "message": "물증 없이 심증만으로 낙인찍었다. 자연상태에서 재판은 공정한가?",
-      "themeTag": "오판과 심증"
+      "id": "ending_half_truth",
+      "title": "절반의 진실",
+      "condition": "accused == harin AND specialC_found == false AND moralChoiceMajority == 'reveal_all'",
+      "message": "팀은 봉투가 사고로 떨어졌다는 것까지는 밝혀 하린을 지목했지만, 그녀가 그 순간 봉투를 열어봤는지는 끝내 알아내지 못한 채 사건을 '단순 실수'로 공표했다.",
+      "insight": "사실관계의 절반만 확인한 채 내린 결론을, 온전한 진실이라 부를 수 있을까?",
+      "themeTag": "불완전한 진실"
     },
     {
-      "id": "ending_d_each_for_self",
-      "title": "각자도생",
-      "condition": "playerAccusations not unanimous",
-      "message": "누구도 손해보지 않으려 했고, 결국 아무 결론도 내지 못했다.",
-      "themeTag": "합의의 실패"
+      "id": "ending_unfinished_suspicion",
+      "title": "미완의 의심",
+      "condition": "accused == harin AND specialC_found == false AND moralChoiceMajority == 'conceal_some'",
+      "message": "팀은 하린을 지목하긴 했지만 정작 무엇을 지목한 것인지 — 단순 사고인지, 그 이상의 선택이 있었는지 — 스스로도 확신하지 못했다. 그리고 그 애매함을 굳이 들추지 않기로 했다.",
+      "insight": "확신 없는 지목과, 그 확신 없음을 덮어버리는 선택. 이 사건의 진실은 결국 그 밤의 하린과, 묻지 않기로 한 팀만이 안다.",
+      "themeTag": "애매함 속의 침묵"
     },
     {
-      "id": "ending_e_self_confession",
-      "title": "자백형 결말",
-      "condition": "kim_doyoon_player triggers 'self_confess' before being exposed",
-      "message": "들키지 않을 수 있었지만, 스스로 반지를 벗었다.",
-      "themeTag": "자발적 도덕성",
-      "note": "김도윤 역할 플레이어에게만 노출되는 별도 개인 트리거 선택지 필요"
+      "id": "ending_wronged_stigma",
+      "title": "억울한 낙인",
+      "condition": "accused == junhyeok AND specialD_found == false",
+      "message": "팀은 준혁을 지목했지만, 그가 그 시각 실제로 무엇을 하고 있었는지 밝혀줄 결정적 반증은 끝내 찾지 못한 채 결론을 공표했다.",
+      "insight": "사실관계를 다 확인하지 않은 도덕적 판단이 누군가의 삶을 실제로 바꿔놓을 수 있다.",
+      "themeTag": "성급한 판단의 대가"
+    },
+    {
+      "id": "ending_seen_but_not_believed",
+      "title": "보고도 믿지 않았다",
+      "condition": "accused == junhyeok AND specialD_found == true",
+      "message": "팀은 도현이 그 시각 자기 사물함 앞에 있었을 뿐이라는 증거까지 확보했다. 그런데도 준혁을 범인으로 지목했다.",
+      "insight": "증거보다 강했던 것은 무엇이었을까 — 처음부터 품고 있던 의심, 혹은 편견은 아니었을까?",
+      "themeTag": "증거보다 강한 편견"
+    },
+    {
+      "id": "ending_accused_by_suspicion",
+      "title": "의심만으로 만든 범인",
+      "condition": "accused == seoyeon OR accused == dohyun",
+      "message": "서연에게는 봉투를 옮길 이유도 기회도 없었다. 그러나 그녀가 논란을 '이미 알고 있었다'는 사실 하나만으로 팀은 그녀를 지목했다.",
+      "insight": "'알고 있었다는 것'과 '저질렀다는 것'은 다른 문제다. 이 둘을 구분하지 못하면 무고한 사람이 범인이 된다.",
+      "themeTag": "의심과 확신의 경계"
+    },
+    {
+      "id": "ending_unfinished_truth",
+      "title": "미완의 진실",
+      "condition": "accused == unknown OR unanimous == false",
+      "message": "팀은 끝내 누구도 지목하지 않기로 했다. 봉투는 제자리로 돌아갔고, 사건은 '미제'로 남았다.",
+      "insight": "그러나 그 34분 동안 실제로 무슨 일이 있었는지는, 그 밤 그 자리에 있었던 누군가는 이미 알고 있다. 밝혀지지 않은 진실도 여전히 진실인가?",
+      "themeTag": "미제 사건"
     }
   ],
 
   "reflectionPrompts": [
-    "나는 조사 중 확보한 단서를 몇 번 공유했고 몇 번 숨겼는가? 그 이유는?",
-    "만약 34분의 정전이 없었다면 이 사건은 벌어졌을까?",
-    "'아무도 보지 않는다면 나는 정직할 것인가?' — 게임 속 내 캐릭터가 아니라 나 자신의 대답은?",
-    "오늘 배운 개념(기게스의 반지 / 홉스의 자연상태) 중 이 게임과 가장 가까운 것은 무엇이고 왜인가?"
+    "정전 34분 동안 '규칙'도 '감시'도 없었는데, 어떤 인물은 스스로 자제했고 어떤 인물은 그러지 않았습니다. 이 차이는 어디서 왔다고 생각하나요?",
+    "만약 이 34분이 학교 전체에서 평생 계속된다면(=도덕이 사라진 사회), 우리 학교는 어떤 모습이 될까요? 홉스가 말한 '만인에 대한 만인의 투쟁'과 비교해 이야기해 봅시다.",
+    "하린은 아무도 보지 않았음에도 유혹 앞에서 선택을 해야 했습니다. 우리에게 '윤리문제'라는 것이 생기는 이유는 무엇일까요? 감시가 있기 때문일까요, 아니면 다른 이유가 있을까요?",
+    "오늘 게임에서 당신이 내린 선택 중, 아무도 몰랐어도 똑같이 행동했을 선택은 무엇인가요? 그 이유는 무엇인가요?"
   ]
 }

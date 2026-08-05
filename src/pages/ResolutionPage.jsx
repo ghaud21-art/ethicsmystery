@@ -13,7 +13,7 @@ function ResolutionInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
   const { uid } = useAuth()
-  const { room, loading, submitAccusation, submitMoralChoice, triggerSelfConfess, finishGame } = useRoom()
+  const { room, loading, submitAccusation, submitMoralChoice, finishGame } = useRoom()
 
   useEffect(() => {
     if (room?.meta?.phase === 'ended') {
@@ -25,13 +25,10 @@ function ResolutionInner({ scenario }) {
   if (!room) return <div className="card">방을 찾을 수 없습니다.</div>
 
   const isHost = room.meta.hostUid === uid
-  const myCharacterId = room.players?.[uid]?.characterId
-  const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
   const characters = getPlayableCharacters(scenario, room.meta.playerCount)
 
   const accusations = room.resolution?.accusations ?? {}
   const moralChoices = room.resolution?.moralChoices ?? {}
-  const selfConfess = room.resolution?.selfConfess ?? {}
 
   const players = Object.keys(room.players)
   const allAccused = players.every((p) => accusations[p])
@@ -50,23 +47,11 @@ function ResolutionInner({ scenario }) {
       <div className="page-title-rule" />
       <p className="dim" style={{ marginBottom: 16 }}>확보한 단서를 바탕으로 진짜 책임자를 지목하세요.</p>
 
-      <AccusationForm
-        characters={characters}
-        value={accusations[uid]}
-        onChange={submitAccusation}
-        disabled={!!selfConfess[uid]}
-      />
+      <AccusationForm characters={characters} value={accusations[uid]} onChange={submitAccusation} />
 
       <hr className="divider" />
 
       <MoralChoiceForm prompt={moralStep?.prompt} value={moralChoices[uid]} onChange={submitMoralChoice} />
-
-      {myCharacter?.isCulprit && !selfConfess[uid] && (
-        <div className="card">
-          <p style={{ margin: 0 }}>당신은 진범입니다. 아직 들키지 않았다면, 스스로 밝힐 수도 있습니다.</p>
-          <button onClick={triggerSelfConfess} style={{ marginTop: 10 }}>자백하기</button>
-        </div>
-      )}
 
       <p className="dim" style={{ fontSize: 12 }}>
         {players.filter((p) => accusations[p]).length}/{players.length}명 지목 완료 ·{' '}

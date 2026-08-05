@@ -5,7 +5,7 @@ export async function loadScenario(scenarioId) {
   const res = await fetch(`${import.meta.env.BASE_URL}scenarios/${scenarioId}.json`)
   if (!res.ok) throw new Error(`시나리오를 불러올 수 없습니다: ${scenarioId}`)
   const scenario = await res.json()
-  if (scenario.schemaVersion !== '1.0') {
+  if (!['1.0', '1.1'].includes(scenario.schemaVersion)) {
     throw new Error(`지원하지 않는 시나리오 스키마 버전: ${scenario.schemaVersion}`)
   }
   cache.set(scenarioId, scenario)

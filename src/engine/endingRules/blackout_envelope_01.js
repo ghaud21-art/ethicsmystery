@@ -1,40 +1,40 @@
 // scenario JSON의 endings[].condition은 저작용 의사코드다. 실제 판정 로직은
 // 여기 시나리오별 evaluator에 작성한다 (범용 조건 문자열 파서는 과설계로 판단해 채택하지 않음).
 //
-// "누가 단서를 실제로 숨겼는가"는 대화가 앱 밖(실제 대화)에서 이뤄지므로 서버가
-// 검증할 수 없다 — moral_choice 응답(reveal_all/conceal_some) 자체가 자진신고이며,
-// 이것이 바로 "기게스의 반지" 주제(보는 사람이 없어도 정직할 것인가)를 게임 메커닉으로 구현한 것.
-//
 // metrics: {
-//   accusationCorrect: boolean,
 //   accusations: { [uid]: characterId | 'unknown' },
 //   moralChoices: { [uid]: 'reveal_all' | 'conceal_some' },
-//   selfConfessTriggeredBy: uid | null,
+//   roomClues: { [clueId]: { claimedBy, publishedToRoom, ... } },
 // }
 export function evaluateEndings(metrics) {
   const accusationValues = Object.values(metrics.accusations ?? {})
   const unanimous =
     accusationValues.length > 0 && accusationValues.every((v) => v === accusationValues[0])
+  const accused = unanimous ? accusationValues[0] : null
 
-  if (metrics.selfConfessTriggeredBy) {
-    return 'ending_e_self_confession'
-  }
-  if (!unanimous) {
-    return 'ending_d_each_for_self'
-  }
-  if (!metrics.accusationCorrect) {
-    return 'ending_c_wrong_stigma'
-  }
+  const specialCFound = !!metrics.roomClues?.p2_specialC?.claimedBy
+  const specialDFound = !!metrics.roomClues?.p1_specialA?.claimedBy && !!metrics.roomClues?.p2_specialD?.claimedBy
 
   const choiceValues = Object.values(metrics.moralChoices ?? {})
   const concealCount = choiceValues.filter((v) => v === 'conceal_some').length
-  if (concealCount === 0) {
-    return 'ending_a_full_truth'
-  }
-  const majorityConceal = concealCount > choiceValues.length / 2
-  if (majorityConceal) {
-    return 'ending_b_silent_complicity'
+  const moralChoiceMajority = choiceValues.length > 0 && concealCount > choiceValues.length / 2 ? 'conceal_some' : 'reveal_all'
+
+  if (!unanimous || !accused || accused === 'unknown') {
+    return 'ending_unfinished_truth'
   }
 
-  return 'ending_a_full_truth'
+  if (accused === 'harin') {
+    if (specialCFound) {
+      return moralChoiceMajority === 'reveal_all' ? 'ending_honest_reconstruction' : 'ending_our_own_morality'
+    }
+    return moralChoiceMajority === 'reveal_all' ? 'ending_half_truth' : 'ending_unfinished_suspicion'
+  }
+
+  if (accused === 'junhyeok') {
+    return specialDFound ? 'ending_seen_but_not_believed' : 'ending_wronged_stigma'
+  }
+
+  // 서연 또는 도현을 지목한 경우 — 이 시나리오는 서연에 대해서만 전용 결말 텍스트를
+  // 작성했으므로(설계안 참고), 도현 오지목도 같은 결말로 수렴시킨다.
+  return 'ending_accused_by_suspicion'
 }
