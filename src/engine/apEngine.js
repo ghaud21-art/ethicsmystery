@@ -43,10 +43,12 @@ export async function claimClue(roomCode, uid, scenario, clueId, phase) {
     }
   }
 
+  // owner는 "이 단서가 누구에 관한 것인가"를 뜻한다 — 그 인물 역의 플레이어 본인은
+  // 자기 자신을 조사할 수 없고, 다른 플레이어들만 캐물어 알아낼 수 있다.
   if (clue.owner) {
     const myCharacterIdSnap = await get(ref(db, `rooms/${roomCode}/players/${uid}/characterId`))
-    if (myCharacterIdSnap.val() !== clue.owner) {
-      throw new Error('본인 캐릭터 소유의 단서만 조사할 수 있습니다')
+    if (myCharacterIdSnap.val() === clue.owner) {
+      throw new Error('자기 자신에 대한 단서는 스스로 조사할 수 없습니다 — 다른 플레이어가 캐물어야 합니다')
     }
   }
 

@@ -5,6 +5,7 @@ import { useAuth } from './AuthContext'
 import { getPhaseApBudget, claimClue as claimClueEngine } from '../engine/apEngine'
 import { publishClue as publishClueEngine } from '../engine/manualReveal'
 import { assignCharactersToPlayers } from '../engine/characterAssignment'
+import { saveActiveRoom, clearActiveRoom } from '../utils/activeRoom'
 
 const RoomContext = createContext(null)
 
@@ -57,6 +58,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
         },
       })
       registerPresence(code, uid)
+      saveActiveRoom({ scenarioId: scenario.scenarioId, roomCode: code })
       return code
     },
     [scenario, uid, registerPresence],
@@ -73,8 +75,9 @@ export function RoomProvider({ scenario, roomCode, children }) {
         ap: {},
       })
       registerPresence(code, uid)
+      saveActiveRoom({ scenarioId: scenario.scenarioId, roomCode: code })
     },
-    [uid, registerPresence],
+    [scenario, uid, registerPresence],
   )
 
   const startGame = useCallback(async () => {
@@ -103,6 +106,12 @@ export function RoomProvider({ scenario, roomCode, children }) {
     await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'resolution' })
   }, [roomCode])
 
+  // targetPhase: 'phase2' | 'resolution' — 다음 단계로 넘어가는 데 동의했음을 표시.
+  const markReady = useCallback(
+    (targetPhase) => set(ref(db, `rooms/${roomCode}/ready/${targetPhase}/${uid}`), true),
+    [roomCode, uid],
+  )
+
   const claimClue = useCallback(
     (clueId, phase) => claimClueEngine(roomCode, uid, scenario, clueId, phase),
     [roomCode, uid, scenario],
@@ -130,6 +139,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
 
   const leaveAndCleanupRoom = useCallback(async () => {
     await remove(ref(db, `rooms/${roomCode}`))
+    clearActiveRoom()
   }, [roomCode])
 
   const value = useMemo(
@@ -141,6 +151,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       startGame,
       advanceToPhase2,
       advanceToResolution,
+      markReady,
       claimClue,
       publishClue,
       submitAccusation,
@@ -156,6 +167,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       startGame,
       advanceToPhase2,
       advanceToResolution,
+      markReady,
       claimClue,
       publishClue,
       submitAccusation,

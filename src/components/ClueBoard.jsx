@@ -3,10 +3,13 @@ import { isClueVisibleTo } from '../engine/visibility.js'
 import { isComboReady } from '../engine/apEngine.js'
 
 export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, onClaim, onPublish }) {
-  // 다른 캐릭터 소유의 단서는 애초에 내 조사판에 표시하지 않는다(그 캐릭터를 맡은
-  // 플레이어의 개인 조사 대상이기 때문 — 공용 단서와 조합형 단서만 모두에게 보인다).
-  const items = scenario.clues[phase].items.filter((c) => !c.owner || c.owner === myCharacterId)
   const clueStates = room.clues ?? {}
+  // owner는 "이 단서가 누구에 관한 것인가"다 — 다른 캐릭터를 조사하는 용도이므로
+  // 내 캐릭터 소유 단서는 목록에서 숨긴다(내가 나를 조사할 수 없으니까). 다만 다른
+  // 누군가가 그걸 캐물어 공개했다면, 나에 대해 뭐가 밝혀졌는지 볼 수 있어야 한다.
+  const items = scenario.clues[phase].items.filter(
+    (c) => !c.owner || c.owner !== myCharacterId || clueStates[c.id]?.publishedToRoom,
+  )
   const myAp = room.players?.[uid]?.ap?.[phase] ?? 0
 
   return (

@@ -2,7 +2,7 @@
   "rules": {
     "siteConfig": {
       ".read": true,
-      ".write": "auth != null && auth.token.admin === true"
+      ".write": "auth != null && auth.token.email === 'ghaud21@gmail.com' && auth.token.email_verified === true"
     },
     "rooms": {
       "$roomCode": {
@@ -22,6 +22,11 @@
             "$uid": { ".write": "auth != null && auth.uid === $uid" }
           },
           "moralChoices": {
+            "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          }
+        },
+        "ready": {
+          "$targetPhase": {
             "$uid": { ".write": "auth != null && auth.uid === $uid" }
           }
         },

@@ -6,7 +6,7 @@ import StepProgress from '../components/StepProgress.jsx'
 import ResultExportButton from '../components/ResultExportButton.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
-import { evaluateScenarioEndings } from '../engine/endingRules/index.js'
+import { evaluateEndings, computeResolutionMetrics } from '../engine/endingEvaluator.js'
 import { saveLocalResult } from '../utils/localStorageStore.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
@@ -29,11 +29,8 @@ function ResultsInner({ scenario }) {
 
   const ending = useMemo(() => {
     if (!room) return null
-    const endingId = evaluateScenarioEndings(scenario.scenarioId, {
-      accusations,
-      moralChoices,
-      roomClues: room.clues ?? {},
-    })
+    const metrics = computeResolutionMetrics({ accusations, moralChoices, roomClues: room.clues ?? {} })
+    const endingId = evaluateEndings(scenario, metrics)
     return scenario.endings.find((e) => e.id === endingId)
   }, [room, scenario, accusations, moralChoices])
 

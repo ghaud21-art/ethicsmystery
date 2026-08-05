@@ -135,71 +135,79 @@ function DetailInner({ scenario }) {
         수사 참가하기
       </div>
 
-      <div className="card col">
-        <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
-        <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-      </div>
-
-      <div className="card col">
-        <div className="row" style={{ justifyContent: 'space-between' }}>
-          <strong>새 방 만들기</strong>
-          <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
-            {scenario.meta.supportedPlayerCounts.map((n) => (
-              <option key={n} value={n}>
-                {n}인
-              </option>
-            ))}
-          </select>
-        </div>
-        <button className="primary" onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
-          방 만들기
-        </button>
-      </div>
-
-      <div className="card col">
-        <strong>방 코드로 참가</strong>
-        <div className="row">
-          <input
-            placeholder="예: A3F9"
-            value={joinCode}
-            onChange={(e) => setJoinCode(e.target.value)}
-            maxLength={4}
-            style={{ flex: 1 }}
-          />
-          <button onClick={handleJoin} disabled={busy}>
-            참가하기
-          </button>
-        </div>
-      </div>
-
-      {tier === 'homeSchoolStudent' ? (
-        <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
-      ) : schoolAuthOpen ? (
-        <div className="card col">
-          <label className="dim" style={{ fontSize: 12 }}>학교 코드</label>
-          <div className="row">
-            <input
-              placeholder="학교에서 안내받은 코드"
-              value={schoolCode}
-              onChange={(e) => setSchoolCode(e.target.value)}
-              style={{ flex: 1 }}
-            />
-            <button onClick={handleVerifySchoolCode} disabled={busy || !schoolCode}>
-              인증하기
-            </button>
-          </div>
+      {!scenario.published ? (
+        <div className="card">
+          <p style={{ margin: 0 }}>아직 준비 중인 시나리오입니다. 곧 플레이할 수 있어요.</p>
         </div>
       ) : (
-        <button
-          onClick={() => setSchoolAuthOpen(true)}
-          style={{ border: 'none', background: 'none', padding: '4px 0', fontSize: 12 }}
-        >
-          우리 학교 학생인가요? 학교 코드 인증하기 →
-        </button>
+        <>
+          <div className="card col">
+            <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
+            <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+          </div>
+
+          <div className="card col">
+            <div className="row" style={{ justifyContent: 'space-between' }}>
+              <strong>새 방 만들기</strong>
+              <select value={playerCount} onChange={(e) => setPlayerCount(Number(e.target.value))}>
+                {scenario.meta.supportedPlayerCounts.map((n) => (
+                  <option key={n} value={n}>
+                    {n}인
+                  </option>
+                ))}
+              </select>
+            </div>
+            <button className="primary" onClick={handleCreate} disabled={busy} style={{ textAlign: 'left' }}>
+              방 만들기
+            </button>
+          </div>
+
+          <div className="card col">
+            <strong>방 코드로 참가</strong>
+            <div className="row">
+              <input
+                placeholder="예: A3F9"
+                value={joinCode}
+                onChange={(e) => setJoinCode(e.target.value)}
+                maxLength={4}
+                style={{ flex: 1 }}
+              />
+              <button onClick={handleJoin} disabled={busy}>
+                참가하기
+              </button>
+            </div>
+          </div>
+
+          {tier === 'homeSchoolStudent' ? (
+            <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
+          ) : schoolAuthOpen ? (
+            <div className="card col">
+              <label className="dim" style={{ fontSize: 12 }}>학교 코드</label>
+              <div className="row">
+                <input
+                  placeholder="학교에서 안내받은 코드"
+                  value={schoolCode}
+                  onChange={(e) => setSchoolCode(e.target.value)}
+                  style={{ flex: 1 }}
+                />
+                <button onClick={handleVerifySchoolCode} disabled={busy || !schoolCode}>
+                  인증하기
+                </button>
+              </div>
+            </div>
+          ) : (
+            <button
+              onClick={() => setSchoolAuthOpen(true)}
+              style={{ border: 'none', background: 'none', padding: '4px 0', fontSize: 12 }}
+            >
+              우리 학교 학생인가요? 학교 코드 인증하기 →
+            </button>
+          )}
+          <p className="dim" style={{ fontSize: 12 }}>
+            인증 없이도 바로 플레이할 수 있어요. 게스트는 결과가 이 기기에만 저장되고 AI 피드백은 제공되지 않습니다.
+          </p>
+        </>
       )}
-      <p className="dim" style={{ fontSize: 12 }}>
-        인증 없이도 바로 플레이할 수 있어요. 게스트는 결과가 이 기기에만 저장되고 AI 피드백은 제공되지 않습니다.
-      </p>
 
       {error && <p style={{ color: 'var(--blood-light)' }}>{error}</p>}
     </div>

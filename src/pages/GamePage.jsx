@@ -16,7 +16,7 @@ function GameInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
   const { uid } = useAuth()
-  const { room, loading, claimClue, publishClue, advanceToPhase2, advanceToResolution } = useRoom()
+  const { room, loading, claimClue, publishClue, markReady, advanceToPhase2, advanceToResolution } = useRoom()
   const [roleOpen, setRoleOpen] = useState(false)
 
   useEffect(() => {
@@ -28,12 +28,23 @@ function GameInner({ scenario }) {
   if (loading) return <div className="dim">불러오는 중...</div>
   if (!room) return <div className="card">방을 찾을 수 없습니다.</div>
 
-  const phase = room.meta.phase // 'phase1' | 'phase2'
+  const phase = room.meta.phase // 'phase1' | 'phase2' — 다른 값(예: 전환 중 'resolution')이면 아래에서 렌더 없이 대기
+  if (phase !== 'phase1' && phase !== 'phase2') {
+    return <div className="page dim">다음 단계로 이동 중...</div>
+  }
+
   const myCharacterId = room.players?.[uid]?.characterId
   const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
   const isHost = room.meta.hostUid === uid
   const maxAp = getPhaseApBudget(scenario, phase, room.meta.playerCount)
   const myAp = room.players?.[uid]?.ap?.[phase] ?? 0
+
+  const targetPhase = phase === 'phase1' ? 'phase2' : 'resolution'
+  const players = Object.keys(room.players)
+  const readyMap = room.ready?.[targetPhase] ?? {}
+  const readyCount = players.filter((p) => readyMap[p]).length
+  const allReady = players.length > 0 && readyCount === players.length
+  const iAmReady = !!readyMap[uid]
 
   const handleClaim = async (clueId) => {
     try {
@@ -49,6 +60,7 @@ function GameInner({ scenario }) {
       alert(e.message)
     }
   }
+  const handleAdvance = phase === 'phase1' ? advanceToPhase2 : advanceToResolution
 
   return (
     <div className="page">
@@ -102,13 +114,25 @@ function GameInner({ scenario }) {
         onPublish={handlePublish}
       />
 
+      <div className="card row" style={{ justifyContent: 'space-between', marginTop: 18 }}>
+        <span className="dim" style={{ fontSize: 12 }}>
+          {phase === 'phase1' ? '심층 대질' : '결론'} 준비: {readyCount}/{players.length}명
+        </span>
+        <button onClick={() => markReady(targetPhase)} disabled={iAmReady}>
+          {iAmReady ? '준비 완료함' : '나도 준비 완료'}
+        </button>
+      </div>
+
       {isHost && (
         <button
           className="primary"
-          onClick={phase === 'phase1' ? advanceToPhase2 : advanceToResolution}
-          style={{ width: '100%', textAlign: 'left', marginTop: 18 }}
+          onClick={handleAdvance}
+          disabled={!allReady}
+          style={{ width: '100%', textAlign: 'left', marginTop: 10 }}
         >
-          {phase === 'phase1' ? '심층 대질 단계로 →' : '결론으로 →'}
+          {allReady
+            ? (phase === 'phase1' ? '심층 대질 단계로 →' : '결론으로 →')
+            : `모두 준비되면 진행할 수 있어요 (${readyCount}/${players.length})`}
         </button>
       )}
 

@@ -11,6 +11,15 @@ service cloud.firestore {
       allow update, delete: if false;
     }
 
+    // 시나리오 — 누구나 읽기(게스트도 시나리오 소개는 볼 수 있어야 함),
+    // 쓰기는 관리자 계정(Google 로그인, 지정된 이메일)만 가능.
+    match /scenarios/{scenarioId} {
+      allow read: if true;
+      allow write: if request.auth != null
+                   && request.auth.token.email == 'ghaud21@gmail.com'
+                   && request.auth.token.email_verified == true;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

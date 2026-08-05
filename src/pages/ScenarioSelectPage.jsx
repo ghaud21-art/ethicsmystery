@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { loadRegistry } from '../engine/scenarioLoader'
 import Masthead from '../components/Masthead.jsx'
+import { useSiteConfig } from '../firebase/useSiteConfig.js'
 
 const MOODS = ['mood-1', 'mood-2', 'mood-3']
 const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
@@ -9,6 +10,8 @@ const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
 export default function ScenarioSelectPage() {
   const [scenarios, setScenarios] = useState(null)
   const [error, setError] = useState(null)
+  const siteConfig = useSiteConfig()
+  const heroSrc = siteConfig?.mainImageDataUrl || `${import.meta.env.BASE_URL}hero-main.webp`
 
   useEffect(() => {
     loadRegistry().then(setScenarios).catch(setError)
@@ -19,11 +22,14 @@ export default function ScenarioSelectPage() {
       <Masthead />
 
       <div style={{ textAlign: 'center', padding: '18px 0 34px' }}>
-        <p style={{ fontFamily: 'var(--font-head)', fontSize: 18, color: 'var(--ink-dim)', lineHeight: 1.7, margin: 0 }}>
-          정답이 없는 딜레마 속으로.
-          <br />
-          지금, 당신의 선택을 시작하세요.
-        </p>
+        <img
+          src={heroSrc}
+          alt="윤리미스터리"
+          style={{
+            width: '100%', maxWidth: 900, borderRadius: 'var(--radius)',
+            boxShadow: 'var(--glow)', border: '1px solid var(--line)',
+          }}
+        />
       </div>
 
       <div className="row" style={{ marginBottom: 18 }}>
@@ -39,18 +45,18 @@ export default function ScenarioSelectPage() {
       <div className="scenario-grid">
         {scenarios?.map((s, i) => (
           <Link
-            to={s.status === '설계 완료' ? `/scenario/${s.scenarioId}` : '#'}
+            to={`/scenario/${s.scenarioId}`}
             key={s.scenarioId}
-            style={{ textDecoration: 'none', color: 'inherit', pointerEvents: s.status === '설계 완료' ? 'auto' : 'none' }}
+            style={{ textDecoration: 'none', color: 'inherit' }}
           >
-            <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: s.status === '설계 완료' ? 'pointer' : 'default' }}>
+            <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}>
               <div className={`mood-art ${MOODS[i % MOODS.length]}`}>
                 <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="var(--gold-light)" strokeWidth="1" style={{ right: -20, bottom: -20 }}>
                   <circle cx="11" cy="11" r="7" />
                   <path d="M21 21l-4.3-4.3" />
                 </svg>
                 <div className="badge-stack">
-                  <span className="corner-badge">{s.status === '설계 완료' ? '플레이 가능' : '준비 중'}</span>
+                  <span className="corner-badge">{s.published ? '플레이 가능' : '준비 중'}</span>
                 </div>
                 <span className="free-badge">무료</span>
                 <span className="mood-art-label">{s.unit}</span>
