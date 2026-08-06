@@ -260,16 +260,22 @@ function GameInner({ scenario }) {
             <div className="col">
               {scenario.characters
                 .filter((c) => c.id !== myCharacterId)
-                .map((c) => (
-                  <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
-                    <div className="avatar-circle">{c.name[0]}</div>
-                    <div>
-                      <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
-                      <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
-                      <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
+                .map((c) => {
+                  const playerEntry = Object.values(room.players ?? {}).find((p) => p.characterId === c.id)
+                  return (
+                    <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
+                      <div className="avatar-circle">{c.name[0]}</div>
+                      <div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
+                          {playerEntry && <span className="pill pill-outline">{playerEntry.name}</span>}
+                        </div>
+                        <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
+                        <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
             </div>
             <div className="row" style={{ justifyContent: 'flex-end' }}>
               <button onClick={() => setCastOpen(false)}>닫기</button>

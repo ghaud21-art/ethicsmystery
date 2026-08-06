@@ -1,4 +1,4 @@
-export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, autoRevealed, onClaim, onPublish, players }) {
+export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, autoRevealed, ownerName, onClaim, onPublish, players }) {
   const claimedByName = clueState?.claimedBy ? players?.[clueState.claimedBy]?.name : null
   const claimedByMe = clueState?.claimedBy && visible
   const isCombo = clue.unlockType === 'combo'
@@ -14,6 +14,7 @@ export default function ClueCard({ clue, clueState, visible, canClaim, comboRead
       </div>
 
       <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 15 }}>{clue.title}</div>
+      {ownerName && <span className="pill pill-outline" style={{ alignSelf: 'flex-start' }}>관련 인물: {ownerName}</span>}
 
       {comboLocked ? (
         <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.6 }}>

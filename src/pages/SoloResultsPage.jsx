@@ -85,22 +85,14 @@ export default function SoloResultsPage() {
         resultSummary: { endingId: ending.id, endingTitle: ending.title, accusedLabel, moralChoiceLabel },
       })
       const myNickname = run.playerName?.trim() || '학생'
-      const prompt = [
-        `학생 닉네임: ${myNickname}`,
-        `(참고: 게임 중 역할극으로 맡은 캐릭터는 "${scenario.playerCharacter.name}(${scenario.playerCharacter.role})"이지만, 이 캐릭터 이름은 피드백에 절대 쓰지 말 것 — 학생을 지칭할 때는 반드시 닉네임 "${myNickname}"만 사용)`,
-        `시나리오: ${scenario.meta.title} (1인용)`,
-        `결말: ${ending.title} — ${ending.message}`,
-        '학생의 성찰 답변:',
-        ...scenario.reflectionPrompts.map((q, i) => `Q${i + 1}. ${q}\nA${i + 1}. ${answers[i] ?? '(무응답)'}`),
-        '',
-        '위 성찰 답변을 바탕으로 윤리 교사가 참고할 분석 리포트를 한국어로 작성해줘. 학생에게 다정하게 말 거는 코멘트가 아니라, 답변을 객관적으로 분석하는 리포트 톤으로 쓸 것. 아래 소제목을 그대로 사용해서 구성해줘:',
-        '- "답변 분석": 학생이 각 질문에 어떤 논리와 근거로 답했는지 객관적으로 요약',
-        '- "강점": 답변에서 드러난 사고의 강점을 학생이 실제로 쓴 표현을 인용하며 구체적으로 서술',
-        '- "성장 포인트": 더 깊이 고민해보면 좋을 지점을 질문 형태로 1~2가지 제시',
-        '- "종합 평가": 전체적인 이해도와 성찰 수준에 대한 한 문단 요약',
-        '전체 6~8문장 분량으로.',
-      ].join('\n')
-      const { feedback } = await getAiFeedback({ reflectionLogId, prompt })
+      const { feedback } = await getAiFeedback({
+        reflectionLogId,
+        nickname: myNickname,
+        scenarioTitle: `${scenario.meta.title} (1인용)`,
+        endingTitle: ending.title,
+        endingMessage: ending.message,
+        qaPairs: scenario.reflectionPrompts.map((q, i) => ({ question: q, answer: answers[i] ?? '' })),
+      })
       setAiFeedback(feedback)
     } catch (e) {
       setAiError(e.message)

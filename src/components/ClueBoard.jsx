@@ -23,6 +23,7 @@ export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, o
         const canClaim = !autoRevealed && !clueState?.claimedBy && myAp >= clue.apCost && comboReady
         // 조합형 단서를 포함해, 확보한 단서는 무엇이든 본인 선택으로 공개할 수 있다.
         const canPublish = !autoRevealed && visible && clueState?.claimedBy === uid && !clueState?.publishedToRoom
+        const ownerCharacter = clue.owner ? scenario.characters.find((c) => c.id === clue.owner) : null
         return (
           <ClueCard
             key={clue.id}
@@ -33,6 +34,7 @@ export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, o
             comboReady={comboReady}
             canPublish={canPublish}
             autoRevealed={autoRevealed}
+            ownerName={ownerCharacter?.name}
             onClaim={() => onClaim(clue.id)}
             onPublish={() => onPublish(clue.id)}
             players={room.players}

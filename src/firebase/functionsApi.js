@@ -17,8 +17,8 @@ export async function getMyResults(code, name, studentId) {
   return result.data
 }
 
-export async function getAiFeedback({ reflectionLogId, prompt }) {
-  const result = await getAiFeedbackCallable({ reflectionLogId, prompt })
+export async function getAiFeedback({ reflectionLogId, nickname, scenarioTitle, endingTitle, endingMessage, qaPairs }) {
+  const result = await getAiFeedbackCallable({ reflectionLogId, nickname, scenarioTitle, endingTitle, endingMessage, qaPairs })
   return result.data
 }
 

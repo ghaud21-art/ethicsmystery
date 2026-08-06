@@ -6,9 +6,10 @@ admin.initializeApp()
 const ADMIN_EMAIL = 'ghaud21@gmail.com'
 
 const { getAdminConfig } = require('./adminConfig')
-const { callGeminiWithFallback } = require('./gemini')
+const { callGeminiJsonWithFallback } = require('./gemini')
 const { callGeminiParse } = require('./scenarioParser')
 const { verifySchoolCode: verifySchoolCodeImpl, getMyResults: getMyResultsImpl } = require('./schoolCode')
+const { buildPrompt: buildAiFeedbackPrompt, assembleFeedbackText } = require('./aiFeedback')
 
 function requireAdmin(req) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
@@ -34,17 +35,21 @@ exports.getAiFeedback = onCall(async (req) => {
   if (req.auth.token.homeSchoolStudent !== true) {
     throw new HttpsError('permission-denied', 'AI 피드백은 학교 인증 사용자만 이용할 수 있습니다')
   }
-  const { reflectionLogId, prompt } = req.data ?? {}
-  if (!prompt) throw new HttpsError('invalid-argument', 'prompt가 필요합니다')
+  const { reflectionLogId, nickname, scenarioTitle, endingTitle, endingMessage, qaPairs } = req.data ?? {}
+  if (!nickname || !scenarioTitle || !endingTitle || !Array.isArray(qaPairs)) {
+    throw new HttpsError('invalid-argument', 'nickname/scenarioTitle/endingTitle/qaPairs가 필요합니다')
+  }
 
   const { geminiApiKey, geminiModelPrimary, geminiModelFallback } = await getAdminConfig()
   if (!geminiApiKey) throw new HttpsError('failed-precondition', '관리자가 아직 Gemini API 키를 설정하지 않았습니다')
 
-  const text = await callGeminiWithFallback(prompt, {
+  const prompt = buildAiFeedbackPrompt({ nickname, scenarioTitle, endingTitle, endingMessage, qaPairs })
+  const parsed = await callGeminiJsonWithFallback(prompt, {
     apiKey: geminiApiKey,
     primaryModel: geminiModelPrimary,
     fallbackModel: geminiModelFallback,
   })
+  const text = assembleFeedbackText(parsed)
 
   if (reflectionLogId) {
     await admin.firestore().doc(`reflectionLogs/${reflectionLogId}`).update({ aiFeedback: text })
