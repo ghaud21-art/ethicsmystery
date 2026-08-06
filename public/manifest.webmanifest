@@ -1,7 +1,7 @@
 {
   "name": "윤리미스터리 — EthicsMystery",
   "short_name": "윤리미스터리",
-  "description": "고등학교 윤리문제 탐구 수업용 온라인 딜레마 추리게임",
+  "description": "생각하는 힘을 키우는 온라인 딜레마 추리게임",
   "start_url": ".",
   "scope": ".",
   "display": "standalone",
