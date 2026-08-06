@@ -262,6 +262,11 @@ function EditorInner({ scenarioId }) {
     setSaved(false)
   }
 
+  const updatePhaseNote = (phase, note) => {
+    setDraft({ ...draft, clues: { ...draft.clues, [phase]: { ...draft.clues[phase], clueDesignNote: note } } })
+    setSaved(false)
+  }
+
   const updateEnding = (index, next) => {
     const endings = draft.endings.map((e, i) => (i === index ? next : e))
     setDraft({ ...draft, endings })
@@ -358,6 +363,16 @@ function EditorInner({ scenarioId }) {
       </div>
 
       <h2 className="page-title" style={{ fontSize: 18 }}>단서 — {draft.clues.phase2.label}</h2>
+      {isSolo && (
+        <Field
+          label="진행 순서 힌트 (1인용 심층 대질 화면에 학생에게 노출됨)"
+          value={draft.clues.phase2.clueDesignNote}
+          editMode={editMode}
+          multiline
+          small
+          onChange={(v) => updatePhaseNote('phase2', v)}
+        />
+      )}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginBottom: 20 }}>
         {draft.clues.phase2.items.map((clue, i) => (
           <ClueEditCard

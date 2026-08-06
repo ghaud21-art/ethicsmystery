@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import Masthead from '../components/Masthead.jsx'
+import AiFeedbackView from '../components/AiFeedbackView.jsx'
 import { getMyResults } from '../firebase/functionsApi.js'
 import { loadRegistry } from '../engine/scenarioLoader.js'
 
@@ -99,8 +100,8 @@ export default function StudentResultsPage() {
                     ))}
                     {r.aiFeedback && (
                       <>
-                        <p className="dim" style={{ fontSize: 12, margin: '4px 0 3px' }}>AI 피드백</p>
-                        <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0 }}>{r.aiFeedback}</p>
+                        <p className="dim" style={{ fontSize: 12, margin: '4px 0 8px' }}>AI 피드백</p>
+                        <AiFeedbackView feedback={r.aiFeedback} />
                       </>
                     )}
                   </div>

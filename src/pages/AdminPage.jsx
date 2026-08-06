@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
+import AiFeedbackView from '../components/AiFeedbackView.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
 import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario } from '../firebase/scenariosApi.js'
@@ -82,8 +83,8 @@ function StudentLogsSection({ scenarios }) {
                 ))}
                 {log.aiFeedback && (
                   <>
-                    <p className="dim" style={{ fontSize: 12, margin: '4px 0 3px' }}>AI 피드백</p>
-                    <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0 }}>{log.aiFeedback}</p>
+                    <p className="dim" style={{ fontSize: 12, margin: '4px 0 8px' }}>AI 피드백</p>
+                    <AiFeedbackView feedback={log.aiFeedback} />
                   </>
                 )}
                 <button onClick={() => handleDelete(log.id)} disabled={busyId === log.id} style={{ alignSelf: 'flex-start', marginTop: 6 }}>

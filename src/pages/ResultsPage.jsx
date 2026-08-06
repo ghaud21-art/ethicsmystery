@@ -4,6 +4,7 @@ import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
 import ResultExportButton from '../components/ResultExportButton.jsx'
+import AiFeedbackView from '../components/AiFeedbackView.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { evaluateEndings, computeResolutionMetrics } from '../engine/endingEvaluator.js'
@@ -31,6 +32,7 @@ function ResultsInner({ scenario }) {
   const [saved, setSaved] = useState(false)
 
   const culprit = scenario.characters.find((c) => c.isCulprit)
+  const criticalClues = [...scenario.clues.phase1.items, ...scenario.clues.phase2.items].filter((c) => c.isCriticalClue)
   const accusations = room?.resolution?.accusations ?? {}
   const moralChoices = room?.resolution?.moralChoices ?? {}
 
@@ -151,6 +153,32 @@ function ResultsInner({ scenario }) {
         <div className="card" style={{ borderLeft: '2px solid var(--gold)' }}>
           <div className="kicker" style={{ marginBottom: 6 }}>나만 보는 개인 에필로그</div>
           <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{myEpilogue.text}</p>
+        </div>
+      )}
+
+      <div className="divider-orn"><span className="divider-orn-diamond" /></div>
+
+      <h2 className="page-title" style={{ fontSize: 19 }}>사건의 진상</h2>
+      <p className="dim" style={{ marginBottom: 16 }}>
+        팀이 무엇을 밝혀냈든 상관없이, 실제로 있었던 일과 이 사건의 핵심 단서를 모두 공개합니다.
+      </p>
+      <div className="card col" style={{ marginBottom: 12 }}>
+        <strong style={{ fontFamily: 'var(--font-head)' }}>{culprit?.name} — {culprit?.role}</strong>
+        {culprit?.secretLayers?.map((layer, i) => (
+          <p key={i} style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{layer.content}</p>
+        ))}
+      </div>
+      {criticalClues.length > 0 && (
+        <div className="col" style={{ marginBottom: 18 }}>
+          {criticalClues.map((clue) => (
+            <div key={clue.id} className="card" style={{ marginBottom: 0, borderColor: 'var(--gold)' }}>
+              <div className="row" style={{ justifyContent: 'space-between' }}>
+                <strong style={{ fontSize: 13 }}>{clue.title}</strong>
+                <span className="pill pill-solid">핵심 단서</span>
+              </div>
+              <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.6 }}>{clue.content}</p>
+            </div>
+          ))}
         </div>
       )}
 
@@ -283,8 +311,8 @@ function ResultsInner({ scenario }) {
         {aiFeedback && (
           <>
             <hr className="divider" style={{ margin: '16px 0' }} />
-            <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>AI 피드백</p>
-            <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0 }}>{aiFeedback}</p>
+            <p className="dim" style={{ fontSize: 12, margin: '0 0 8px' }}>AI 피드백</p>
+            <AiFeedbackView feedback={aiFeedback} />
           </>
         )}
       </div>

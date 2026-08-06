@@ -9,7 +9,7 @@ const { getAdminConfig } = require('./adminConfig')
 const { callGeminiJsonWithFallback } = require('./gemini')
 const { callGeminiParse } = require('./scenarioParser')
 const { verifySchoolCode: verifySchoolCodeImpl, getMyResults: getMyResultsImpl } = require('./schoolCode')
-const { buildPrompt: buildAiFeedbackPrompt, assembleFeedbackText } = require('./aiFeedback')
+const { buildPrompt: buildAiFeedbackPrompt, normalizeFeedback } = require('./aiFeedback')
 
 function requireAdmin(req) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
@@ -49,12 +49,12 @@ exports.getAiFeedback = onCall(async (req) => {
     primaryModel: geminiModelPrimary,
     fallbackModel: geminiModelFallback,
   })
-  const text = assembleFeedbackText(parsed)
+  const feedback = normalizeFeedback(parsed)
 
   if (reflectionLogId) {
-    await admin.firestore().doc(`reflectionLogs/${reflectionLogId}`).update({ aiFeedback: text })
+    await admin.firestore().doc(`reflectionLogs/${reflectionLogId}`).update({ aiFeedback: feedback })
   }
-  return { feedback: text }
+  return { feedback }
 })
 
 // 관리자 전용 — 업로드된 시나리오 설계 문서(PDF)를 Gemini로 해석해 앱 스키마에

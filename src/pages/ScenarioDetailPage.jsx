@@ -84,7 +84,7 @@ function DetailInner({ scenario }) {
           <path d="M21 21l-4.3-4.3" />
         </svg>
         <span className="pill pill-outline" style={{ position: 'relative', marginBottom: 10 }}>
-          {scenario.meta.supportedPlayerCounts.join('/')}인용 · 약 {scenario.meta.estimatedMinutes}분
+          {scenario.meta.supportedPlayerCounts.join('~')}인용 · 약 {scenario.meta.estimatedMinutes}분
         </span>
         <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 28, margin: '0 0 8px', position: 'relative' }}>
           {scenario.meta.title}

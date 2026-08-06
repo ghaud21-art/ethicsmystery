@@ -62,6 +62,7 @@ function GameInner({ scenario, run, setRun }) {
   const [roleOpen, setRoleOpen] = useState(false)
   const [cluesOpen, setCluesOpen] = useState(false)
   const [castOpen, setCastOpen] = useState(false)
+  const [hintOpen, setHintOpen] = useState(false)
 
   const handleView = (clueId) => {
     setError(null)
@@ -229,6 +230,19 @@ function GameInner({ scenario, run, setRun }) {
         </div>
         {iconNav}
         <div className="page-title-rule" />
+        {scenario.clues.phase2.clueDesignNote && (
+          <div className="card" style={{ marginBottom: 12 }}>
+            <button
+              onClick={() => setHintOpen((v) => !v)}
+              style={{ border: 'none', background: 'none', padding: 0, fontSize: 12, color: 'var(--gold-light)' }}
+            >
+              {hintOpen ? '진행 순서 힌트 숨기기 ▲' : '진행 순서 힌트 보기 ▼'}
+            </button>
+            {hintOpen && (
+              <p className="dim" style={{ margin: '8px 0 0', fontSize: 12, lineHeight: 1.6 }}>{scenario.clues.phase2.clueDesignNote}</p>
+            )}
+          </div>
+        )}
         <div className="col" style={{ marginBottom: 18 }}>
           {scenario.characters.map((character) => {
             const [baseId, deepId] = character.ownedPhase2Clues ?? []
