@@ -107,7 +107,15 @@ export default function SoloResultsPage() {
       <StepProgress activeIndex={4} />
 
       <div className="card" style={{ borderTop: '2px solid var(--gold)', position: 'relative', padding: '26px 20px' }}>
-        <div className="thumb" style={{ margin: '-26px -20px 16px', height: 150, borderRadius: 0 }}>{ending.title} 이미지</div>
+        {ending.imageDataUrl ? (
+          <img
+            src={ending.imageDataUrl}
+            alt={ending.title}
+            style={{ margin: '-26px -20px 16px', width: 'calc(100% + 40px)', height: 150, objectFit: 'cover', display: 'block' }}
+          />
+        ) : (
+          <div className="thumb" style={{ margin: '-26px -20px 16px', height: 150, borderRadius: 0 }}>{ending.title} 이미지</div>
+        )}
         <span className="stamp" style={{ position: 'absolute', top: 20, right: 20 }}>수사 종결</span>
         <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: 10 }}>
           수사 종결

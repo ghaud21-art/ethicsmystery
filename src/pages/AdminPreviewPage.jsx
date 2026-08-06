@@ -179,6 +179,51 @@ function ClueEditCard({ clue, editMode, found, onToggleFound, onChange }) {
   )
 }
 
+function EndingEditCard({ ending, editMode, onChange }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+
+  const handleImage = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      const dataUrl = await resizeImageToDataUrl(file, { maxWidth: 900, quality: 0.8 })
+      onChange({ ...ending, imageDataUrl: dataUrl })
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+      e.target.value = ''
+    }
+  }
+
+  return (
+    <div className="card col">
+      <div className="row" style={{ alignItems: 'flex-start', gap: 14 }}>
+        {ending.imageDataUrl && (
+          <img src={ending.imageDataUrl} alt={ending.title} style={{ width: 140, height: 90, objectFit: 'cover', borderRadius: 'var(--radius-sm)' }} />
+        )}
+        {editMode && (
+          <div className="col" style={{ gap: 4 }}>
+            <label className="dim" style={{ fontSize: 12 }}>엔딩 이미지</label>
+            <input type="file" accept="image/*" onChange={handleImage} disabled={busy} />
+            {busy && <span className="dim" style={{ fontSize: 11 }}>업로드 중...</span>}
+            {error && <span style={{ color: 'var(--blood-light)', fontSize: 11 }}>{error}</span>}
+          </div>
+        )}
+      </div>
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="제목" value={ending.title} editMode={editMode} onChange={(v) => onChange({ ...ending, title: v })} />
+        <Field grow label="테마 태그" value={ending.themeTag} editMode={editMode} onChange={(v) => onChange({ ...ending, themeTag: v })} />
+      </div>
+      <Field label="엔딩 서술" value={ending.message} editMode={editMode} multiline onChange={(v) => onChange({ ...ending, message: v })} />
+      <Field label="성찰 포인트 (insight)" value={ending.insight} editMode={editMode} multiline small onChange={(v) => onChange({ ...ending, insight: v })} />
+    </div>
+  )
+}
+
 function EditorInner({ scenarioId }) {
   const navigate = useNavigate()
   const [original, setOriginal] = useState(null)
@@ -214,6 +259,12 @@ function EditorInner({ scenarioId }) {
   const updateClue = (phase, index, next) => {
     const items = draft.clues[phase].items.map((c, i) => (i === index ? next : c))
     setDraft({ ...draft, clues: { ...draft.clues, [phase]: { ...draft.clues[phase], items } } })
+    setSaved(false)
+  }
+
+  const updateEnding = (index, next) => {
+    const endings = draft.endings.map((e, i) => (i === index ? next : e))
+    setDraft({ ...draft, endings })
     setSaved(false)
   }
 
@@ -320,6 +371,13 @@ function EditorInner({ scenarioId }) {
         ))}
       </div>
 
+      <h2 className="page-title" style={{ fontSize: 18 }}>엔딩</h2>
+      <div className="col" style={{ marginBottom: 20 }}>
+        {draft.endings.map((ending, i) => (
+          <EndingEditCard key={ending.id} ending={ending} editMode={editMode} onChange={(next) => updateEnding(i, next)} />
+        ))}
+      </div>
+
       <h2 className="page-title" style={{ fontSize: 18 }}>엔딩 분기 테스트</h2>
       <div className="card col" style={{ marginBottom: 24 }}>
         <p className="dim" style={{ fontSize: 12, margin: 0 }}>
@@ -348,6 +406,9 @@ function EditorInner({ scenarioId }) {
         </div>
         {previewEnding && (
           <div className="card" style={{ borderColor: 'var(--gold)', marginBottom: 0 }}>
+            {previewEnding.imageDataUrl && (
+              <img src={previewEnding.imageDataUrl} alt={previewEnding.title} style={{ width: '100%', maxHeight: 160, objectFit: 'cover', borderRadius: 'var(--radius-sm)', marginBottom: 8 }} />
+            )}
             <strong style={{ fontFamily: 'var(--font-head)' }}>{previewEnding.title}</strong>
             <p style={{ fontSize: 13, lineHeight: 1.6, margin: '6px 0 0' }}>{previewEnding.message}</p>
             <p className="dim" style={{ fontSize: 12, margin: '6px 0 0' }}>{previewEnding.themeTag}</p>
