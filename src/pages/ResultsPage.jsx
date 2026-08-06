@@ -9,6 +9,8 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { evaluateEndings, computeResolutionMetrics } from '../engine/endingEvaluator.js'
 import { isClueAutoRevealed } from '../engine/visibility.js'
+import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
+import { getPlayableCharacters, getEffectiveCharacterId } from '../engine/characterAssignment.js'
 import { saveLocalResult } from '../utils/localStorageStore.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
@@ -31,36 +33,46 @@ function ResultsInner({ scenario }) {
   const [aiError, setAiError] = useState(null)
   const [saved, setSaved] = useState(false)
 
-  const culprit = scenario.characters.find((c) => c.isCulprit)
+  // 통합 캐릭터 3인 시나리오에서는 진범이 통합 캐릭터 쪽에 표시돼야 하므로
+  // playerCount 기준의 플레이 가능 목록에서 찾는다(4인은 원본 캐릭터와 동일).
+  const culprit = getPlayableCharacters(scenario, room?.meta?.playerCount).find((c) => c.isCulprit)
   const criticalClues = [...scenario.clues.phase1.items, ...scenario.clues.phase2.items].filter((c) => c.isCriticalClue)
   const accusations = room?.resolution?.accusations ?? {}
   const moralChoices = room?.resolution?.moralChoices ?? {}
 
   const ending = useMemo(() => {
     if (!room) return null
-    const metrics = computeResolutionMetrics({ accusations, moralChoices, roomClues: room.clues ?? {} })
-    const endingId = evaluateEndings(scenario, metrics)
+    const metrics = computeResolutionMetrics({ accusations, moralChoices, roomClues: room.clues ?? {}, scenario })
+    const endingId = evaluateEndings(scenario, metrics, room?.meta?.playerCount)
     return scenario.endings.find((e) => e.id === endingId)
   }, [room, scenario, accusations, moralChoices])
 
   const myCharacterId = room?.players?.[uid]?.characterId
-  const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
+  const myCharacter = getPlayableCharacters(scenario, room?.meta?.playerCount).find((c) => c.id === myCharacterId)
   const myAccusedId = accusations[uid]
-  const myAccusedCharacter = scenario.characters.find((c) => c.id === myAccusedId)
-  const myAccusedLabel = myAccusedId === 'unknown' ? '모르겠다' : myAccusedId ? myAccusedCharacter?.name : '미응답'
+  const accusationOptions = resolveAccusationOptions(scenario, room?.meta?.playerCount)
+  const myAccusedLabel = myAccusedId ? accusationOptions.find((o) => o.id === myAccusedId)?.label ?? myAccusedId : '미응답'
   const myMoralChoiceLabel =
     moralChoices[uid] === 'reveal_all' ? '모두 공개했다' : moralChoices[uid] === 'conceal_some' ? '일부는 덮었다' : '미응답'
 
-  // 팀이 게임 중에 내 비밀 단서를 이미 공개했다면 그 자체로 드러난 것이고,
-  // 그게 아니어도 결론 단계에서 "모두 공개하겠다"를 선택했다면 지금 이 순간
-  // 스스로 밝힌 것으로 본다 — 결론 질문 자체가 "지금 공개할지 말지"를 묻기 때문.
+  const selfReports = room?.resolution?.selfReport ?? {}
+
+  // 두 가지 개인 에필로그 방식을 모두 지원한다:
+  // 1) 자기보고형(finalReflectionCheck) — 시스템이 판정하지 않고 플레이어가 직접
+  //    "밝혀졌다/끝까지 숨겼다"를 답한 값을 그대로 쓴다.
+  // 2) 단서공개형(epilogueCard) — 팀이 게임 중 내 비밀 단서를 공개했거나, 결론
+  //    단계에서 "모두 공개하겠다"를 선택했다면 드러난 것으로 본다.
   const myEpilogue = useMemo(() => {
+    if (myCharacter?.epilogueA !== undefined && myCharacter?.epilogueB !== undefined) {
+      const revealed = selfReports[uid] === 'revealed'
+      return { revealed, text: revealed ? myCharacter.epilogueA : myCharacter.epilogueB }
+    }
     if (!myCharacter?.epilogueCard || !myCharacter.secretRevealClueId) return null
     const publishedInGame = !!room?.clues?.[myCharacter.secretRevealClueId]?.publishedToRoom
     const choseToReveal = moralChoices[uid] === 'reveal_all'
     const revealed = publishedInGame || choseToReveal
     return { revealed, text: revealed ? myCharacter.epilogueCard.revealed : myCharacter.epilogueCard.hidden }
-  }, [myCharacter, room, moralChoices, uid])
+  }, [myCharacter, room, moralChoices, selfReports, uid])
 
   useEffect(() => {
     if (!room || !ending || saved) return
@@ -212,11 +224,11 @@ function ResultsInner({ scenario }) {
       <h2 className="page-title" style={{ fontSize: 19 }}>참가자들의 선택</h2>
       <div className="col" style={{ marginBottom: 8 }}>
         {Object.entries(room.players ?? {}).map(([pUid, p]) => {
-          const pCharacter = scenario.characters.find((c) => c.id === p.characterId)
+          const pCharacter = getPlayableCharacters(scenario, room.meta?.playerCount).find((c) => c.id === p.characterId)
           const accusedId = accusations[pUid]
-          const accusedCharacter = scenario.characters.find((c) => c.id === accusedId)
-          const accusedLabel = accusedId === 'unknown' ? '모르겠다' : accusedId ? accusedCharacter?.name : '미응답'
-          const wasCorrect = accusedId && accusedId !== 'unknown' && accusedId === culprit?.id
+          const accusedLabel = accusedId ? accusationOptions.find((o) => o.id === accusedId)?.label ?? accusedId : '미응답'
+          const effectiveCulpritId = getEffectiveCharacterId(scenario, culprit?.id, room.meta?.playerCount)
+          const wasCorrect = accusedId && accusedId !== 'unknown' && accusedId === effectiveCulpritId
           return (
             <div key={pUid} className="card row" style={{ justifyContent: 'space-between' }}>
               <div className="row">

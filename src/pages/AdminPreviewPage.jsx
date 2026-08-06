@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { getScenario, saveScenario } from '../firebase/scenariosApi.js'
 import { evaluateEndings } from '../engine/endingEvaluator.js'
 import { computeSoloMetrics, evaluateSoloEnding } from '../engine/soloEndingEvaluator.js'
+import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
 import { resizeImageToDataUrl } from '../utils/fileHelpers.js'
 
 function Field({ label, value, onChange, editMode, multiline, small, grow }) {
@@ -305,15 +306,16 @@ function EditorInner({ scenarioId }) {
       const fakeRun = { viewedClueIds: [...foundClueIds], accusation: accused, moralChoice }
       endingId = evaluateSoloEnding(draft, computeSoloMetrics(draft, fakeRun))
     } else {
-      endingId = evaluateEndings(draft, { accused, moralChoiceMajority: moralChoice, foundClueIds })
+      const criticalIds = new Set(
+        [...(draft.clues?.phase1?.items ?? []), ...(draft.clues?.phase2?.items ?? [])].filter((c) => c.isCriticalClue).map((c) => c.id),
+      )
+      const criticalCluesFoundCount = [...foundClueIds].filter((id) => criticalIds.has(id)).length
+      endingId = evaluateEndings(draft, { accused, moralChoiceMajority: moralChoice, foundClueIds, criticalCluesFoundCount })
     }
     setPreviewEnding(draft.endings.find((e) => e.id === endingId))
   }
 
-  const accusationOptions = (draft.resolutionPhase?.steps.find((s) => s.id === 'accusation')?.options ?? []).map((id) => {
-    const character = draft.characters.find((c) => c.id === id)
-    return { id, label: character?.name ?? (id === 'unknown' ? '모르겠다' : id === 'no_single_person' ? '특정 개인만의 문제는 아니다' : id) }
-  })
+  const accusationOptions = resolveAccusationOptions(draft, undefined)
 
   return (
     <div className="page-wide">

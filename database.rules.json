@@ -28,6 +28,9 @@
           },
           "moralChoices": {
             "$uid": { ".write": "auth != null && auth.uid === $uid" }
+          },
+          "selfReport": {
+            "$uid": { ".write": "auth != null && auth.uid === $uid" }
           }
         },
         "ready": {

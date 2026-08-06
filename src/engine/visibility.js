@@ -1,12 +1,15 @@
-import { getPlayableCharacters } from './characterAssignment'
+import { getPlayableCharacters, getEffectiveCharacterId } from './characterAssignment'
 
 // owner가 있는 단서인데, 그 owner 캐릭터가 이번 방의 인원수(playerCount)에서는
 // 아예 플레이 대상이 아닌 경우(예: 4인용 시나리오를 3인으로 진행) — 그 인물을
 // 캐물을 사람 자체가 없으므로, 조사(claim) 없이 처음부터 모두에게 공개한다.
+// 통합 캐릭터로 흡수된 인물의 단서는 "미등장"이 아니라 통합 캐릭터 본인 소유로
+// 취급해야 하므로, 비교 전에 owner를 effective id로 치환한다.
 export function isClueAutoRevealed(clue, scenario, playerCount) {
   if (!clue.owner || !scenario || !playerCount) return false
   const playable = getPlayableCharacters(scenario, playerCount)
-  return !playable.some((c) => c.id === clue.owner)
+  const effectiveOwner = getEffectiveCharacterId(scenario, clue.owner, playerCount)
+  return !playable.some((c) => c.id === effectiveOwner)
 }
 
 // 단서 하나가 특정 플레이어에게 보여야 하는지 판단한다.
@@ -22,7 +25,7 @@ export function isClueVisibleTo(clue, clueState, uid, myCharacterId, scenario, p
 // 시나리오 characters[].secretLayers는 게임 콘텐츠일 뿐 보안 경계가 아니다.
 // 전체 JSON은 모든 클라이언트에 동일하게 전달되며, 아래 함수는 "내 캐릭터가 아니면
 // UI에 렌더링하지 않는다"는 표시 목적의 필터일 뿐이다.
-export function getVisibleSecretLayers(scenario, myCharacterId) {
-  const character = scenario.characters.find((c) => c.id === myCharacterId)
+export function getVisibleSecretLayers(scenario, myCharacterId, playerCount) {
+  const character = getPlayableCharacters(scenario, playerCount).find((c) => c.id === myCharacterId)
   return character?.secretLayers ?? []
 }

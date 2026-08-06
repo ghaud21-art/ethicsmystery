@@ -163,6 +163,14 @@ export function RoomProvider({ scenario, roomCode, children }) {
     [roomCode, uid],
   )
 
+  // 자기보고형 개인 에필로그(finalReflectionCheck)가 있는 시나리오에서만 쓰인다 —
+  // 시스템이 대화를 판정하지 않고, 자기 캐릭터의 비밀이 이번 판에서 밝혀졌는지를
+  // 플레이어 스스로 답하게 한다.
+  const submitSelfReport = useCallback(
+    (revealed) => set(ref(db, `rooms/${roomCode}/resolution/selfReport/${uid}`), revealed),
+    [roomCode, uid],
+  )
+
   const finishGame = useCallback(async () => {
     await update(ref(db, `rooms/${roomCode}/meta`), { phase: 'ended' })
   }, [roomCode])
@@ -195,6 +203,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       publishClue,
       submitAccusation,
       submitMoralChoice,
+      submitSelfReport,
       finishGame,
       leaveAndCleanupRoom,
     }),
@@ -214,6 +223,7 @@ export function RoomProvider({ scenario, roomCode, children }) {
       publishClue,
       submitAccusation,
       submitMoralChoice,
+      submitSelfReport,
       finishGame,
       leaveAndCleanupRoom,
     ],

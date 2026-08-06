@@ -1,6 +1,7 @@
 import { ref, runTransaction, get } from 'firebase/database'
 import { db } from '../firebase/firebaseConfig'
 import { isClueVisibleTo, isClueAutoRevealed } from './visibility'
+import { getEffectiveCharacterId } from './characterAssignment'
 
 export function getPhaseApBudget(scenario, phase, playerCount) {
   const phaseDef = scenario.clues[phase]
@@ -48,10 +49,13 @@ export async function claimClue(roomCode, uid, scenario, clueId, phase, playerCo
   }
 
   // owner는 "이 단서가 누구에 관한 것인가"를 뜻한다 — 그 인물 역의 플레이어 본인은
-  // 자기 자신을 조사할 수 없고, 다른 플레이어들만 캐물어 알아낼 수 있다.
+  // 자기 자신을 조사할 수 없고, 다른 플레이어들만 캐물어 알아낼 수 있다. 통합
+  // 캐릭터로 흡수된 인물의 단서라면 통합 캐릭터 본인을 연기하는 플레이어가 곧
+  // "본인"이므로 effective id로 비교한다.
   if (clue.owner) {
     const myCharacterIdSnap = await get(ref(db, `rooms/${roomCode}/players/${uid}/characterId`))
-    if (myCharacterIdSnap.val() === clue.owner) {
+    const effectiveOwner = getEffectiveCharacterId(scenario, clue.owner, playerCount)
+    if (myCharacterIdSnap.val() === effectiveOwner) {
       throw new Error('자기 자신에 대한 단서는 스스로 조사할 수 없습니다 — 다른 플레이어가 캐물어야 합니다')
     }
   }

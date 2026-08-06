@@ -13,6 +13,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { getPhaseApBudget } from '../engine/apEngine.js'
 import { getVisibleSecretLayers } from '../engine/visibility.js'
+import { getPlayableCharacters } from '../engine/characterAssignment.js'
 
 function BriefingScreen({ character, secretLayers, onContinue }) {
   return (
@@ -92,8 +93,9 @@ function GameInner({ scenario }) {
   }
 
   const myCharacterId = room.players?.[uid]?.characterId
-  const myCharacter = scenario.characters.find((c) => c.id === myCharacterId)
-  const mySecretLayers = getVisibleSecretLayers(scenario, myCharacterId)
+  const playableCharacters = getPlayableCharacters(scenario, room.meta.playerCount)
+  const myCharacter = playableCharacters.find((c) => c.id === myCharacterId)
+  const mySecretLayers = getVisibleSecretLayers(scenario, myCharacterId, room.meta.playerCount)
 
   // phase1에 처음 들어오면 캐릭터 브리핑(상세설명+비밀)을 먼저 읽게 한다.
   if (phase === 'phase1' && !room.players?.[uid]?.briefingSeen) {
@@ -258,7 +260,7 @@ function GameInner({ scenario }) {
           <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
             <div className="modal-title">등장인물</div>
             <div className="col">
-              {scenario.characters
+              {playableCharacters
                 .filter((c) => c.id !== myCharacterId)
                 .map((c) => {
                   const playerEntry = Object.values(room.players ?? {}).find((p) => p.characterId === c.id)
