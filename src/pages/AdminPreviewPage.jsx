@@ -38,6 +38,66 @@ function Field({ label, value, onChange, editMode, multiline, small, grow }) {
   )
 }
 
+function Checkbox({ label, checked, onChange, editMode }) {
+  if (!editMode) {
+    if (!checked) return null
+    return <span className="pill pill-solid" style={{ marginBottom: 10 }}>{label}</span>
+  }
+  return (
+    <label className="row" style={{ fontSize: 12, gap: 6, marginBottom: 10 }}>
+      <input type="checkbox" checked={!!checked} onChange={(e) => onChange(e.target.checked)} />
+      {label}
+    </label>
+  )
+}
+
+// 지목 옵션·엔딩 조건·결론 단계 구조처럼 리스트/중첩 객체로 이루어진 값은 전용 폼 대신
+// JSON 텍스트로 직접 편집한다 — 필드마다 전용 UI를 만드는 대신, 구조가 시나리오마다
+// 크게 달라질 수 있는 부분(조건식, 분류 항목 등)을 하나로 커버하기 위한 실용적 선택.
+function JsonField({ label, value, onChange, editMode, rows = 6 }) {
+  const [text, setText] = useState(() => JSON.stringify(value ?? null, null, 2))
+  const [error, setError] = useState(null)
+
+  if (!editMode) {
+    if (value === undefined || value === null) return null
+    return (
+      <div style={{ marginBottom: 10 }}>
+        {label && <div className="dim" style={{ fontSize: 11 }}>{label}</div>}
+        <pre style={{ fontSize: 11, lineHeight: 1.5, whiteSpace: 'pre-wrap', margin: '4px 0 0', fontFamily: 'monospace' }}>
+          {JSON.stringify(value, null, 2)}
+        </pre>
+      </div>
+    )
+  }
+
+  const handleBlur = () => {
+    try {
+      const parsed = text.trim() === '' ? undefined : JSON.parse(text)
+      setError(null)
+      onChange(parsed)
+    } catch {
+      setError('JSON 형식이 올바르지 않습니다 — 고쳐야 저장됩니다')
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 10 }}>
+      {label && <label className="dim" style={{ fontSize: 11, display: 'block' }}>{label}</label>}
+      <textarea
+        rows={rows}
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        onBlur={handleBlur}
+        style={{
+          display: 'block', width: '100%', boxSizing: 'border-box', marginTop: 4,
+          fontSize: 12, lineHeight: 1.5, fontFamily: 'monospace',
+        }}
+      />
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 11, margin: '4px 0 0' }}>{error}</p>}
+    </div>
+  )
+}
+
 function ScenarioInfoSection({ draft, editMode, onChange }) {
   const [thumbBusy, setThumbBusy] = useState(false)
   const [thumbError, setThumbError] = useState(null)
@@ -129,15 +189,35 @@ function CharacterEditCard({ character, editMode, onChange }) {
     const layers = character.secretLayers.map((l, idx) => (idx === i ? { ...l, content } : l))
     onChange({ ...character, secretLayers: layers })
   }
+  const updateAdlibLine = (i, patch) => {
+    const lines = character.adlibLines.map((l, idx) => (idx === i ? { ...l, ...patch } : l))
+    onChange({ ...character, adlibLines: lines })
+  }
+  const updateThreePlayerVariant = (patch) =>
+    onChange({ ...character, threePlayerVariant: { ...(character.threePlayerVariant ?? { included: true, notes: '' }), ...patch } })
+
   return (
     <div className="card col">
       <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
         <Field grow label="이름" value={character.name} editMode={editMode} onChange={(v) => onChange({ ...character, name: v })} />
         <Field grow label="역할" value={character.role} editMode={editMode} onChange={(v) => onChange({ ...character, role: v })} />
-        {character.isCulprit && <span className="pill pill-solid" style={{ marginTop: 18 }}>진범</span>}
+      </div>
+      <Checkbox
+        label="이 인물이 진범(원인 제공자)입니다"
+        checked={character.isCulprit}
+        editMode={editMode}
+        onChange={(v) => onChange({ ...character, isCulprit: v })}
+      />
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="성격 유형" value={character.personalityType} editMode={editMode} onChange={(v) => onChange({ ...character, personalityType: v })} />
+        <Field grow label="성격 설명" value={character.personalityDescription} editMode={editMode} multiline small onChange={(v) => onChange({ ...character, personalityDescription: v })} />
       </div>
       <Field label="공개 정보" value={character.publicInfo} editMode={editMode} multiline onChange={(v) => onChange({ ...character, publicInfo: v })} />
       <Field label="상세 정보" value={character.detailInfo} editMode={editMode} multiline onChange={(v) => onChange({ ...character, detailInfo: v })} />
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="협력 유인" value={character.cooperationIncentive} editMode={editMode} multiline small onChange={(v) => onChange({ ...character, cooperationIncentive: v })} />
+        <Field grow label="경쟁/은폐 유인" value={character.competitionIncentive} editMode={editMode} multiline small onChange={(v) => onChange({ ...character, competitionIncentive: v })} />
+      </div>
       {character.secretLayers?.map((layer, i) => (
         <Field
           key={i}
@@ -168,6 +248,51 @@ function CharacterEditCard({ character, editMode, onChange }) {
           />
         </>
       )}
+      {(character.epilogueA !== undefined || character.epilogueB !== undefined) && (
+        <>
+          <Field
+            label="개인 에필로그 A — 자기보고: 밝혀졌다"
+            value={character.epilogueA}
+            editMode={editMode}
+            multiline
+            small
+            onChange={(v) => onChange({ ...character, epilogueA: v })}
+          />
+          <Field
+            label="개인 에필로그 B — 자기보고: 끝까지 숨겼다"
+            value={character.epilogueB}
+            editMode={editMode}
+            multiline
+            small
+            onChange={(v) => onChange({ ...character, epilogueB: v })}
+          />
+        </>
+      )}
+      {character.adlibIntro !== undefined && (
+        <Field label="연기 참고 — 자기소개" value={character.adlibIntro} editMode={editMode} multiline small onChange={(v) => onChange({ ...character, adlibIntro: v })} />
+      )}
+      {character.adlibLines?.map((line, i) => (
+        <div key={i} className="row" style={{ gap: 8, alignItems: 'flex-start' }}>
+          <Field grow label="상황" value={line.trigger} editMode={editMode} small onChange={(v) => updateAdlibLine(i, { trigger: v })} />
+          <Field grow label="대사" value={line.line} editMode={editMode} small onChange={(v) => updateAdlibLine(i, { line: v })} />
+        </div>
+      ))}
+      <Checkbox
+        label="3인 플레이에도 등장함"
+        checked={character.threePlayerVariant?.included !== false}
+        editMode={editMode}
+        onChange={(v) => updateThreePlayerVariant({ included: v })}
+      />
+      {editMode && character.threePlayerVariant?.included === false && (
+        <Field
+          label="3인 변형 메모"
+          value={character.threePlayerVariant?.notes}
+          editMode={editMode}
+          multiline
+          small
+          onChange={(v) => updateThreePlayerVariant({ notes: v })}
+        />
+      )}
     </div>
   )
 }
@@ -189,8 +314,31 @@ function ClueEditCard({ clue, editMode, found, onToggleFound, onChange }) {
       )}
       <Field label="내용" value={clue.content} editMode={editMode} multiline onChange={(v) => onChange({ ...clue, content: v })} />
       <Field label="함의" value={clue.implication} editMode={editMode} multiline small onChange={(v) => onChange({ ...clue, implication: v })} />
+      <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+        <Field grow label="AP 비용" value={clue.apCost} editMode={editMode} onChange={(v) => onChange({ ...clue, apCost: Number(v) || 0 })} />
+        <Field
+          grow
+          label="관련 인물 id (owner, 비워두면 공용)"
+          value={clue.owner ?? ''}
+          editMode={editMode}
+          onChange={(v) => onChange({ ...clue, owner: v === '' ? null : v })}
+        />
+      </div>
+      <div className="row" style={{ gap: 14 }}>
+        <Checkbox label="핵심 단서" checked={clue.isCriticalClue} editMode={editMode} onChange={(v) => onChange({ ...clue, isCriticalClue: v })} />
+        <Checkbox label="레드헤링(함정 단서)" checked={clue.isRedHerring} editMode={editMode} onChange={(v) => onChange({ ...clue, isRedHerring: v })} />
+      </div>
       {(clue.unlockType === 'combo' || clue.unlockType === 'conditional' || clue.unlockNote) && (
         <Field label="해금 안내" value={clue.unlockNote} editMode={editMode} multiline small onChange={(v) => onChange({ ...clue, unlockNote: v })} />
+      )}
+      {clue.unlockCondition !== undefined && (
+        <Field
+          label="해금 조건 (unlockCondition — 1인용 전용)"
+          value={clue.unlockCondition ?? ''}
+          editMode={editMode}
+          small
+          onChange={(v) => onChange({ ...clue, unlockCondition: v === '' ? null : v })}
+        />
       )}
     </div>
   )
@@ -237,6 +385,30 @@ function EndingEditCard({ ending, editMode, onChange }) {
       </div>
       <Field label="엔딩 서술" value={ending.message} editMode={editMode} multiline onChange={(v) => onChange({ ...ending, message: v })} />
       <Field label="성찰 포인트 (insight)" value={ending.insight} editMode={editMode} multiline small onChange={(v) => onChange({ ...ending, insight: v })} />
+      {ending.when !== undefined && (
+        <JsonField
+          label="발동 조건 (when — 멀티플레이, JSON)"
+          value={ending.when}
+          editMode={editMode}
+          rows={5}
+          onChange={(v) => onChange({ ...ending, when: v })}
+        />
+      )}
+      {ending.condition !== undefined && ending.when === undefined && (
+        <Field
+          label="발동 조건 (condition — 1인용, 예: accusationCorrect == true AND moralChoice == 'reveal_all')"
+          value={ending.condition}
+          editMode={editMode}
+          multiline
+          small
+          onChange={(v) => onChange({ ...ending, condition: v })}
+        />
+      )}
+      {ending.condition !== undefined && ending.when !== undefined && (
+        <p className="dim" style={{ fontSize: 11, margin: 0 }}>
+          (참고: 이 엔딩에는 사용되지 않는 예전 condition 텍스트가 남아있습니다 — 실제 판정은 위 when만 봅니다.)
+        </p>
+      )}
     </div>
   )
 }
@@ -293,6 +465,13 @@ function EditorInner({ scenarioId }) {
   const updateReflectionPrompt = (index, value) => {
     const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
     setDraft({ ...draft, reflectionPrompts })
+    setSaved(false)
+  }
+
+  // narration/finalReflectionCheck/epilogueCards/threePlayerVariant/resolutionPhase처럼
+  // 구조가 시나리오마다 크게 다른 최상위 필드는 JsonField로 통째로 편집한다.
+  const updateTopLevelField = (key, value) => {
+    setDraft({ ...draft, [key]: value })
     setSaved(false)
   }
 
@@ -372,6 +551,37 @@ function EditorInner({ scenarioId }) {
         ))}
       </div>
 
+      {draft.narration !== undefined && (
+        <>
+          <h2 className="page-title" style={{ fontSize: 18 }}>내레이션 대본</h2>
+          <div className="card col" style={{ marginBottom: 20 }}>
+            <JsonField
+              value={draft.narration}
+              editMode={editMode}
+              rows={10}
+              onChange={(v) => updateTopLevelField('narration', v)}
+            />
+          </div>
+        </>
+      )}
+
+      {draft.threePlayerVariant !== undefined && (
+        <>
+          <h2 className="page-title" style={{ fontSize: 18 }}>3인용 변형</h2>
+          <div className="card col" style={{ marginBottom: 20 }}>
+            <p className="dim" style={{ fontSize: 12, margin: 0 }}>
+              캐릭터 통합형 3인 변형(threePlayerVariant.integratedCharacter)이나 그 밖의 3인 전용 설정을 JSON으로 직접 수정합니다.
+            </p>
+            <JsonField
+              value={draft.threePlayerVariant}
+              editMode={editMode}
+              rows={10}
+              onChange={(v) => updateTopLevelField('threePlayerVariant', v)}
+            />
+          </div>
+        </>
+      )}
+
       <h2 className="page-title" style={{ fontSize: 18 }}>단서 — {draft.clues.phase1.label}</h2>
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: 10, marginBottom: 20 }}>
         {draft.clues.phase1.items.map((clue, i) => (
@@ -410,12 +620,54 @@ function EditorInner({ scenarioId }) {
         ))}
       </div>
 
+      <h2 className="page-title" style={{ fontSize: 18 }}>결론 단계</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <p className="dim" style={{ fontSize: 12, margin: 0 }}>
+          지목·도덕적 선택 등 각 스텝의 문구·선택지·분류 항목을 JSON으로 직접 수정합니다. 캐릭터를 가리키는 옵션 값은 반드시 캐릭터
+          id와 정확히 일치해야 지목/정답 판정이 제대로 됩니다.
+        </p>
+        <JsonField
+          value={draft.resolutionPhase}
+          editMode={editMode}
+          rows={14}
+          onChange={(v) => updateTopLevelField('resolutionPhase', v)}
+        />
+      </div>
+
+      {draft.finalReflectionCheck !== undefined && (
+        <>
+          <h2 className="page-title" style={{ fontSize: 18 }}>자기보고 질문 (finalReflectionCheck)</h2>
+          <div className="card col" style={{ marginBottom: 20 }}>
+            <JsonField
+              value={draft.finalReflectionCheck}
+              editMode={editMode}
+              rows={10}
+              onChange={(v) => updateTopLevelField('finalReflectionCheck', v)}
+            />
+          </div>
+        </>
+      )}
+
       <h2 className="page-title" style={{ fontSize: 18 }}>엔딩</h2>
       <div className="col" style={{ marginBottom: 20 }}>
         {draft.endings.map((ending, i) => (
           <EndingEditCard key={ending.id} ending={ending} editMode={editMode} onChange={(next) => updateEnding(i, next)} />
         ))}
       </div>
+
+      {draft.epilogueCards !== undefined && (
+        <>
+          <h2 className="page-title" style={{ fontSize: 18 }}>공감 에필로그 카드 (epilogueCards)</h2>
+          <div className="card col" style={{ marginBottom: 20 }}>
+            <JsonField
+              value={draft.epilogueCards}
+              editMode={editMode}
+              rows={8}
+              onChange={(v) => updateTopLevelField('epilogueCards', v)}
+            />
+          </div>
+        </>
+      )}
 
       <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
       <div className="card col" style={{ marginBottom: 20 }}>
