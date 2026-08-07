@@ -274,6 +274,12 @@ function EditorInner({ scenarioId }) {
     setSaved(false)
   }
 
+  const updateReflectionPrompt = (index, value) => {
+    const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
+    setDraft({ ...draft, reflectionPrompts })
+    setSaved(false)
+  }
+
   const toggleFound = (clueId) => {
     setFoundClueIds((prev) => {
       const next = new Set(prev)
@@ -392,6 +398,21 @@ function EditorInner({ scenarioId }) {
       <div className="col" style={{ marginBottom: 20 }}>
         {draft.endings.map((ending, i) => (
           <EndingEditCard key={ending.id} ending={ending} editMode={editMode} onChange={(next) => updateEnding(i, next)} />
+        ))}
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        {draft.reflectionPrompts.map((prompt, i) => (
+          <Field
+            key={i}
+            label={`질문 ${i + 1}`}
+            value={prompt}
+            editMode={editMode}
+            multiline
+            small
+            onChange={(v) => updateReflectionPrompt(i, v)}
+          />
         ))}
       </div>
 
