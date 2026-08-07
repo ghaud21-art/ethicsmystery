@@ -56,6 +56,72 @@ function MyCluesPanel({ scenario, run }) {
   )
 }
 
+// 정답이 있는 항목형 분류 스텝(예: "다음 사실들을 좋음/옳음으로 분류하세요") — 각 항목마다
+// 같은 두 범주 중 하나를 고른다. 범주 목록은 items[].correctCategory에서 자동으로 뽑는다.
+function ClassificationStep({ step, value, onChange }) {
+  const categories = [...new Set(step.items.map((it) => it.correctCategory))]
+  return (
+    <>
+      <hr className="divider" />
+      <h2 className="page-title" style={{ fontSize: 19 }}>{step.prompt}</h2>
+      <div className="col" style={{ marginBottom: 24, marginTop: 12 }}>
+        {step.items.map((item, i) => (
+          <div key={i} className="card col" style={{ marginBottom: 0 }}>
+            <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{item.statement}</p>
+            <div className="row" style={{ gap: 8 }}>
+              {categories.map((cat) => (
+                <button
+                  key={cat}
+                  onClick={() => onChange({ ...value, [i]: cat })}
+                  style={{
+                    padding: '8px 14px',
+                    background: value[i] === cat ? 'rgba(201,162,39,.14)' : 'var(--panel2)',
+                    border: value[i] === cat ? '1px solid var(--gold)' : '1px solid var(--line)',
+                    color: 'var(--ink)',
+                  }}
+                >
+                  {cat}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
+    </>
+  )
+}
+
+// 정답이 없는 단일선택 스텝(예: "가장 공감이 되는 인물은?") — 캐릭터 id 옵션을 이름으로 보여준다.
+function FreeChoiceStep({ step, characters, value, onChange }) {
+  const options = step.options.map((id) => {
+    const character = characters.find((c) => c.id === id)
+    return character ? { id, label: character.name } : { id, label: id }
+  })
+  return (
+    <>
+      <hr className="divider" />
+      <h2 className="page-title" style={{ fontSize: 19 }}>{step.prompt}</h2>
+      <div className="col" style={{ marginBottom: 24, marginTop: 12 }}>
+        {options.map((o) => (
+          <button
+            key={o.id}
+            onClick={() => onChange(o.id)}
+            style={{
+              textAlign: 'left',
+              padding: '12px 16px',
+              background: value === o.id ? 'rgba(201,162,39,.14)' : 'var(--panel2)',
+              border: value === o.id ? '1px solid var(--gold)' : '1px solid var(--line)',
+              color: 'var(--ink)',
+            }}
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
 function GameInner({ scenario, run, setRun }) {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
@@ -326,7 +392,19 @@ function GameInner({ scenario, run, setRun }) {
     return { id, label: id }
   })
 
-  const canSubmit = !!run.accusation && !!run.moralChoice
+  // accusation/moral_choice 외의 스텝은 두 가지 형태를 지원한다: items[].correctCategory가
+  // 있으면 분류형(정답 있음), options만 있으면 자유선택형(정답 없음 — 에필로그 등에 쓰임).
+  const otherSteps = scenario.resolutionPhase.steps.filter((s) => s.id !== 'accusation' && s.id !== 'moral_choice')
+  const classificationSteps = otherSteps.filter((s) => Array.isArray(s.items) && s.items.some((it) => it.correctCategory !== undefined))
+  const freeChoiceSteps = otherSteps.filter((s) => !classificationSteps.includes(s) && Array.isArray(s.options))
+
+  const classificationComplete = classificationSteps.every((s) => {
+    const answers = run.classificationAnswers?.[s.id] ?? {}
+    return s.items.every((_, i) => answers[i] !== undefined)
+  })
+  const freeChoiceComplete = freeChoiceSteps.every((s) => !!run.stepAnswers?.[s.id])
+
+  const canSubmit = !!run.accusation && (!moralStep || !!run.moralChoice) && classificationComplete && freeChoiceComplete
 
   const handleFinish = () => {
     const finalRun = { ...run, step: 'ended' }
@@ -357,12 +435,35 @@ function GameInner({ scenario, run, setRun }) {
           </button>
         ))}
       </div>
-      <hr className="divider" />
-      <MoralChoiceForm
-        prompt={moralStep?.prompt}
-        value={run.moralChoice}
-        onChange={(choice) => setRun((prev) => ({ ...prev, moralChoice: choice }))}
-      />
+      {moralStep && (
+        <>
+          <hr className="divider" />
+          <MoralChoiceForm
+            prompt={moralStep.prompt}
+            value={run.moralChoice}
+            onChange={(choice) => setRun((prev) => ({ ...prev, moralChoice: choice }))}
+          />
+        </>
+      )}
+      {classificationSteps.map((step) => (
+        <ClassificationStep
+          key={step.id}
+          step={step}
+          value={run.classificationAnswers?.[step.id] ?? {}}
+          onChange={(next) =>
+            setRun((prev) => ({ ...prev, classificationAnswers: { ...prev.classificationAnswers, [step.id]: next } }))
+          }
+        />
+      ))}
+      {freeChoiceSteps.map((step) => (
+        <FreeChoiceStep
+          key={step.id}
+          step={step}
+          characters={scenario.characters}
+          value={run.stepAnswers?.[step.id]}
+          onChange={(v) => setRun((prev) => ({ ...prev, stepAnswers: { ...prev.stepAnswers, [step.id]: v } }))}
+        />
+      ))}
       <button className="primary" onClick={handleFinish} disabled={!canSubmit} style={{ width: '100%', textAlign: 'left' }}>
         결과 확인하기
       </button>

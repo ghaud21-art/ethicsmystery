@@ -11,6 +11,8 @@ export function newSoloRun(scenario, playerName) {
     viewedClueIds: [],
     accusation: null,
     moralChoice: null,
+    classificationAnswers: {}, // { [stepId]: { [itemIndex]: category } } — 좋음/옳음 분류 등 항목형 스텝 응답
+    stepAnswers: {}, // { [stepId]: optionId } — 공감 선택 등 정답 없는 단일선택 스텝 응답
     startedAt: Date.now(),
     investigationStartedAt: null, // 브리핑을 넘기고 조사를 시작한 시각 — 제한시간 타이머 기준점
   }

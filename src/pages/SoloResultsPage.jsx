@@ -56,10 +56,18 @@ export default function SoloResultsPage() {
   if (!scenario || !run || !ending) return <div className="dim">불러오는 중...</div>
 
   const accusationStep = scenario.resolutionPhase.steps.find((s) => s.id === 'accusation')
+  const hasMoralStep = scenario.resolutionPhase.steps.some((s) => s.id === 'moral_choice')
   const accusedCharacter = scenario.characters.find((c) => c.id === run.accusation)
   const accusedLabel = accusedCharacter ? accusedCharacter.name : run.accusation === 'no_single_person' ? '특정 개인만의 문제는 아니다' : run.accusation
   const moralChoiceLabel = run.moralChoice === 'reveal_all' ? '모두 공개했다' : run.moralChoice === 'conceal_some' ? '일부는 덮었다' : '미응답'
   const culprit = scenario.characters.find((c) => c.isCulprit)
+
+  // 공감 선택형 스텝(정답 없는 자유선택)의 응답과 scenario.epilogueCards[].empathyTarget이
+  // 일치하는 카드를 찾는다 — 어떤 스텝이 "공감 선택"인지 이름으로 하드코딩하지 않고,
+  // stepAnswers에 저장된 값들 중 실제로 매치되는 카드가 있는 것을 그대로 쓴다.
+  const myEpilogue = scenario.epilogueCards?.find((card) =>
+    Object.values(run.stepAnswers ?? {}).includes(card.empathyTarget),
+  )
 
   const allClues = [...scenario.clues.phase1.items, ...scenario.clues.phase2.items]
   const criticalClues = allClues.filter((c) => c.isCriticalClue)
@@ -131,6 +139,13 @@ export default function SoloResultsPage() {
         </div>
       </div>
 
+      {myEpilogue && (
+        <div className="card" style={{ borderLeft: '2px solid var(--gold)' }}>
+          <div className="kicker" style={{ marginBottom: 6 }}>나만 보는 개인 에필로그</div>
+          <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{myEpilogue.text}</p>
+        </div>
+      )}
+
       <div className="divider-orn"><span className="divider-orn-diamond" /></div>
 
       <h2 className="page-title" style={{ fontSize: 19 }}>사건의 진상</h2>
@@ -189,7 +204,7 @@ export default function SoloResultsPage() {
         <p style={{ margin: '0 0 8px', fontSize: 13 }}>{accusationStep?.prompt}</p>
         <div className="row">
           <span className="pill pill-outline">지목: {accusedLabel}</span>
-          <span className="pill pill-outline">{moralChoiceLabel}</span>
+          {hasMoralStep && <span className="pill pill-outline">{moralChoiceLabel}</span>}
         </div>
       </div>
 
@@ -245,7 +260,7 @@ export default function SoloResultsPage() {
 
         <div className="row" style={{ marginBottom: 14 }}>
           <span className="pill pill-outline">나의 지목: {accusedLabel}</span>
-          <span className="pill pill-outline">나의 선택: {moralChoiceLabel}</span>
+          {hasMoralStep && <span className="pill pill-outline">나의 선택: {moralChoiceLabel}</span>}
         </div>
 
         <div className="col">
