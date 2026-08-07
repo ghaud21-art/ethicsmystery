@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
 import APBar from '../components/APBar.jsx'
+import PhaseTimer from '../components/PhaseTimer.jsx'
 import MoralChoiceForm from '../components/MoralChoiceForm.jsx'
 import { loadScenario } from '../engine/scenarioLoader.js'
 import { getSoloRun, saveSoloRun, newSoloRun } from '../utils/soloRun.js'
@@ -63,6 +64,9 @@ function GameInner({ scenario, run, setRun }) {
   const [cluesOpen, setCluesOpen] = useState(false)
   const [castOpen, setCastOpen] = useState(false)
   const [hintOpen, setHintOpen] = useState(false)
+  const [timeUpNoticeOpen, setTimeUpNoticeOpen] = useState(false)
+
+  const handleTimeExpire = () => setTimeUpNoticeOpen(true)
 
   const handleView = (clueId) => {
     setError(null)
@@ -74,6 +78,7 @@ function GameInner({ scenario, run, setRun }) {
   }
 
   const goToStep = (step) => setRun((prev) => ({ ...prev, step }))
+  const startInvestigation = () => setRun((prev) => ({ ...prev, step: 'phase1', investigationStartedAt: Date.now() }))
 
   const accusationStep = scenario.resolutionPhase.steps.find((s) => s.id === 'accusation')
   const moralStep = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')
@@ -156,6 +161,17 @@ function GameInner({ scenario, run, setRun }) {
           </div>
         </div>
       )}
+      {timeUpNoticeOpen && (
+        <div className="modal-overlay" onClick={() => setTimeUpNoticeOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">시간이 다 됐어요!</div>
+            <p style={{ margin: 0, fontSize: 14 }}>지금까지 조사한 내용을 바탕으로 결론을 내려볼 시간이에요.</p>
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button className="primary" onClick={() => setTimeUpNoticeOpen(false)}>확인</button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   )
 
@@ -179,7 +195,7 @@ function GameInner({ scenario, run, setRun }) {
         <p className="dim" style={{ fontSize: 13 }}>
           총 행동력(AP) {totalAp}를 갖고 시작합니다. 무엇을 조사하고 무엇을 넘길지는 당신의 선택입니다.
         </p>
-        <button className="primary" onClick={() => goToStep('phase1')} style={{ width: '100%', textAlign: 'left' }}>
+        <button className="primary" onClick={startInvestigation} style={{ width: '100%', textAlign: 'left' }}>
           조사 시작하기 →
         </button>
       </div>
@@ -194,7 +210,14 @@ function GameInner({ scenario, run, setRun }) {
         <StepProgress activeIndex={2} />
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <h1 className="page-title" style={{ margin: 0, fontSize: 20 }}>{phase1.label}</h1>
-          <APBar current={run.apRemaining} max={totalAp} />
+          <div className="row" style={{ gap: 8 }}>
+            <PhaseTimer
+              startedAt={run.investigationStartedAt}
+              durationMinutes={scenario.meta.soloTimeLimitMinutes}
+              onExpire={handleTimeExpire}
+            />
+            <APBar current={run.apRemaining} max={totalAp} />
+          </div>
         </div>
         {iconNav}
         <div className="page-title-rule" />
@@ -226,7 +249,14 @@ function GameInner({ scenario, run, setRun }) {
         <StepProgress activeIndex={2} />
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
           <h1 className="page-title" style={{ margin: 0, fontSize: 20 }}>{scenario.clues.phase2.label}</h1>
-          <APBar current={run.apRemaining} max={totalAp} />
+          <div className="row" style={{ gap: 8 }}>
+            <PhaseTimer
+              startedAt={run.investigationStartedAt}
+              durationMinutes={scenario.meta.soloTimeLimitMinutes}
+              onExpire={handleTimeExpire}
+            />
+            <APBar current={run.apRemaining} max={totalAp} />
+          </div>
         </div>
         {iconNav}
         <div className="page-title-rule" />

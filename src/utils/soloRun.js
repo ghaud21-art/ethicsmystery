@@ -12,6 +12,7 @@ export function newSoloRun(scenario, playerName) {
     accusation: null,
     moralChoice: null,
     startedAt: Date.now(),
+    investigationStartedAt: null, // 브리핑을 넘기고 조사를 시작한 시각 — 제한시간 타이머 기준점
   }
 }
 

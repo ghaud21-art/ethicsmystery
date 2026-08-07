@@ -89,6 +89,22 @@ function ScenarioInfoSection({ draft, editMode, onChange }) {
           editMode={editMode}
           onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })}
         />
+        {!!draft.playerCharacter && (
+          <Field
+            grow
+            label="조사 제한시간(분) — 비워두면 타이머 없음"
+            value={draft.meta?.soloTimeLimitMinutes}
+            editMode={editMode}
+            onChange={(v) => {
+              // Firestore setDoc은 undefined 필드값을 허용하지 않으므로, 비웠을 때는
+              // 값을 undefined로 설정하는 대신 키 자체를 meta에서 제거한다.
+              const meta = { ...draft.meta }
+              if (v === '') delete meta.soloTimeLimitMinutes
+              else meta.soloTimeLimitMinutes = Number(v) || 0
+              onChange({ ...draft, meta })
+            }}
+          />
+        )}
       </div>
       <Field label="학습 목표" value={draft.meta?.learningObjective} editMode={editMode} multiline onChange={(v) => updateMeta({ learningObjective: v })} />
       <Field
