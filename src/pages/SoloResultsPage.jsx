@@ -92,7 +92,7 @@ export default function SoloResultsPage() {
         characterId: scenario.playerCharacter.id,
         reflectionPrompts: scenario.reflectionPrompts,
         answers,
-        resultSummary: { endingId: ending.id, endingTitle: ending.title, accusedLabel, moralChoiceLabel },
+        resultSummary: { endingId: ending.id, endingTitle: ending.title, accusedLabel, moralChoiceLabel: hasMoralStep ? moralChoiceLabel : null },
       })
       const myNickname = run.playerName?.trim() || '학생'
       const { feedback } = await getAiFeedback({
