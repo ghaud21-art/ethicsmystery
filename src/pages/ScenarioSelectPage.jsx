@@ -104,6 +104,15 @@ export default function ScenarioSelectPage() {
         <Link to="/my-results" className="dim" style={{ fontSize: 12, textDecoration: 'none' }}>
           예전에 플레이한 결과가 궁금하신가요? →
         </Link>
+        <a
+          href="https://blog.naver.com/zsq123/224369789157"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="dim"
+          style={{ fontSize: 12, textDecoration: 'none' }}
+        >
+          문의하기 →
+        </a>
         <Link to="/admin" className="dim" style={{ fontSize: 12, textDecoration: 'none' }}>
           관리자이신가요? →
         </Link>
