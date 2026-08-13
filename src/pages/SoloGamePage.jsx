@@ -19,10 +19,7 @@ function ClueRow({ clue, viewed, unlocked, apRemaining, onView }) {
       </div>
       {clue.location && <span className="dim" style={{ fontSize: 11 }}>{clue.location}</span>}
       {viewed ? (
-        <>
-          <p className="dim" style={{ margin: 0, fontSize: 13, lineHeight: 1.55 }}>{clue.content}</p>
-          <p className="dim" style={{ margin: 0, fontSize: 12 }}>{clue.implication}</p>
-        </>
+        <p className="dim" style={{ margin: 0, fontSize: 13, lineHeight: 1.55 }}>{clue.content}</p>
       ) : !unlocked ? (
         <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.6 }}>🔒 {clue.unlockNote ?? '아직 조건이 충족되지 않았습니다.'}</p>
       ) : (
@@ -68,6 +65,7 @@ function ClassificationStep({ step, value, onChange }) {
         {step.items.map((item, i) => (
           <div key={i} className="card col" style={{ marginBottom: 0 }}>
             <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{item.statement}</p>
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>이 사실은 어떤 영역의 문제인가요?</p>
             <div className="row" style={{ gap: 8 }}>
               {categories.map((cat) => (
                 <button
@@ -80,7 +78,7 @@ function ClassificationStep({ step, value, onChange }) {
                     color: 'var(--ink)',
                   }}
                 >
-                  {cat}
+                  {cat}의 영역
                 </button>
               ))}
             </div>

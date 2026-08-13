@@ -5,13 +5,14 @@ import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { newSoloRun, saveSoloRun } from '../utils/soloRun.js'
+import { getStudentIdentity } from '../utils/studentIdentity.js'
 
 const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
 
 function DetailInner({ scenario }) {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
-  const { tier, verifySchoolCode } = useAuth()
+  const { verifySchoolCode } = useAuth()
   const { createRoom, joinRoom } = useRoom()
   const isSolo = !!scenario.playerCharacter
 
@@ -20,10 +21,14 @@ function DetailInner({ scenario }) {
   const [joinCode, setJoinCode] = useState('')
   const [schoolAuthOpen, setSchoolAuthOpen] = useState(false)
   const [schoolCode, setSchoolCode] = useState('')
-  const [studentName, setStudentName] = useState('')
-  const [studentId, setStudentId] = useState('')
+  const [studentName, setStudentName] = useState(() => getStudentIdentity()?.name ?? '')
+  const [studentId, setStudentId] = useState(() => getStudentIdentity()?.studentId ?? '')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
+  // 학교 인증 custom claim(tier)은 기기/브라우저에 계속 남아있을 수 있지만, 학교
+  // 공용기기·게스트 브라우징 등에서는 언제든 초기화될 수 있다 — 매 접속마다 다시
+  // 인증하게 해서, 결과 제출 시점에야 "인증 만료"를 알게 되는 상황을 막는다.
+  const [verifiedThisSession, setVerifiedThisSession] = useState(false)
 
   const handleVerifySchoolCode = async () => {
     if (!studentName.trim() || !studentId.trim()) return setError('이름과 학번을 입력해주세요')
@@ -32,6 +37,7 @@ function DetailInner({ scenario }) {
     try {
       await verifySchoolCode(schoolCode, studentName, studentId)
       setSchoolAuthOpen(false)
+      setVerifiedThisSession(true)
     } catch (e) {
       setError(e.message)
     } finally {
@@ -224,7 +230,7 @@ function DetailInner({ scenario }) {
             </>
           )}
 
-          {tier === 'homeSchoolStudent' ? (
+          {verifiedThisSession ? (
             <p className="dim" style={{ fontSize: 12 }}>✅ 우리 학교 학생 인증 완료 — 성찰 기록 저장, AI 피드백 사용 가능</p>
           ) : schoolAuthOpen ? (
             <div className="card col">

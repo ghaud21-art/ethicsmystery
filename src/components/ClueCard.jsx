@@ -23,7 +23,6 @@ export default function ClueCard({ clue, clueState, visible, canClaim, comboRead
       ) : visible ? (
         <>
           <p className="dim" style={{ margin: 0, fontSize: 13, lineHeight: 1.5 }}>{clue.content}</p>
-          <p className="dim" style={{ margin: 0, fontSize: 12 }}>{clue.implication}</p>
           {autoRevealed && (
             <span className="pill pill-outline" style={{ alignSelf: 'flex-start' }}>이번 판에 등장하지 않는 인물 · 자동 공개</span>
           )}
