@@ -18,7 +18,7 @@ import { getPlayableCharacters } from '../engine/characterAssignment.js'
 function BriefingScreen({ character, secretLayers, onContinue }) {
   return (
     <div className="page">
-      <Masthead />
+      <Masthead showBack />
       <StepProgress activeIndex={2} />
 
       <div className="kicker">

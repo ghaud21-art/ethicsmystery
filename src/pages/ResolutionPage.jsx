@@ -1,13 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import StepProgress from '../components/StepProgress.jsx'
 import AccusationForm from '../components/AccusationForm.jsx'
 import MoralChoiceForm from '../components/MoralChoiceForm.jsx'
+import RoleInfoTabs from '../components/RoleInfoTabs.jsx'
+import MyCluesPanel from '../components/MyCluesPanel.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
+import { getPlayableCharacters } from '../engine/characterAssignment.js'
+import { getVisibleSecretLayers } from '../engine/visibility.js'
 
 function SelfReportStep({ question, value, onChange }) {
   return (
@@ -43,6 +47,9 @@ function ResolutionInner({ scenario }) {
   const navigate = useNavigate()
   const { uid } = useAuth()
   const { room, loading, submitAccusation, submitMoralChoice, submitSelfReport, finishGame } = useRoom()
+  const [roleOpen, setRoleOpen] = useState(false)
+  const [cluesOpen, setCluesOpen] = useState(false)
+  const [castOpen, setCastOpen] = useState(false)
 
   useEffect(() => {
     if (room?.meta?.phase === 'ended') {
@@ -55,6 +62,9 @@ function ResolutionInner({ scenario }) {
 
   const isHost = room.meta.hostUid === uid
   const myCharacterId = room.players?.[uid]?.characterId
+  const playableCharacters = getPlayableCharacters(scenario, room.meta.playerCount)
+  const myCharacter = playableCharacters.find((c) => c.id === myCharacterId)
+  const mySecretLayers = getVisibleSecretLayers(scenario, myCharacterId, room.meta.playerCount)
   const accusationOptions = resolveAccusationOptions(scenario, room.meta.playerCount)
 
   const accusations = room.resolution?.accusations ?? {}
@@ -77,6 +87,32 @@ function ResolutionInner({ scenario }) {
     <div className="page">
       <Masthead />
       <StepProgress activeIndex={3} />
+
+      <div className="icon-nav">
+        <button className="icon-nav-button" onClick={() => setRoleOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 21v-1a7 7 0 0 1 14 0v1" />
+          </svg>
+          내 역할
+        </button>
+        <button className="icon-nav-button" onClick={() => setCluesOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <path d="M21 21l-4.3-4.3" />
+          </svg>
+          내 단서
+        </button>
+        <button className="icon-nav-button" onClick={() => setCastOpen(true)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="9" cy="7" r="4" />
+            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+          </svg>
+          등장인물
+        </button>
+      </div>
 
       <h1 className="page-title">{accusationStep?.prompt ?? '범인 지목'}</h1>
       <div className="page-title-rule" />
@@ -107,6 +143,61 @@ function ResolutionInner({ scenario }) {
         >
           결과 확인하기
         </button>
+      )}
+
+      {roleOpen && (
+        <div className="modal-overlay" onClick={() => setRoleOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">내 역할</div>
+            <RoleInfoTabs character={myCharacter} secretLayers={mySecretLayers} />
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setRoleOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {cluesOpen && (
+        <div className="modal-overlay" onClick={() => setCluesOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">내 단서</div>
+            <MyCluesPanel scenario={scenario} room={room} uid={uid} myCharacterId={myCharacterId} />
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setCluesOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {castOpen && (
+        <div className="modal-overlay" onClick={() => setCastOpen(false)}>
+          <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-title">등장인물</div>
+            <div className="col">
+              {playableCharacters
+                .filter((c) => c.id !== myCharacterId)
+                .map((c) => {
+                  const playerEntry = Object.values(room.players ?? {}).find((p) => p.characterId === c.id)
+                  return (
+                    <div key={c.id} className="card row" style={{ marginBottom: 0, alignItems: 'flex-start' }}>
+                      <div className="avatar-circle">{c.name[0]}</div>
+                      <div>
+                        <div className="row" style={{ gap: 6 }}>
+                          <div style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>{c.name}</div>
+                          {playerEntry && <span className="pill pill-outline">{playerEntry.name}</span>}
+                        </div>
+                        <div className="dim" style={{ fontSize: 12, marginBottom: 4 }}>{c.role}</div>
+                        <div className="dim" style={{ fontSize: 12, lineHeight: 1.5 }}>{c.publicInfo}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+            </div>
+            <div className="row" style={{ justifyContent: 'flex-end' }}>
+              <button onClick={() => setCastOpen(false)}>닫기</button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   )

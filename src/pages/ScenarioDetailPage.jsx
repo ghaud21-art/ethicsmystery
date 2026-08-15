@@ -4,10 +4,13 @@ import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
-import { newSoloRun, saveSoloRun } from '../utils/soloRun.js'
+import { getSoloRun, newSoloRun, saveSoloRun } from '../utils/soloRun.js'
 import { getStudentIdentity } from '../utils/studentIdentity.js'
+import { getActiveRoom } from '../utils/activeRoom.js'
 
 const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
+
+const STEP_LABELS = { briefing: '역할 확인', phase1: '현장 조사', phase2: '심층 대질', resolution: '결론' }
 
 function DetailInner({ scenario }) {
   const { scenarioId } = useParams()
@@ -59,11 +62,27 @@ function DetailInner({ scenario }) {
     }
   }
 
+  // 폰 뒤로가기 등으로 플레이 중 이 화면에 다시 돌아왔을 때, "시작하기"를 다시 눌러
+  // 진행 중이던 기록을 실수로 덮어쓰지 않도록 — 미완료 기록이 있으면 이어하기를 기본으로 제안한다.
+  const existingRun = isSolo ? getSoloRun(scenarioId) : null
+  const hasUnfinishedRun = !!existingRun && existingRun.step !== 'ended'
+
   const handleStartSolo = () => {
+    if (hasUnfinishedRun && !window.confirm('진행 중이던 기록이 있어요. 정말 처음부터 다시 시작할까요? 지금까지의 기록은 사라집니다.')) {
+      return
+    }
     const run = newSoloRun(scenario, displayName || '나')
     saveSoloRun(scenarioId, run)
     navigate(`/scenario/${scenarioId}/solo/play`)
   }
+
+  const handleResumeSolo = () => navigate(`/scenario/${scenarioId}/solo/play`)
+
+  // 멀티플레이도 마찬가지 이유로 — 참가했던 방 코드를 기억해뒀다가 되돌아올 수 있게 한다.
+  // /wait로 들여보내면, 이미 진행된 단계라면 그 페이지들이 알아서 다음 단계로 넘겨준다.
+  const activeRoom = !isSolo ? getActiveRoom() : null
+  const hasActiveRoom = activeRoom?.scenarioId === scenarioId
+  const handleReturnToRoom = () => navigate(`/scenario/${scenarioId}/room/${activeRoom.roomCode}/wait`)
 
   const handleJoin = async () => {
     if (!displayName) return setError('닉네임을 입력해주세요')
@@ -184,14 +203,40 @@ function DetailInner({ scenario }) {
         <>
           {isSolo ? (
             <div className="card col">
-              <label className="dim" style={{ fontSize: 12 }}>닉네임 (선택)</label>
-              <input placeholder="결과 기록에 표시할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
-              <button className="primary" onClick={handleStartSolo} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
-                혼자 조사 시작하기 →
-              </button>
+              {hasUnfinishedRun ? (
+                <>
+                  <p className="dim" style={{ fontSize: 12, margin: 0 }}>
+                    조사하던 기록이 남아있어요 (진행 단계: {STEP_LABELS[existingRun.step] ?? existingRun.step}).
+                  </p>
+                  <button className="primary" onClick={handleResumeSolo} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                    이어서 조사하기 →
+                  </button>
+                  <button onClick={handleStartSolo} style={{ alignSelf: 'flex-start', fontSize: 12, marginTop: 2 }}>
+                    처음부터 다시 시작
+                  </button>
+                </>
+              ) : (
+                <>
+                  <label className="dim" style={{ fontSize: 12 }}>닉네임 (선택)</label>
+                  <input placeholder="결과 기록에 표시할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />
+                  <button className="primary" onClick={handleStartSolo} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                    혼자 조사 시작하기 →
+                  </button>
+                </>
+              )}
             </div>
           ) : (
             <>
+              {hasActiveRoom && (
+                <div className="card col">
+                  <p className="dim" style={{ fontSize: 12, margin: 0 }}>
+                    참가 중이던 방(코드: {activeRoom.roomCode})이 있어요.
+                  </p>
+                  <button className="primary" onClick={handleReturnToRoom} style={{ alignSelf: 'flex-start', marginTop: 4 }}>
+                    그 방으로 돌아가기 →
+                  </button>
+                </div>
+              )}
               <div className="card col">
                 <label className="dim" style={{ fontSize: 12 }}>닉네임</label>
                 <input placeholder="이 방에서 사용할 이름" value={displayName} onChange={(e) => setDisplayName(e.target.value)} />

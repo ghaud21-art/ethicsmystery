@@ -414,6 +414,7 @@ function GameInner({ scenario, run, setRun }) {
     <div className="page">
       <Masthead />
       <StepProgress activeIndex={3} />
+      {iconNav}
       <h1 className="page-title">{accusationStep?.prompt ?? '결론'}</h1>
       <div className="page-title-rule" />
       <div className="col" style={{ marginBottom: 24 }}>
@@ -465,6 +466,7 @@ function GameInner({ scenario, run, setRun }) {
       <button className="primary" onClick={handleFinish} disabled={!canSubmit} style={{ width: '100%', textAlign: 'left' }}>
         결과 확인하기
       </button>
+      {modals}
     </div>
   )
 }
