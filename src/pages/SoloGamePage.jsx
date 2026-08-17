@@ -99,6 +99,7 @@ function FreeChoiceStep({ step, characters, value, onChange }) {
     <>
       <hr className="divider" />
       <h2 className="page-title" style={{ fontSize: 19 }}>{step.prompt}</h2>
+      {step.note && <p className="dim" style={{ fontSize: 12, margin: '4px 0 0' }}>{step.note}</p>}
       <div className="col" style={{ marginBottom: 24, marginTop: 12 }}>
         {options.map((o) => (
           <button
