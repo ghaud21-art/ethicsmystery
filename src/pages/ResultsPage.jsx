@@ -14,6 +14,7 @@ import { getPlayableCharacters, getEffectiveCharacterId } from '../engine/charac
 import { saveLocalResult } from '../utils/localStorageStore.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
+import { exportElementAsImage } from '../utils/html2canvasExport.js'
 
 function ResultsInner({ scenario }) {
   const { roomCode } = useParams()
@@ -32,6 +33,7 @@ function ResultsInner({ scenario }) {
   const [aiBusy, setAiBusy] = useState(false)
   const [aiError, setAiError] = useState(null)
   const [saved, setSaved] = useState(false)
+  const [autoExportPending, setAutoExportPending] = useState(false)
 
   // 통합 캐릭터 3인 시나리오에서는 진범이 통합 캐릭터 쪽에 표시돼야 하므로
   // playerCount 기준의 플레이 가능 목록에서 찾는다(4인은 원본 캐릭터와 동일).
@@ -86,6 +88,16 @@ function ResultsInner({ scenario }) {
     setSaved(true)
   }, [room, ending, saved, scenario, roomCode, myCharacterId])
 
+  // 제출 버튼과 이미지 저장 버튼이 따로 있어 학생들이 헷갈려해서, 제출이 끝나는 즉시
+  // (AI 피드백까지 반영된 다음) 자동으로 결과 이미지를 저장한다. aiFeedback 렌더링이
+  // 커밋된 뒤에 캡처해야 하므로 상태 변경 직후가 아니라 effect에서 처리한다.
+  useEffect(() => {
+    if (autoExportPending && exportRef.current) {
+      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.png`)
+      setAutoExportPending(false)
+    }
+  }, [autoExportPending, scenario.scenarioId])
+
   if (loading) return <div className="dim">불러오는 중...</div>
   if (!room || !ending) return <div className="card">결과를 불러올 수 없습니다.</div>
 
@@ -94,8 +106,9 @@ function ResultsInner({ scenario }) {
     if (!studentIdentity) return setAiError('학교 인증 정보가 만료됐어요 — 새로고침 후 학교 코드를 다시 인증해주세요')
     setAiBusy(true)
     setAiError(null)
+    let reflectionLogId
     try {
-      const reflectionLogId = await saveReflectionLog({
+      reflectionLogId = await saveReflectionLog({
         uid,
         studentName: studentIdentity.name,
         studentId: studentIdentity.studentId,
@@ -111,6 +124,12 @@ function ResultsInner({ scenario }) {
           moralChoiceLabel: myMoralChoiceLabel,
         },
       })
+    } catch (e) {
+      setAiError(e.message)
+      setAiBusy(false)
+      return
+    }
+    try {
       const myNickname = room.players?.[uid]?.name ?? '학생'
       const { feedback } = await getAiFeedback({
         reflectionLogId,
@@ -122,9 +141,11 @@ function ResultsInner({ scenario }) {
       })
       setAiFeedback(feedback)
     } catch (e) {
+      // 제출(성찰 기록 저장) 자체는 이미 성공했으므로 AI 피드백 실패는 이미지 저장을 막지 않는다.
       setAiError(e.message)
     } finally {
       setAiBusy(false)
+      setAutoExportPending(true)
     }
   }
 
@@ -290,7 +311,7 @@ function ResultsInner({ scenario }) {
 
       {tier === 'homeSchoolStudent' ? (
         <button className="primary" onClick={handleReflectionSubmit} disabled={aiBusy} style={{ width: '100%', textAlign: 'left', marginBottom: 18 }}>
-          {aiBusy ? 'AI 피드백 생성 중...' : '성찰 기록 제출하기'}
+          {aiBusy ? 'AI 피드백 생성 중...' : '성찰 기록 제출하기 (결과 이미지도 자동 저장돼요)'}
         </button>
       ) : (
         <p className="dim" style={{ fontSize: 12, marginBottom: 18 }}>게스트 모드에서는 이 기기에만 결과가 저장되며 AI 피드백은 제공되지 않습니다.</p>
@@ -330,7 +351,11 @@ function ResultsInner({ scenario }) {
       </div>
 
       <div style={{ marginTop: 12, marginBottom: 18 }}>
-        <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-my-record.png`} />
+        <ResultExportButton
+          targetRef={exportRef}
+          filename={`${scenario.scenarioId}-my-record.png`}
+          label={tier === 'homeSchoolStudent' ? '이미지 다시 저장하기' : '결과 이미지로 저장'}
+        />
       </div>
 
       <hr className="divider" />

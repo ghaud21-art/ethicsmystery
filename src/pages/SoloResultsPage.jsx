@@ -10,6 +10,7 @@ import { getSoloRun, clearSoloRun } from '../utils/soloRun.js'
 import { computeSoloMetrics, evaluateSoloEnding } from '../engine/soloEndingEvaluator.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
+import { exportElementAsImage } from '../utils/html2canvasExport.js'
 
 export default function SoloResultsPage() {
   const { scenarioId } = useParams()
@@ -25,6 +26,7 @@ export default function SoloResultsPage() {
   const [aiFeedback, setAiFeedback] = useState(null)
   const [aiBusy, setAiBusy] = useState(false)
   const [aiError, setAiError] = useState(null)
+  const [autoExportPending, setAutoExportPending] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -51,6 +53,15 @@ export default function SoloResultsPage() {
     const endingId = evaluateSoloEnding(scenario, metrics)
     return scenario.endings.find((e) => e.id === endingId)
   }, [scenario, run])
+
+  // 제출 버튼과 이미지 저장 버튼이 따로 있어 학생들이 헷갈려해서, 제출이 끝나는 즉시
+  // (AI 피드백까지 반영된 다음) 자동으로 결과 이미지를 저장한다.
+  useEffect(() => {
+    if (autoExportPending && exportRef.current && scenario) {
+      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.png`)
+      setAutoExportPending(false)
+    }
+  }, [autoExportPending, scenario])
 
   if (error) return <div className="card">{error.message}</div>
   if (!scenario || !run || !ending) return <div className="dim">불러오는 중...</div>
@@ -82,8 +93,9 @@ export default function SoloResultsPage() {
     if (!studentIdentity) return setAiError('학교 인증 정보가 만료됐어요 — 새로고침 후 학교 코드를 다시 인증해주세요')
     setAiBusy(true)
     setAiError(null)
+    let reflectionLogId
     try {
-      const reflectionLogId = await saveReflectionLog({
+      reflectionLogId = await saveReflectionLog({
         uid,
         studentName: studentIdentity.name,
         studentId: studentIdentity.studentId,
@@ -94,6 +106,12 @@ export default function SoloResultsPage() {
         answers,
         resultSummary: { endingId: ending.id, endingTitle: ending.title, accusedLabel, moralChoiceLabel: hasMoralStep ? moralChoiceLabel : null },
       })
+    } catch (e) {
+      setAiError(e.message)
+      setAiBusy(false)
+      return
+    }
+    try {
       const myNickname = run.playerName?.trim() || '학생'
       const { feedback } = await getAiFeedback({
         reflectionLogId,
@@ -105,9 +123,11 @@ export default function SoloResultsPage() {
       })
       setAiFeedback(feedback)
     } catch (e) {
+      // 제출(성찰 기록 저장) 자체는 이미 성공했으므로 AI 피드백 실패는 이미지 저장을 막지 않는다.
       setAiError(e.message)
     } finally {
       setAiBusy(false)
+      setAutoExportPending(true)
     }
   }
 
