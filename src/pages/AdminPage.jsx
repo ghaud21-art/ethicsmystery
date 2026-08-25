@@ -21,6 +21,7 @@ function StudentLogsSection({ scenarios }) {
   const [openId, setOpenId] = useState(null)
   const [busyId, setBusyId] = useState(null)
   const [error, setError] = useState(null)
+  const [query, setQuery] = useState('')
 
   const titleMap = Object.fromEntries((scenarios ?? []).map((s) => [s.scenarioId, s.meta?.title ?? s.scenarioId]))
 
@@ -44,16 +45,43 @@ function StudentLogsSection({ scenarios }) {
     }
   }
 
+  // 이름/학번/시나리오 제목으로 클라이언트 사이드 검색 — 기록이 이미 전부
+  // 메모리에 로드돼 있어(listAllReflectionLogs가 한 번에 다 가져옴) 별도 API
+  // 호출 없이 바로 필터링한다.
+  const normalizedQuery = query.trim().toLowerCase()
+  const filteredLogs = !logs
+    ? logs
+    : !normalizedQuery
+      ? logs
+      : logs.filter((log) => {
+          const title = titleMap[log.scenarioId] ?? log.scenarioId
+          return [log.studentId, log.studentName, title].some((v) => v?.toLowerCase().includes(normalizedQuery))
+        })
+
   return (
     <div className="col">
       <h2 className="page-title" style={{ fontSize: 19 }}>학생 기록 (학번순)</h2>
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+      {logs && logs.length > 0 && (
+        <input
+          placeholder="이름, 학번, 시나리오 제목으로 검색"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          style={{ marginBottom: 4 }}
+        />
+      )}
       {!logs ? (
         error ? null : <div className="dim">불러오는 중...</div>
       ) : logs.length === 0 ? (
         <p className="dim">아직 저장된 학생 기록이 없어요.</p>
+      ) : filteredLogs.length === 0 ? (
+        <p className="dim">검색 결과가 없어요.</p>
       ) : (
-        logs.map((log) => (
+        <div className="col" style={{ maxHeight: 600, overflowY: 'auto', paddingRight: 4 }}>
+          <p className="dim" style={{ fontSize: 11, margin: '0 0 4px' }}>
+            {filteredLogs.length}건{normalizedQuery ? ` (전체 ${logs.length}건 중 검색됨)` : ''}
+          </p>
+          {filteredLogs.map((log) => (
           <div key={log.id} className="card col">
             <div className="row" style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpenId(openId === log.id ? null : log.id)}>
               <div>
@@ -93,7 +121,8 @@ function StudentLogsSection({ scenarios }) {
               </div>
             )}
           </div>
-        ))
+          ))}
+        </div>
       )}
     </div>
   )
