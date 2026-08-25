@@ -3,6 +3,18 @@ import { db } from '../firebase/firebaseConfig'
 import { isClueVisibleTo, isClueAutoRevealed } from './visibility'
 import { getEffectiveCharacterId } from './characterAssignment'
 
+// scenario.clues.sharedApPool===true인 시나리오는 phase1/phase2가 AP를 따로 받지
+// 않고, 게임 시작 시 한 번 받은 공동 예산을 두 단계에 걸쳐 자유롭게 나눠 쓴다
+// (예: phase1에서 아껴서 phase2에 더 쓰는 전략적 배분). RTDB 경로는
+// players/{uid}/ap/shared 하나만 쓰고, phase1/phase2 각각의 ap 경로는 쓰지 않는다.
+export function isSharedApPool(scenario) {
+  return scenario.clues.sharedApPool === true
+}
+
+export function getApFieldName(scenario, phase) {
+  return isSharedApPool(scenario) ? 'shared' : phase
+}
+
 export function getPhaseApBudget(scenario, phase, playerCount) {
   const phaseDef = scenario.clues[phase]
   const bonus = playerCount === 3 ? phaseDef.apBonusFor3Players : 0
@@ -48,28 +60,49 @@ export async function claimClue(roomCode, uid, scenario, clueId, phase, playerCo
     }
   }
 
-  // owner는 "이 단서가 누구에 관한 것인가"를 뜻한다 — 그 인물 역의 플레이어 본인은
-  // 자기 자신을 조사할 수 없고, 다른 플레이어들만 캐물어 알아낼 수 있다. 통합
-  // 캐릭터로 흡수된 인물의 단서라면 통합 캐릭터 본인을 연기하는 플레이어가 곧
-  // "본인"이므로 effective id로 비교한다.
+  // owner는 "이 단서가 누구에 관한 것인가"를 뜻한다. 기본 규칙은 그 인물 역의
+  // 플레이어 본인은 자기 자신을 조사할 수 없고 다른 플레이어들만 캐물어 알아낼
+  // 수 있다는 것이지만, 두 가지 예외가 있다:
+  //  - phaseDef.ownerCanSelfReveal===true — 소유자 본인이 "자백"하듯 무료로,
+  //    즉시 방 전체에 공개하며 스스로 공개할 수 있다(단서.owner!==나 인 사람은
+  //    기존처럼 AP를 내고 강제 열람).
+  //  - clue.revealPolicy==='ownerOnly' — 소유자만 공개할 수 있고, 남은 AP를
+  //    내더라도 강제로 열람할 수 없다(자백 전용 단서).
+  let isFreeSelfReveal = false
   if (clue.owner) {
     const myCharacterIdSnap = await get(ref(db, `rooms/${roomCode}/players/${uid}/characterId`))
     const effectiveOwner = getEffectiveCharacterId(scenario, clue.owner, playerCount)
-    if (myCharacterIdSnap.val() === effectiveOwner) {
-      throw new Error('자기 자신에 대한 단서는 스스로 조사할 수 없습니다 — 다른 플레이어가 캐물어야 합니다')
+    const iAmOwner = myCharacterIdSnap.val() === effectiveOwner
+    const phaseDef = scenario.clues[phase]
+    const selfRevealAllowed = clue.revealPolicy === 'ownerOnly' || phaseDef?.ownerCanSelfReveal === true
+
+    if (iAmOwner) {
+      if (!selfRevealAllowed) {
+        throw new Error('자기 자신에 대한 단서는 스스로 조사할 수 없습니다 — 다른 플레이어가 캐물어야 합니다')
+      }
+      isFreeSelfReveal = true
+    } else if (clue.revealPolicy === 'ownerOnly') {
+      throw new Error('이 단서는 소유자 본인만 공개할 수 있습니다 — 다른 사람이 강제로 열람할 수 없습니다')
     }
   }
 
   const clueRef = ref(db, `rooms/${roomCode}/clues/${clueId}`)
   const claimResult = await runTransaction(clueRef, (current) => {
     if (current && current.claimedBy && current.claimedBy !== uid) return current // 이미 다른 사람이 선점
-    return { ...current, claimedBy: uid, claimedAt: Date.now() }
+    return {
+      ...current,
+      claimedBy: uid,
+      claimedAt: Date.now(),
+      ...(isFreeSelfReveal ? { publishedToRoom: true } : {}),
+    }
   })
   if (!claimResult.committed || claimResult.snapshot.val()?.claimedBy !== uid) {
     throw new Error('이미 다른 플레이어가 조사한 단서입니다')
   }
 
-  const apRef = ref(db, `rooms/${roomCode}/players/${uid}/ap/${phase}`)
+  if (isFreeSelfReveal) return clue // 자발적 공개는 무료 — AP 차감 없음
+
+  const apRef = ref(db, `rooms/${roomCode}/players/${uid}/ap/${getApFieldName(scenario, phase)}`)
   const apResult = await runTransaction(apRef, (current) => {
     const remaining = current ?? 0
     if (remaining < clue.apCost) return undefined // abort

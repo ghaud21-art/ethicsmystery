@@ -44,7 +44,14 @@ function ResultsInner({ scenario }) {
 
   const ending = useMemo(() => {
     if (!room) return null
-    const metrics = computeResolutionMetrics({ accusations, moralChoices, roomClues: room.clues ?? {}, scenario })
+    const metrics = computeResolutionMetrics({
+      accusations,
+      moralChoices,
+      roomClues: room.clues ?? {},
+      scenario,
+      players: room.players,
+      playerCount: room?.meta?.playerCount,
+    })
     const endingId = evaluateEndings(scenario, metrics, room?.meta?.playerCount)
     return scenario.endings.find((e) => e.id === endingId)
   }, [room, scenario, accusations, moralChoices])
@@ -54,19 +61,32 @@ function ResultsInner({ scenario }) {
   const myAccusedId = accusations[uid]
   const accusationOptions = resolveAccusationOptions(scenario, room?.meta?.playerCount)
   const myAccusedLabel = myAccusedId ? accusationOptions.find((o) => o.id === myAccusedId)?.label ?? myAccusedId : '미응답'
-  const myMoralChoiceLabel =
-    moralChoices[uid] === 'reveal_all' ? '모두 공개했다' : moralChoices[uid] === 'conceal_some' ? '일부는 덮었다' : '미응답'
+  // 도덕적 선택 스텝의 옵션이 시나리오 고유 라벨({id,label})로 저작돼 있으면 그걸
+  // 그대로 쓰고(예: '자백한다'/'은닉한다'), 아니면 기존 두 시나리오가 쓰던
+  // reveal_all/conceal_some 기본 문구로 되돌아간다.
+  const moralStepOptions = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')?.options
+  const moralOptionLabels = moralStepOptions?.every((o) => typeof o === 'object')
+    ? Object.fromEntries(moralStepOptions.map((o) => [o.id, o.label]))
+    : { reveal_all: '모두 공개했다', conceal_some: '일부는 덮었다' }
+  const myMoralChoiceLabel = moralOptionLabels[moralChoices[uid]] ?? '미응답'
 
   const selfReports = room?.resolution?.selfReport ?? {}
 
-  // 두 가지 개인 에필로그 방식을 모두 지원한다:
-  // 1) 자기보고형(finalReflectionCheck) — 시스템이 판정하지 않고 플레이어가 직접
-  //    "밝혀졌다/끝까지 숨겼다"를 답한 값을 그대로 쓴다.
-  // 2) 단서공개형(epilogueCard) — 팀이 게임 중 내 비밀 단서를 공개했거나, 결론
+  // 세 가지 개인 에필로그 방식을 모두 지원한다:
+  // 1) 규명형(epilogueIdentified) — 나를 특정하는 단서(identifyingClueId)가 방에
+  //    공개됐다면 정체가 드러난 전용 카드를 보여준다(예: 익명 제보자가 밝혀짐).
+  //    나머지 두 방식보다 우선한다.
+  // 2) 자기보고형(epilogueA/B) — selfReports(밝혀졌다/숨겼다) 또는 moralChoices가
+  //    'confess'(자백)일 때 revealed로 본다 — finalReflectionCheck가 없는
+  //    시나리오는 자백 여부를 그대로 재사용한다.
+  // 3) 단서공개형(epilogueCard) — 팀이 게임 중 내 비밀 단서를 공개했거나, 결론
   //    단계에서 "모두 공개하겠다"를 선택했다면 드러난 것으로 본다.
   const myEpilogue = useMemo(() => {
+    if (myCharacter?.epilogueIdentified && myCharacter.identifyingClueId && room?.clues?.[myCharacter.identifyingClueId]?.claimedBy) {
+      return { revealed: true, text: myCharacter.epilogueIdentified }
+    }
     if (myCharacter?.epilogueA !== undefined && myCharacter?.epilogueB !== undefined) {
-      const revealed = selfReports[uid] === 'revealed'
+      const revealed = selfReports[uid] === 'revealed' || moralChoices[uid] === 'confess'
       return { revealed, text: revealed ? myCharacter.epilogueA : myCharacter.epilogueB }
     }
     if (!myCharacter?.epilogueCard || !myCharacter.secretRevealClueId) return null
@@ -247,9 +267,15 @@ function ResultsInner({ scenario }) {
         {Object.entries(room.players ?? {}).map(([pUid, p]) => {
           const pCharacter = getPlayableCharacters(scenario, room.meta?.playerCount).find((c) => c.id === p.characterId)
           const accusedId = accusations[pUid]
-          const accusedLabel = accusedId ? accusationOptions.find((o) => o.id === accusedId)?.label ?? accusedId : '미응답'
+          const accusedOption = accusationOptions.find((o) => o.id === accusedId)
+          const accusedLabel = accusedId ? accusedOption?.label ?? accusedId : '미응답'
+          // 지목 선택지에 isCorrect가 있는 시나리오(정답이 캐릭터가 아니라 객관식
+          // 답지인 경우)는 그걸 그대로 쓰고, 없으면 기존처럼 진범 캐릭터 id와 비교한다.
           const effectiveCulpritId = getEffectiveCharacterId(scenario, culprit?.id, room.meta?.playerCount)
-          const wasCorrect = accusedId && accusedId !== 'unknown' && accusedId === effectiveCulpritId
+          const wasCorrect =
+            accusedOption?.isCorrect !== undefined
+              ? accusedOption.isCorrect
+              : accusedId && accusedId !== 'unknown' && accusedId === effectiveCulpritId
           return (
             <div key={pUid} className="card row" style={{ justifyContent: 'space-between' }}>
               <div className="row">
@@ -261,9 +287,7 @@ function ResultsInner({ scenario }) {
               </div>
               <div className="col" style={{ gap: 4, alignItems: 'flex-end' }}>
                 <span className={`pill ${wasCorrect ? 'pill-solid' : 'pill-muted'}`}>지목: {accusedLabel}</span>
-                <span className="pill pill-outline">
-                  {moralChoices[pUid] === 'reveal_all' ? '모두 공개' : moralChoices[pUid] === 'conceal_some' ? '일부 은폐' : '미응답'}
-                </span>
+                <span className="pill pill-outline">{moralOptionLabels[moralChoices[pUid]] ?? '미응답'}</span>
               </div>
             </div>
           )

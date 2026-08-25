@@ -9,9 +9,10 @@ import NarrationScript from '../components/NarrationScript.jsx'
 import APBar from '../components/APBar.jsx'
 import PhaseTimer from '../components/PhaseTimer.jsx'
 import MyCluesPanel from '../components/MyCluesPanel.jsx'
+import JudgingReferenceModal from '../components/JudgingReferenceModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
-import { getPhaseApBudget } from '../engine/apEngine.js'
+import { getPhaseApBudget, getApFieldName, isSharedApPool } from '../engine/apEngine.js'
 import { getVisibleSecretLayers } from '../engine/visibility.js'
 import { getPlayableCharacters } from '../engine/characterAssignment.js'
 
@@ -75,6 +76,7 @@ function GameInner({ scenario }) {
   const [roleOpen, setRoleOpen] = useState(false)
   const [cluesOpen, setCluesOpen] = useState(false)
   const [castOpen, setCastOpen] = useState(false)
+  const [referenceOpen, setReferenceOpen] = useState(false)
   const [timeUpNoticeOpen, setTimeUpNoticeOpen] = useState(false)
   const [timeUp, setTimeUp] = useState(false)
 
@@ -103,8 +105,10 @@ function GameInner({ scenario }) {
   }
 
   const isHost = room.meta.hostUid === uid
-  const maxAp = getPhaseApBudget(scenario, phase, room.meta.playerCount)
-  const myAp = room.players?.[uid]?.ap?.[phase] ?? 0
+  // 공유 AP 풀 시나리오는 phase1 예산이 곧 전체 예산이라, 지금 phase가 몇이든
+  // 같은 최대치를 보여주고 남은 값도 항상 shared 경로에서 읽는다.
+  const maxAp = getPhaseApBudget(scenario, isSharedApPool(scenario) ? 'phase1' : phase, room.meta.playerCount)
+  const myAp = room.players?.[uid]?.ap?.[getApFieldName(scenario, phase)] ?? 0
 
   const targetPhase = phase === 'phase1' ? 'phase2' : 'resolution'
   const players = Object.keys(room.players)
@@ -177,6 +181,15 @@ function GameInner({ scenario }) {
           </svg>
           등장인물
         </button>
+        {scenario.judgingReference && (
+          <button className="icon-nav-button" onClick={() => setReferenceOpen(true)}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2Z" />
+            </svg>
+            판정 기준
+          </button>
+        )}
       </div>
 
       <h2 className="page-title" style={{ fontSize: 20 }}>
@@ -285,6 +298,8 @@ function GameInner({ scenario }) {
           </div>
         </div>
       )}
+
+      {referenceOpen && <JudgingReferenceModal reference={scenario.judgingReference} onClose={() => setReferenceOpen(false)} />}
 
       {timeUpNoticeOpen && (
         <div className="modal-overlay" onClick={() => setTimeUpNoticeOpen(false)}>

@@ -8,6 +8,30 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { getPlayableCharacters } from '../engine/characterAssignment.js'
 
+// 게임 시작 전에 관련 개념을 짧게 짚어주는 인트로 카드 — 방 전체 동기화 없이
+// 각자 자기 속도로 읽고 넘기는 로컬 read-along이라 게임 시작을 막지 않는다.
+function IntroCases({ cases, onDone }) {
+  const [index, setIndex] = useState(0)
+  const current = cases[index]
+  const isLast = index === cases.length - 1
+  return (
+    <div className="card col" style={{ borderColor: 'var(--gold)' }}>
+      <div className="kicker">들어가기 전에</div>
+      <strong style={{ fontFamily: 'var(--font-head)', fontSize: 15 }}>{current.title}</strong>
+      <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{current.text}</p>
+      <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.6, borderLeft: '2px solid var(--gold)', paddingLeft: 10 }}>
+        {current.concept}
+      </p>
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="dim" style={{ fontSize: 11 }}>{index + 1}/{cases.length}</span>
+        <button className="primary" onClick={() => (isLast ? onDone() : setIndex((i) => i + 1))}>
+          {isLast ? '확인했어요 →' : '다음 →'}
+        </button>
+      </div>
+    </div>
+  )
+}
+
 function WaitingRoomInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
@@ -15,6 +39,7 @@ function WaitingRoomInner({ scenario }) {
   const { room, loading, selectCharacter, clearCharacterSelection, startGame } = useRoom()
   const [selectError, setSelectError] = useState(null)
   const [busy, setBusy] = useState(false)
+  const [introDone, setIntroDone] = useState(false)
 
   useEffect(() => {
     if (room?.meta?.phase === 'phase1') {
@@ -106,6 +131,10 @@ function WaitingRoomInner({ scenario }) {
           {players.length}/{room.meta.playerCount}명 모임
         </p>
       </div>
+
+      {scenario.introCases?.length > 0 && !introDone && (
+        <IntroCases cases={scenario.introCases} onDone={() => setIntroDone(true)} />
+      )}
 
       {scenario.narration?.opening && (
         <NarrationScript title="오프닝 내레이션" lines={scenario.narration.opening} characters={scenario.characters} />
