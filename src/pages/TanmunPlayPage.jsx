@@ -66,6 +66,31 @@ function SchoolAuthGate() {
   )
 }
 
+// window.confirm()은 홈 화면에 설치한 PWA(standalone)에서 브라우저가 조용히
+// 차단하는 경우가 있어(버튼이 "안 먹히는" 것처럼 보임) 앱 자체 확인 모달을 쓴다.
+function ConfirmModal({ request, onCancel }) {
+  if (!request) return null
+  return (
+    <div className="modal-overlay" onClick={onCancel}>
+      <div className="modal-panel" onClick={(e) => e.stopPropagation()}>
+        <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7 }}>{request.message}</p>
+        <div className="row" style={{ justifyContent: 'flex-end' }}>
+          <button onClick={onCancel}>취소</button>
+          <button
+            className="primary"
+            onClick={() => {
+              request.action()
+              onCancel()
+            }}
+          >
+            확인
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 function VerdictPill({ verdict }) {
   const style = VERDICT_STYLES[verdict] ?? VERDICT_STYLES['그럴수도']
   return (
@@ -94,6 +119,7 @@ function TanmunInner({ scenario }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [confirmRequest, setConfirmRequest] = useState(null) // { message, action }
   const logEndRef = useRef(null)
 
   // 결과 화면(성찰/AI 피드백/이미지 저장)
@@ -171,15 +197,18 @@ function TanmunInner({ scenario }) {
 
   const handleEmergencyClue = () => {
     if (!run || run.cluesRevealed >= clues.length) return
-    if (!confirm(`+${EMERGENCY_CLUE_COST}문을 쓰고 다음 단서를 미리 열람할까요?`)) return
-    setRun((prev) => {
-      const next = {
-        ...prev,
-        questionCount: prev.questionCount + EMERGENCY_CLUE_COST,
-        cluesRevealed: prev.cluesRevealed + 1,
-        log: [...prev.log, { type: 'clue', index: prev.cluesRevealed }],
-      }
-      return syncClues(next)
+    setConfirmRequest({
+      message: `+${EMERGENCY_CLUE_COST}문을 쓰고 다음 단서를 미리 열람할까요?`,
+      action: () =>
+        setRun((prev) => {
+          const next = {
+            ...prev,
+            questionCount: prev.questionCount + EMERGENCY_CLUE_COST,
+            cluesRevealed: prev.cluesRevealed + 1,
+            log: [...prev.log, { type: 'clue', index: prev.cluesRevealed }],
+          }
+          return syncClues(next)
+        }),
     })
   }
 
@@ -247,16 +276,22 @@ function TanmunInner({ scenario }) {
   }
 
   const handleGiveUp = () => {
-    if (!confirm('수사를 포기할까요? 미해결 종료로 처리되고 진상이 공개됩니다.')) return
-    setRun((prev) => finishRun(prev, { solved: false, slotHits: [], bonusHit: false }))
+    setConfirmRequest({
+      message: '수사를 포기할까요? 미해결 종료로 처리되고 진상이 공개됩니다.',
+      action: () => setRun((prev) => finishRun(prev, { solved: false, slotHits: [], bonusHit: false })),
+    })
   }
 
   const handleRestart = () => {
-    if (!confirm('처음부터 다시 시작할까요? 지금까지의 문답 기록이 사라집니다.')) return
-    clearTanmunRun(scenarioId)
-    setRunState(null)
-    setAnswers({})
-    setAiFeedback(null)
+    setConfirmRequest({
+      message: '처음부터 다시 시작할까요? 지금까지의 문답 기록이 사라집니다.',
+      action: () => {
+        clearTanmunRun(scenarioId)
+        setRunState(null)
+        setAnswers({})
+        setAiFeedback(null)
+      },
+    })
   }
 
   const handleEndGame = () => {
@@ -507,6 +542,8 @@ function TanmunInner({ scenario }) {
           <button onClick={handleRestart}>다시 도전하기</button>
           <button onClick={handleEndGame}>게임 종료 (메인 화면으로)</button>
         </div>
+
+        <ConfirmModal request={confirmRequest} onCancel={() => setConfirmRequest(null)} />
       </div>
     )
   }
@@ -658,6 +695,8 @@ function TanmunInner({ scenario }) {
           </div>
         </div>
       )}
+
+      <ConfirmModal request={confirmRequest} onCancel={() => setConfirmRequest(null)} />
     </div>
   )
 }
