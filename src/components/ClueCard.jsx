@@ -1,4 +1,4 @@
-export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, autoRevealed, ownerName, onClaim, onPublish, players }) {
+export default function ClueCard({ clue, clueState, visible, canClaim, comboReady, canPublish, autoRevealed, selfReveal, ownerName, onClaim, onPublish, players }) {
   const claimedByName = clueState?.claimedBy ? players?.[clueState.claimedBy]?.name : null
   const claimedByMe = clueState?.claimedBy && visible
   const isCombo = clue.unlockType === 'combo'
@@ -37,9 +37,13 @@ export default function ClueCard({ clue, clueState, visible, canClaim, comboRead
         <p className="dim" style={{ margin: 0, fontSize: 12 }}>{claimedByName ?? '다른 플레이어'}가 이미 조사했습니다.</p>
       ) : (
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <span className="pill pill-muted">AP {clue.apCost}</span>
+          {selfReveal ? (
+            <span className="pill pill-outline">내 단서 · 무료</span>
+          ) : (
+            <span className="pill pill-muted">AP {clue.apCost}</span>
+          )}
           <button className="primary" onClick={onClaim} disabled={!canClaim}>
-            {isCombo ? '조합 확보' : '단서 확보'}
+            {selfReveal ? '스스로 공개하기' : isCombo ? '조합 확보' : '단서 확보'}
           </button>
         </div>
       )}

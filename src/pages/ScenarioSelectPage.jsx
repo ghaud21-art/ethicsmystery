@@ -49,7 +49,7 @@ function ScenarioCard({ s, index }) {
             </span>
             <span className="stat-chip">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-              {isTanmun ? '1인 · AI 문답' : `${s.supportedPlayerCounts?.join('~')}인`}
+              {isTanmun ? '1인' : `${s.supportedPlayerCounts?.join('~')}인`}
             </span>
           </div>
           <div className="row" style={{ marginTop: 4 }}>
@@ -106,9 +106,16 @@ export default function ScenarioSelectPage() {
       <div className="row" style={{ marginBottom: 18 }}>
         <div style={{ width: 4, height: 20, background: 'var(--gold)', borderRadius: 2 }} />
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: 0 }}>
-          {tab === 'murder' ? '머더미스터리 — 모둠 역할극 추리' : '탐문 수사 — 1인 AI 문답 추리'}
+          {tab === 'murder' ? '머더미스터리' : '탐문 수사'}
         </h2>
       </div>
+
+      {tab === 'murder' && (
+        <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+          머더 미스터리는 특정 사건을 해결하기 위해 다수의 플레이어가 각자가 맡은 역할을 연기하며 플레이하는
+          추리 형식의 롤플레잉 게임입니다.
+        </p>
+      )}
 
       {tab === 'tanmun' && (
         <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>

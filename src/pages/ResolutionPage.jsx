@@ -11,7 +11,7 @@ import JudgingReferenceModal from '../components/JudgingReferenceModal.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
-import { getPlayableCharacters } from '../engine/characterAssignment.js'
+import { getPlayableCharacters, getEffectiveCharacterId } from '../engine/characterAssignment.js'
 import { getVisibleSecretLayers } from '../engine/visibility.js'
 
 function SelfReportStep({ question, value, onChange }) {
@@ -45,23 +45,21 @@ function SelfReportStep({ question, value, onChange }) {
 
 // 정답/오답이 없는 순수 서술형 질문을 캐릭터별로 던져놓고, 학생들이 직접 입으로
 // 답하도록 유도하는 스텝 — 앱이 텍스트를 수집·저장하지 않고 대본처럼 보여주기만 한다
-// (기존 내레이션 스크립트와 같은 방식).
-function RoleplayQuestionsStep({ step, characters }) {
+// (기존 내레이션 스크립트와 같은 방식). questions는 부모가 캐릭터 이름까지 해석해
+// 넘긴다(3인 통합 캐릭터 치환 포함).
+function RoleplayQuestionsStep({ step, questions }) {
   return (
     <>
       <hr className="divider" />
       <h2 className="page-title" style={{ fontSize: 19 }}>{step.name ?? '자기보고 질문'}</h2>
       {step.note && <p className="dim" style={{ fontSize: 12, marginBottom: 12 }}>{step.note}</p>}
       <div className="col" style={{ marginBottom: 24 }}>
-        {step.questions.map((q, i) => {
-          const character = characters.find((c) => c.id === q.characterId)
-          return (
-            <div key={i} className="card" style={{ marginBottom: 0 }}>
-              <strong style={{ fontFamily: 'var(--font-head)', fontSize: 13 }}>{character?.name ?? q.characterId}</strong>
-              <p style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.6 }}>{q.question}</p>
-            </div>
-          )
-        })}
+        {questions.map((q, i) => (
+          <div key={i} className="card" style={{ marginBottom: 0 }}>
+            <strong style={{ fontFamily: 'var(--font-head)', fontSize: 13 }}>{q.characterName}</strong>
+            <p style={{ margin: '6px 0 0', fontSize: 13, lineHeight: 1.6 }}>{q.question}</p>
+          </div>
+        ))}
       </div>
     </>
   )
@@ -109,6 +107,15 @@ function ResolutionInner({ scenario }) {
   const moralStep = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')
   const moralOptions = moralStep?.options?.every((o) => typeof o === 'object') ? moralStep.options : undefined
   const roleplayQuestionsStep = scenario.resolutionPhase.steps.find((s) => s.id === 'roleplay_questions')
+  // 3인 통합 캐릭터로 흡수된 인물의 질문은 통합 캐릭터의 이름으로 표시한다.
+  const roleplayQuestions = (roleplayQuestionsStep?.questions ?? []).map((q) => {
+    const effectiveId = getEffectiveCharacterId(scenario, q.characterId, room.meta.playerCount)
+    const character = playableCharacters.find((c) => c.id === effectiveId)
+    return { ...q, characterName: character?.name ?? q.characterId }
+  })
+  // 지목 안내 문구 — 시나리오가 hint를 주면 그대로 쓰고, 없으면 기본 문구
+  // (선택지가 인물이 아닌 시나리오에서 "책임자를 지목하세요"가 어긋나는 것 방지).
+  const accusationHint = accusationStep?.hint ?? '확보한 단서를 바탕으로 진짜 책임자를 지목하세요.'
 
   return (
     <div className="page">
@@ -152,11 +159,11 @@ function ResolutionInner({ scenario }) {
 
       <h1 className="page-title">{accusationStep?.prompt ?? '범인 지목'}</h1>
       <div className="page-title-rule" />
-      <p className="dim" style={{ marginBottom: 16 }}>확보한 단서를 바탕으로 진짜 책임자를 지목하세요.</p>
+      <p className="dim" style={{ marginBottom: 16 }}>{accusationHint}</p>
 
       <AccusationForm options={accusationOptions} value={accusations[uid]} onChange={submitAccusation} />
 
-      {roleplayQuestionsStep && <RoleplayQuestionsStep step={roleplayQuestionsStep} characters={playableCharacters} />}
+      {roleplayQuestionsStep && <RoleplayQuestionsStep step={roleplayQuestionsStep} questions={roleplayQuestions} />}
 
       <hr className="divider" />
 

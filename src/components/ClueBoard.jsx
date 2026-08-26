@@ -54,6 +54,7 @@ export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, o
             comboReady={comboReady}
             canPublish={canPublish}
             autoRevealed={autoRevealed}
+            selfReveal={selfRevealAllowed}
             ownerName={ownerCharacter?.name}
             onClaim={() => onClaim(clue.id)}
             onPublish={() => onPublish(clue.id)}

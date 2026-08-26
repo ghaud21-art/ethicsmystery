@@ -109,7 +109,13 @@ export async function claimClue(roomCode, uid, scenario, clueId, phase, playerCo
     return remaining - clue.apCost
   })
   if (!apResult.committed) {
-    // AP 부족 — 선점만 롤백(단서 자체는 공용 자원이 아니라 이미 이 uid 소유이므로 되돌리지 않고 에러만 반환)
+    // AP 부족 — 이미 선점한 단서를 롤백한다. 롤백하지 않으면 화면의 AP 상태가
+    // 낡았을 때(버튼이 잠깐 활성화된 채로 클릭) AP 없이 단서를 확보하는 구멍이 생긴다.
+    await runTransaction(clueRef, (current) => {
+      if (current?.claimedBy !== uid) return current // 이례적 — 남의 선점은 건드리지 않는다
+      const { claimedBy, claimedAt, publishedToRoom, ...rest } = current
+      return Object.keys(rest).length > 0 ? rest : null
+    })
     throw new Error('AP가 부족합니다')
   }
 
