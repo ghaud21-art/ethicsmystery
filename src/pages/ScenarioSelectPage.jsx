@@ -120,8 +120,7 @@ export default function ScenarioSelectPage() {
       {tab === 'tanmun' && (
         <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
           AI 기록관에게 예/아니오 질문을 던지며 혼자 힘으로 진상에 도달하는 문답 추리입니다.
-          AI 기능이 기본으로 사용되어 <strong style={{ color: 'var(--gold-light)' }}>학교 인증이 반드시 필요</strong>해요.
-          게임 사용 문의는{' '}
+          30명 이상 학급에서의 사용 문의는{' '}
           <a href={TANMUN_KAKAO_LINK} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-light)' }}>
             카카오톡 오픈채팅
           </a>

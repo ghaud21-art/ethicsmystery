@@ -10,7 +10,7 @@ import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newTanmunRun, saveTanmunRun, getTanmunRun, clearTanmunRun,
-  CLUE_INTERVAL, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY,
+  CLUE_INTERVAL, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY, MAX_DEDUCTION_ATTEMPTS,
   getQuestionCap, unresolvedPenalty, gradeForScore, gradeLineText, VERDICT_STYLES,
 } from '../utils/tanmunRun.js'
 
@@ -87,6 +87,7 @@ function TanmunInner({ scenario }) {
   const { uid, tier, isAdmin, studentIdentity } = useAuth()
 
   const [run, setRunState] = useState(() => getTanmunRun(scenarioId))
+  const [nickname, setNickname] = useState('')
   const [question, setQuestion] = useState('')
   const [deduction, setDeduction] = useState('')
   const [deductionOpen, setDeductionOpen] = useState(false)
@@ -122,7 +123,9 @@ function TanmunInner({ scenario }) {
     }
   }, [autoExportPending, scenario.scenarioId])
 
-  const authorized = tier === 'homeSchoolStudent' || isAdmin
+  // 시나리오가 게스트 플레이를 허용하면 학교 인증 없이도 시작할 수 있다
+  // (관리자 페이지 체크박스로 시나리오별 개폐 — 서버에서도 동일하게 강제).
+  const authorized = scenario.guestAllowed === true || tier === 'homeSchoolStudent' || isAdmin
 
   const clues = scenario.clues ?? []
   const nextClueAt = run ? (run.cluesRevealed < clues.length ? (run.cluesRevealed + 1) * CLUE_INTERVAL : null) : null
@@ -139,6 +142,8 @@ function TanmunInner({ scenario }) {
 
   const questionCap = getQuestionCap(scenario)
   const questionsLocked = run && run.questionCount >= questionCap
+  const attemptsUsed = run ? run.log.filter((l) => l.type === 'attempt').length : 0
+  const attemptsLeft = MAX_DEDUCTION_ATTEMPTS - attemptsUsed
 
   const handleAsk = async () => {
     const q = question.trim()
@@ -206,10 +211,12 @@ function TanmunInner({ scenario }) {
       const { slotHits, bonusHit } = await gradeTanmunDeduction(scenarioId, text)
       const hitCount = slotHits.filter(Boolean).length
       const allHit = hitCount === (scenario.slots?.length ?? 4)
+      const isLastAttempt = attemptsUsed + 1 >= MAX_DEDUCTION_ATTEMPTS
       if (allHit) {
         setRun((prev) => finishRun(prev, { solved: true, slotHits, bonusHit }))
-      } else if (questionsLocked) {
-        // 질문 마감 후에는 최종 답안 1회만 — 실패하면 미해결 종료
+      } else if (questionsLocked || isLastAttempt) {
+        // 질문 마감 후이거나 마지막(3번째) 시도 — 포기 없이도 수사를 종료하고
+        // 적중한 슬롯 수만큼 감면된 미해결 페널티로 등급을 매긴다.
         setRun((prev) =>
           finishRun(
             { ...prev, log: [...prev.log, { type: 'attempt', text, slotHits, bonusHit }] },
@@ -228,7 +235,9 @@ function TanmunInner({ scenario }) {
           }
           return syncClues(next)
         })
-        setError(`아직 진상에 도달하지 못했습니다 (${hitCount}/${scenario.slots?.length ?? 4}개 요소 적중, +${WRONG_ATTEMPT_PENALTY}문)`)
+        setError(
+          `아직 진상에 도달하지 못했습니다 (${hitCount}/${scenario.slots?.length ?? 4}개 요소 적중, +${WRONG_ATTEMPT_PENALTY}문) — 남은 제출 기회 ${MAX_DEDUCTION_ATTEMPTS - attemptsUsed - 1}회`,
+        )
       }
     } catch (e) {
       setError(e.message)
@@ -289,7 +298,7 @@ function TanmunInner({ scenario }) {
     try {
       const { feedback } = await getAiFeedback({
         reflectionLogId,
-        nickname: studentIdentity.name,
+        nickname: run.playerName?.trim() || studentIdentity.name,
         scenarioTitle: `${scenario.meta.title} (탐문 수사)`,
         endingTitle,
         endingMessage: run.solved ? '플레이어가 진상에 도달해 사건을 해결했다.' : '플레이어가 진상에 도달하지 못한 채 수사를 종료했다.',
@@ -336,7 +345,7 @@ function TanmunInner({ scenario }) {
             <li>판정은 5가지 — <strong style={{ color: '#4caf7d' }}>네</strong> · <strong style={{ color: '#e05d5d' }}>아니오</strong> · <strong style={{ color: '#d9b23d' }}>그럴수도</strong> · <strong style={{ color: '#9a9a9a' }}>중요하지않음</strong> · 반려(개방형 질문, 문 수 미포함)</li>
             <li>질문 1개 = <strong>+1문</strong>. 문 수가 낮을수록 좋은 등급을 받습니다.</li>
             <li>{CLUE_INTERVAL}문마다 단서가 1장씩 공개됩니다 (총 {clues.length}장). 급하면 +{EMERGENCY_CLUE_COST}문으로 미리 열람할 수 있어요.</li>
-            <li>확신이 서면 <strong>최종 추리</strong>를 서술로 제출하세요. 오답이면 +{WRONG_ATTEMPT_PENALTY}문 후 수사를 계속합니다.</li>
+            <li>확신이 서면 <strong>최종 추리</strong>를 서술로 제출하세요 (총 {MAX_DEDUCTION_ATTEMPTS}회). 오답이면 +{WRONG_ATTEMPT_PENALTY}문 후 수사를 계속하고, 마지막 시도가 빗나가면 적중한 요소만큼 감면된 점수로 수사가 종료됩니다.</li>
             <li>{questionCap}문에 도달하면 질문이 마감되고 최종 답안 1회만 남습니다.</li>
           </ul>
           <p className="dim" style={{ fontSize: 12, margin: 0 }}>
@@ -345,13 +354,21 @@ function TanmunInner({ scenario }) {
         </div>
 
         {authorized ? (
-          <button
-            className="primary"
-            onClick={() => setRun(newTanmunRun(scenarioId))}
-            style={{ width: '100%', textAlign: 'left' }}
-          >
-            수사 시작하기 →
-          </button>
+          <div className="card col">
+            <label className="dim" style={{ fontSize: 12 }}>닉네임 (선택)</label>
+            <input
+              placeholder="결과 기록에 표시할 이름"
+              value={nickname}
+              onChange={(e) => setNickname(e.target.value)}
+            />
+            <button
+              className="primary"
+              onClick={() => setRun(newTanmunRun(scenarioId, nickname.trim()))}
+              style={{ alignSelf: 'flex-start', marginTop: 4 }}
+            >
+              수사 시작하기 →
+            </button>
+          </div>
         ) : (
           <SchoolAuthGate />
         )}
@@ -375,6 +392,7 @@ function TanmunInner({ scenario }) {
           <span className="stamp" style={{ position: 'absolute', top: 20, right: 20 }}>CASE CLOSED</span>
           <div style={{ fontSize: 11, letterSpacing: '.1em', textTransform: 'uppercase', color: 'var(--gold-light)', marginBottom: 10 }}>
             수사 종결 · {scenario.meta.title}
+            {run.playerName?.trim() && ` · ${run.playerName.trim()} 탐정`}
           </div>
           <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 40, margin: '0 0 4px', color: 'var(--gold-light)' }}>
             {gradeInfo.grade}
@@ -444,7 +462,9 @@ function TanmunInner({ scenario }) {
             {aiBusy ? 'AI 피드백 생성 중...' : '성찰 기록 제출하기 (결과 이미지도 자동 저장돼요)'}
           </button>
         ) : (
-          <p className="dim" style={{ fontSize: 12, marginBottom: 18 }}>관리자 미리보기 모드 — 성찰 기록 제출은 학교 인증 학생만 가능합니다.</p>
+          <p className="dim" style={{ fontSize: 12, marginBottom: 18 }}>
+            게스트 모드에서는 성찰 기록 제출과 AI 피드백이 제공되지 않아요. 결과는 아래 버튼으로 이미지로 저장할 수 있습니다.
+          </p>
         )}
         {aiError && <p style={{ color: 'var(--blood-light)' }}>{aiError}</p>}
 
@@ -454,6 +474,7 @@ function TanmunInner({ scenario }) {
           <div className="kicker" style={{ marginBottom: 4 }}>나의 수사 기록</div>
           <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: '0 0 4px' }}>{scenario.meta.title}</h2>
           <p className="dim" style={{ fontSize: 12, margin: '0 0 14px' }}>
+            {run.playerName?.trim() ? `${run.playerName.trim()} 탐정 · ` : ''}
             {gradeInfo.grade}등급 「{gradeInfo.title}」 · 총 {run.finalScore}문 · {run.solved ? '사건 해결' : '미해결 종료'}
           </p>
           <div className="col">
@@ -592,7 +613,9 @@ function TanmunInner({ scenario }) {
           <strong style={{ fontFamily: 'var(--font-head)', fontSize: 14 }}>최종 추리 제출</strong>
           <p className="dim" style={{ fontSize: 12, margin: 0, lineHeight: 1.6 }}>
             무슨 일이 있었나 · 왜 그랬나 · 왜 실제와 다르게 보였나 · 결말의 이유 — 네 가지가 모두 담기게 서술하세요.
-            {questionsLocked ? ' (마지막 1회입니다!)' : ` 오답이면 +${WRONG_ATTEMPT_PENALTY}문 후 수사를 계속합니다.`}
+            {questionsLocked || attemptsLeft <= 1
+              ? ' (마지막 시도입니다! 빗나가도 적중한 요소만큼 감면되어 수사가 종료됩니다.)'
+              : ` 오답이면 +${WRONG_ATTEMPT_PENALTY}문 후 수사를 계속합니다. (남은 제출 기회 ${attemptsLeft}회)`}
           </p>
           <textarea
             rows={5}
@@ -625,7 +648,7 @@ function TanmunInner({ scenario }) {
               <li>질문 1개 = +1문 (반려된 개방형 질문은 문 수에 안 들어감)</li>
               <li>오답 제출 = +{WRONG_ATTEMPT_PENALTY}문 · 긴급 단서 열람 = +{EMERGENCY_CLUE_COST}문</li>
               <li>{CLUE_INTERVAL}문마다 단서 1장 자동 공개 (총 {clues.length}장)</li>
-              <li>{questionCap}문 도달 시 질문 마감, 최종 답안 1회만</li>
+              <li>최종 추리는 총 {MAX_DEDUCTION_ATTEMPTS}회까지 제출 가능 · {questionCap}문 도달 시 질문 마감</li>
               <li>미해결 종료 시 +25문 (핵심 요소 1개 적중당 -4문 감면, 최소 +10문)</li>
               <li>등급: {gradeLineText(scenario)}</li>
             </ul>

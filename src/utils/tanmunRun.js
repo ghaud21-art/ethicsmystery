@@ -2,9 +2,10 @@
 // localStorage에 저장한다. 새로고침/뒤로가기에도 문답 기록과 문 수가 유지된다.
 const KEY_PREFIX = 'ethicsmystery.tanmunRun.'
 
-export function newTanmunRun(scenarioId) {
+export function newTanmunRun(scenarioId, playerName = '') {
   return {
     scenarioId,
+    playerName,
     step: 'play', // play -> ended
     questionCount: 0, // 누적 "문" 수 — 판정된 질문 +1, 오답 제출 +5, 긴급 단서 +10, 미해결 종료 페널티 포함
     log: [], // { type: 'question', text, verdict } | { type: 'clue', index } | { type: 'attempt', text, slotHits, bonusHit }
@@ -36,6 +37,9 @@ export function clearTanmunRun(scenarioId) {
 export const CLUE_INTERVAL = 15 // 15문마다 단서 1장 공개
 export const EMERGENCY_CLUE_COST = 10 // 긴급 단서 열람 비용(문)
 export const WRONG_ATTEMPT_PENALTY = 5 // 오답 제출 페널티(문)
+// 최종 추리는 총 3회까지 — 3회 모두 빗나가면 포기 없이도 수사가 종료되고,
+// 적중한 슬롯 수만큼 감면된 미해결 페널티로 등급이 매겨진다.
+export const MAX_DEDUCTION_ATTEMPTS = 3
 
 // 질문 마감 문 수 — 이 문 수에 도달하면 최종 답안 1회만 남는다. 난이도 상
 // 시나리오는 상한을 높일 수 있으므로 시나리오 데이터(questionCap)가 우선한다.

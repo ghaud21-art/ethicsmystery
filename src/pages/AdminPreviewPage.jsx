@@ -447,8 +447,15 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
           editMode
           onChange={(v) => onChange({ ...draft, aiEnabled: v })}
         />
+        <Checkbox
+          label="학교 인증 없이(게스트) 플레이 허용 — 체크를 풀면 다시 학교 인증이 필요해집니다"
+          checked={draft.guestAllowed === true}
+          editMode
+          onChange={(v) => onChange({ ...draft, guestAllowed: v })}
+        />
         <p className="dim" style={{ fontSize: 11, margin: 0 }}>
-          현재 상태: {draft.aiEnabled === false ? 'AI 꺼짐 — 플레이 잠김' : 'AI 켜짐 — 플레이 가능'}. 서버에서도 동일하게 강제됩니다.
+          현재 상태: {draft.aiEnabled === false ? 'AI 꺼짐 — 플레이 잠김' : 'AI 켜짐 — 플레이 가능'} ·{' '}
+          {draft.guestAllowed === true ? '게스트 허용(인증 불필요)' : '학교 인증 필요'}. 두 설정 모두 서버에서도 동일하게 강제됩니다.
         </p>
       </div>
 

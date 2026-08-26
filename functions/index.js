@@ -73,20 +73,24 @@ async function loadTanmunScenario(scenarioId) {
   return scenario
 }
 
-function requireHomeSchoolStudent(req) {
+// 시나리오가 게스트 플레이를 허용(guestAllowed)하면 익명 로그인만으로 충분하고,
+// 아니면 학교 인증(homeSchoolStudent claim) 또는 관리자여야 한다 — 관리자 페이지의
+// 체크박스로 시나리오별로 열고 닫을 수 있다.
+function requireTanmunAccess(req, scenario) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
+  if (scenario.guestAllowed === true) return
   if (req.auth.token.homeSchoolStudent !== true && req.auth.token.email !== ADMIN_EMAIL) {
-    throw new HttpsError('permission-denied', '탐문 수사는 학교 인증 사용자만 이용할 수 있습니다')
+    throw new HttpsError('permission-denied', '이 시나리오는 학교 인증 사용자만 이용할 수 있습니다')
   }
 }
 
 exports.judgeTanmunQuestion = onCall(async (req) => {
-  requireHomeSchoolStudent(req)
   const { scenarioId, question } = req.data ?? {}
   if (!question || typeof question !== 'string' || question.length > 300) {
     throw new HttpsError('invalid-argument', '질문(300자 이내)이 필요합니다')
   }
   const scenario = await loadTanmunScenario(scenarioId)
+  requireTanmunAccess(req, scenario)
   const { geminiApiKey, geminiModelPrimary, geminiModelFallback } = await getAdminConfig()
   if (!geminiApiKey) throw new HttpsError('failed-precondition', '관리자가 아직 Gemini API 키를 설정하지 않았습니다')
 
@@ -112,12 +116,12 @@ exports.judgeTanmunQuestion = onCall(async (req) => {
 })
 
 exports.gradeTanmunDeduction = onCall(async (req) => {
-  requireHomeSchoolStudent(req)
   const { scenarioId, deduction } = req.data ?? {}
   if (!deduction || typeof deduction !== 'string' || deduction.length > 2000) {
     throw new HttpsError('invalid-argument', '최종 추리 서술(2000자 이내)이 필요합니다')
   }
   const scenario = await loadTanmunScenario(scenarioId)
+  requireTanmunAccess(req, scenario)
   const { geminiApiKey, geminiModelPrimary, geminiModelFallback } = await getAdminConfig()
   if (!geminiApiKey) throw new HttpsError('failed-precondition', '관리자가 아직 Gemini API 키를 설정하지 않았습니다')
 
