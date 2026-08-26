@@ -10,8 +10,8 @@ import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newTanmunRun, saveTanmunRun, getTanmunRun, clearTanmunRun,
-  QUESTION_CAP, CLUE_INTERVAL, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY,
-  unresolvedPenalty, gradeForScore, VERDICT_STYLES,
+  CLUE_INTERVAL, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY,
+  getQuestionCap, unresolvedPenalty, gradeForScore, gradeLineText, VERDICT_STYLES,
 } from '../utils/tanmunRun.js'
 
 const KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
@@ -137,7 +137,8 @@ function TanmunInner({ scenario }) {
     return next
   }
 
-  const questionsLocked = run && run.questionCount >= QUESTION_CAP
+  const questionCap = getQuestionCap(scenario)
+  const questionsLocked = run && run.questionCount >= questionCap
 
   const handleAsk = async () => {
     const q = question.trim()
@@ -254,7 +255,7 @@ function TanmunInner({ scenario }) {
     navigate('/')
   }
 
-  const gradeInfo = run?.finalScore != null ? gradeForScore(run.finalScore) : null
+  const gradeInfo = run?.finalScore != null ? gradeForScore(run.finalScore, scenario) : null
 
   const handleReflectionSubmit = async () => {
     if (tier !== 'homeSchoolStudent') return
@@ -336,10 +337,10 @@ function TanmunInner({ scenario }) {
             <li>질문 1개 = <strong>+1문</strong>. 문 수가 낮을수록 좋은 등급을 받습니다.</li>
             <li>{CLUE_INTERVAL}문마다 단서가 1장씩 공개됩니다 (총 {clues.length}장). 급하면 +{EMERGENCY_CLUE_COST}문으로 미리 열람할 수 있어요.</li>
             <li>확신이 서면 <strong>최종 추리</strong>를 서술로 제출하세요. 오답이면 +{WRONG_ATTEMPT_PENALTY}문 후 수사를 계속합니다.</li>
-            <li>{QUESTION_CAP}문에 도달하면 질문이 마감되고 최종 답안 1회만 남습니다.</li>
+            <li>{questionCap}문에 도달하면 질문이 마감되고 최종 답안 1회만 남습니다.</li>
           </ul>
           <p className="dim" style={{ fontSize: 12, margin: 0 }}>
-            등급: S ≤15문 · A ≤25문 · B ≤35문 · C ≤45문 · D 46문 이상
+            등급: {gradeLineText(scenario)}
           </p>
         </div>
 
@@ -580,7 +581,7 @@ function TanmunInner({ scenario }) {
         </div>
       ) : (
         <p style={{ color: 'var(--blood-light)', fontSize: 13, marginBottom: 12 }}>
-          {QUESTION_CAP}문에 도달해 질문이 마감됐습니다 — 최종 추리 1회만 제출할 수 있습니다.
+          {questionCap}문에 도달해 질문이 마감됐습니다 — 최종 추리 1회만 제출할 수 있습니다.
         </p>
       )}
 
@@ -624,9 +625,9 @@ function TanmunInner({ scenario }) {
               <li>질문 1개 = +1문 (반려된 개방형 질문은 문 수에 안 들어감)</li>
               <li>오답 제출 = +{WRONG_ATTEMPT_PENALTY}문 · 긴급 단서 열람 = +{EMERGENCY_CLUE_COST}문</li>
               <li>{CLUE_INTERVAL}문마다 단서 1장 자동 공개 (총 {clues.length}장)</li>
-              <li>{QUESTION_CAP}문 도달 시 질문 마감, 최종 답안 1회만</li>
+              <li>{questionCap}문 도달 시 질문 마감, 최종 답안 1회만</li>
               <li>미해결 종료 시 +25문 (핵심 요소 1개 적중당 -4문 감면, 최소 +10문)</li>
-              <li>등급: S ≤15문 · A ≤25문 · B ≤35문 · C ≤45문 · D 46문 이상</li>
+              <li>등급: {gradeLineText(scenario)}</li>
             </ul>
             <div className="row" style={{ justifyContent: 'flex-end' }}>
               <button onClick={() => setRulesOpen(false)}>닫기</button>

@@ -33,17 +33,24 @@ export function clearTanmunRun(scenarioId) {
   localStorage.removeItem(KEY_PREFIX + scenarioId)
 }
 
-export const QUESTION_CAP = 50 // 이 문 수에 도달하면 질문 마감 — 최종 답안 1회만 남는다
 export const CLUE_INTERVAL = 15 // 15문마다 단서 1장 공개
 export const EMERGENCY_CLUE_COST = 10 // 긴급 단서 열람 비용(문)
 export const WRONG_ATTEMPT_PENALTY = 5 // 오답 제출 페널티(문)
+
+// 질문 마감 문 수 — 이 문 수에 도달하면 최종 답안 1회만 남는다. 난이도 상
+// 시나리오는 상한을 높일 수 있으므로 시나리오 데이터(questionCap)가 우선한다.
+export function getQuestionCap(scenario) {
+  return scenario?.questionCap ?? 50
+}
 
 // 미해결 종료 페널티: 기본 +25문, 채점 슬롯 1개 적중당 -4문 감면(최소 +10문 유지)
 export function unresolvedPenalty(bestSlotHits) {
   return Math.max(10, 25 - 4 * bestSlotHits)
 }
 
-const GRADES = [
+// 기본 등급 컷 — 시나리오가 grades([{grade,max,title}], 마지막 항목은 max 생략
+// 가능)를 정의하면 그것이 우선한다(난이도별 보정용).
+const DEFAULT_GRADES = [
   { grade: 'S', max: 15, title: '진실의 대가' },
   { grade: 'A', max: 25, title: '베테랑 수사관' },
   { grade: 'B', max: 35, title: '촉이 좋은 형사' },
@@ -51,8 +58,24 @@ const GRADES = [
   { grade: 'D', max: Infinity, title: '미제 사건 전담' },
 ]
 
-export function gradeForScore(score) {
-  return GRADES.find((g) => score <= g.max)
+export function getGrades(scenario) {
+  const grades = scenario?.grades ?? DEFAULT_GRADES
+  return grades.map((g) => ({ ...g, max: g.max ?? Infinity }))
+}
+
+export function gradeForScore(score, scenario) {
+  const grades = getGrades(scenario)
+  return grades.find((g) => score <= g.max) ?? grades[grades.length - 1]
+}
+
+// 인트로/규칙 화면용 등급 요약 문자열 (예: "S ≤15문 · A ≤25문 · ... · D 46문 이상")
+export function gradeLineText(scenario) {
+  const grades = getGrades(scenario)
+  return grades
+    .map((g, i) =>
+      g.max === Infinity ? `${g.grade} ${(grades[i - 1]?.max ?? 0) + 1}문 이상` : `${g.grade} ≤${g.max}문`,
+    )
+    .join(' · ')
 }
 
 export const VERDICT_STYLES = {
