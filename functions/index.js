@@ -10,6 +10,7 @@ const { callGeminiJsonWithFallback } = require('./gemini')
 const { callGeminiParse } = require('./scenarioParser')
 const { verifySchoolCode: verifySchoolCodeImpl, getMyResults: getMyResultsImpl } = require('./schoolCode')
 const { buildPrompt: buildAiFeedbackPrompt, normalizeFeedback } = require('./aiFeedback')
+const { buildJudgePrompt, normalizeVerdict, buildGradePrompt, normalizeGrade } = require('./tanmun')
 
 function requireAdmin(req) {
   if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
@@ -55,6 +56,88 @@ exports.getAiFeedback = onCall(async (req) => {
     await admin.firestore().doc(`reflectionLogs/${reflectionLogId}`).update({ aiFeedback: feedback })
   }
   return { feedback }
+})
+
+// ---- 탐문 수사 (1인 예/아니오 문답 추리) ----
+// AI 기록관은 학교 인증 사용자 전용이며, 시나리오별로 관리자가 aiEnabled를 꺼두면
+// 서버에서도 호출이 거부된다. 진상(truth)은 시나리오 문서에서 서버가 직접 읽는다.
+async function loadTanmunScenario(scenarioId) {
+  if (!scenarioId) throw new HttpsError('invalid-argument', 'scenarioId가 필요합니다')
+  const snap = await admin.firestore().doc(`scenarios/${scenarioId}`).get()
+  if (!snap.exists) throw new HttpsError('not-found', '시나리오를 찾을 수 없습니다')
+  const scenario = snap.data()
+  if (scenario.contentType !== 'tanmun') throw new HttpsError('invalid-argument', '탐문 수사 시나리오가 아닙니다')
+  if (scenario.aiEnabled === false) {
+    throw new HttpsError('failed-precondition', '이 시나리오는 관리자가 AI 기록관을 꺼둔 상태입니다')
+  }
+  return scenario
+}
+
+function requireHomeSchoolStudent(req) {
+  if (!req.auth) throw new HttpsError('unauthenticated', '로그인이 필요합니다')
+  if (req.auth.token.homeSchoolStudent !== true && req.auth.token.email !== ADMIN_EMAIL) {
+    throw new HttpsError('permission-denied', '탐문 수사는 학교 인증 사용자만 이용할 수 있습니다')
+  }
+}
+
+exports.judgeTanmunQuestion = onCall(async (req) => {
+  requireHomeSchoolStudent(req)
+  const { scenarioId, question } = req.data ?? {}
+  if (!question || typeof question !== 'string' || question.length > 300) {
+    throw new HttpsError('invalid-argument', '질문(300자 이내)이 필요합니다')
+  }
+  const scenario = await loadTanmunScenario(scenarioId)
+  const { geminiApiKey, geminiModelPrimary, geminiModelFallback } = await getAdminConfig()
+  if (!geminiApiKey) throw new HttpsError('failed-precondition', '관리자가 아직 Gemini API 키를 설정하지 않았습니다')
+
+  const prompt = buildJudgePrompt({
+    truth: scenario.truth,
+    canonicalFacts: scenario.canonicalFacts,
+    fewShots: scenario.fewShots,
+    question,
+  })
+  let verdict
+  try {
+    const parsed = await callGeminiJsonWithFallback(prompt, {
+      apiKey: geminiApiKey,
+      primaryModel: geminiModelPrimary,
+      fallbackModel: geminiModelFallback,
+    })
+    verdict = normalizeVerdict(parsed)
+  } catch (e) {
+    console.error('judgeTanmunQuestion failed', e)
+    verdict = '그럴수도' // 설계 문서: 파싱 실패 시 "그럴수도" 폴백
+  }
+  return { verdict }
+})
+
+exports.gradeTanmunDeduction = onCall(async (req) => {
+  requireHomeSchoolStudent(req)
+  const { scenarioId, deduction } = req.data ?? {}
+  if (!deduction || typeof deduction !== 'string' || deduction.length > 2000) {
+    throw new HttpsError('invalid-argument', '최종 추리 서술(2000자 이내)이 필요합니다')
+  }
+  const scenario = await loadTanmunScenario(scenarioId)
+  const { geminiApiKey, geminiModelPrimary, geminiModelFallback } = await getAdminConfig()
+  if (!geminiApiKey) throw new HttpsError('failed-precondition', '관리자가 아직 Gemini API 키를 설정하지 않았습니다')
+
+  const prompt = buildGradePrompt({
+    truth: scenario.truth,
+    slots: scenario.slots,
+    bonusRule: scenario.bonusRule,
+    deduction,
+  })
+  try {
+    const parsed = await callGeminiJsonWithFallback(prompt, {
+      apiKey: geminiApiKey,
+      primaryModel: geminiModelPrimary,
+      fallbackModel: geminiModelFallback,
+    })
+    return normalizeGrade(parsed, (scenario.slots ?? []).length)
+  } catch (e) {
+    console.error('gradeTanmunDeduction failed', e)
+    throw new HttpsError('internal', '채점에 실패했습니다 — 잠시 후 다시 시도해주세요')
+  }
 })
 
 // 관리자 전용 — 업로드된 시나리오 설계 문서(PDF)를 Gemini로 해석해 앱 스키마에

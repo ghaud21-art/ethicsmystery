@@ -2,7 +2,7 @@ import { listScenarios, getScenario } from '../firebase/scenariosApi'
 
 const cache = new Map()
 
-const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2']
+const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', 'tanmun-1.0']
 
 export async function loadScenario(scenarioId) {
   if (cache.has(scenarioId)) return cache.get(scenarioId)
@@ -21,6 +21,7 @@ export async function loadRegistry() {
   const scenarios = await listScenarios()
   return scenarios.map((s) => ({
     scenarioId: s.scenarioId,
+    contentType: s.contentType ?? 'murder', // 'murder'(기본) | 'tanmun'
     title: s.meta?.title,
     unit: s.unit,
     themes: s.meta?.themes,

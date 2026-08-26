@@ -413,6 +413,112 @@ function EndingEditCard({ ending, editMode, onChange }) {
   )
 }
 
+// 탐문 수사(1인 AI 문답 추리) 시나리오 전용 편집기 — 머더미스터리와 데이터 구조가
+// 완전히 달라(clues.phase1 등이 없음) 별도 화면으로 분리한다.
+function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, onSave, busy, saved, error }) {
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
+  const updateMeta = (patch) => onChange({ ...draft, meta: { ...draft.meta, ...patch } })
+  const updateReflectionPrompt = (index, value) => {
+    const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
+    onChange({ ...draft, reflectionPrompts })
+  }
+
+  return (
+    <div className="page-wide">
+      <Masthead showBack />
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <h1 className="page-title" style={{ margin: 0 }}>{draft.meta?.title ?? draft.scenarioId} — 탐문 수사 편집</h1>
+        <div className="row" style={{ gap: 10 }}>
+          <label className="row" style={{ fontSize: 13, gap: 4 }}>
+            <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
+            편집 모드
+          </label>
+          <button className="primary" onClick={onSave} disabled={!isDirty || busy}>
+            {busy ? '저장 중...' : saved ? '저장됨' : '변경사항 저장'}
+          </button>
+        </div>
+      </div>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+
+      <div className="card col" style={{ borderColor: draft.aiEnabled === false ? 'var(--blood-light)' : 'var(--gold)', marginBottom: 20 }}>
+        <Checkbox
+          label="AI 기록관 사용 (끄면 이 시나리오는 학생이 플레이할 수 없게 잠깁니다)"
+          checked={draft.aiEnabled !== false}
+          editMode
+          onChange={(v) => onChange({ ...draft, aiEnabled: v })}
+        />
+        <p className="dim" style={{ fontSize: 11, margin: 0 }}>
+          현재 상태: {draft.aiEnabled === false ? 'AI 꺼짐 — 플레이 잠김' : 'AI 켜짐 — 플레이 가능'}. 서버에서도 동일하게 강제됩니다.
+        </p>
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>시나리오 정보</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <Field grow label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
+          <Field grow label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
+        </div>
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <Field grow label="단원명" value={draft.unit} editMode={editMode} onChange={(v) => onChange({ ...draft, unit: v })} />
+          <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
+          <Field grow label="예상 소요시간(분)" value={draft.meta?.estimatedMinutes} editMode={editMode} onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })} />
+        </div>
+        <Field label="학습 목표" value={draft.meta?.learningObjective} editMode={editMode} multiline onChange={(v) => updateMeta({ learningObjective: v })} />
+        <Field
+          label="테마 태그 (쉼표로 구분)"
+          value={draft.meta?.themes?.join(', ')}
+          editMode={editMode}
+          onChange={(v) => updateMeta({ themes: v.split(',').map((t) => t.trim()).filter(Boolean) })}
+        />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>공개 정보 (플레이어에게 처음 보이는 전부)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <Field label="사건 개요" value={draft.publicInfo} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, publicInfo: v })} />
+        <Field
+          label="공개 키워드 개수"
+          value={draft.publicKeywordCount}
+          editMode={editMode}
+          onChange={(v) => onChange({ ...draft, publicKeywordCount: Number(v) || 0 })}
+        />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>진상 전문 (AI 기록관 판정의 유일한 근거)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <Field value={draft.truth} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, truth: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>확정 사실 목록 (판정용)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.canonicalFacts} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, canonicalFacts: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>Few-shot 판정 예시</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.fewShots} editMode={editMode} rows={12} onChange={(v) => onChange({ ...draft, fewShots: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>단서 (15문마다 1장 공개)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.clues} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, clues: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>최종 추리 채점 슬롯</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.slots} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, slots: v })} />
+        <Field label="보너스 기준 (-1문)" value={draft.bonusRule} editMode={editMode} multiline small onChange={(v) => onChange({ ...draft, bonusRule: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
+      <div className="card col" style={{ marginBottom: 24 }}>
+        {(draft.reflectionPrompts ?? []).map((prompt, i) => (
+          <Field key={i} label={`질문 ${i + 1}`} value={prompt} editMode={editMode} multiline small onChange={(v) => updateReflectionPrompt(i, v)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function EditorInner({ scenarioId }) {
   const navigate = useNavigate()
   const [original, setOriginal] = useState(null)
@@ -497,6 +603,23 @@ function EditorInner({ scenarioId }) {
     } finally {
       setBusy(false)
     }
+  }
+
+  // 탐문 수사는 데이터 구조가 완전히 달라 전용 편집기로 분기한다.
+  if (draft.contentType === 'tanmun') {
+    return (
+      <TanmunEditorView
+        draft={draft}
+        original={original}
+        editMode={editMode}
+        setEditMode={setEditMode}
+        onChange={(next) => { setDraft(next); setSaved(false) }}
+        onSave={handleSave}
+        busy={busy}
+        saved={saved}
+        error={error}
+      />
+    )
   }
 
   const isSolo = !!draft.playerCharacter

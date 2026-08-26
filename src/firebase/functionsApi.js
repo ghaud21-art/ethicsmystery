@@ -26,3 +26,16 @@ export async function parseScenarioDoc({ fileBase64, mimeType }) {
   const result = await parseScenarioDocCallable({ fileBase64, mimeType })
   return result.data
 }
+
+const judgeTanmunQuestionCallable = httpsCallable(functions, 'judgeTanmunQuestion')
+const gradeTanmunDeductionCallable = httpsCallable(functions, 'gradeTanmunDeduction')
+
+export async function judgeTanmunQuestion(scenarioId, question) {
+  const result = await judgeTanmunQuestionCallable({ scenarioId, question })
+  return result.data // { verdict }
+}
+
+export async function gradeTanmunDeduction(scenarioId, deduction) {
+  const result = await gradeTanmunDeductionCallable({ scenarioId, deduction })
+  return result.data // { slotHits: bool[], bonusHit: bool }
+}
