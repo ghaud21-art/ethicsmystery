@@ -10,7 +10,7 @@ import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newTanmunRun, saveTanmunRun, getTanmunRun, clearTanmunRun,
-  CLUE_INTERVAL, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY, MAX_DEDUCTION_ATTEMPTS,
+  getClueInterval, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY, MAX_DEDUCTION_ATTEMPTS,
   getQuestionCap, unresolvedPenalty, gradeForScore, gradeLineText, VERDICT_STYLES,
 } from '../utils/tanmunRun.js'
 
@@ -119,6 +119,7 @@ function TanmunInner({ scenario }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [rulesOpen, setRulesOpen] = useState(false)
+  const [caseFilesOpen, setCaseFilesOpen] = useState(false)
   const [confirmRequest, setConfirmRequest] = useState(null) // { message, action }
   const logEndRef = useRef(null)
 
@@ -154,12 +155,13 @@ function TanmunInner({ scenario }) {
   const authorized = scenario.guestAllowed === true || tier === 'homeSchoolStudent' || isAdmin
 
   const clues = scenario.clues ?? []
-  const nextClueAt = run ? (run.cluesRevealed < clues.length ? (run.cluesRevealed + 1) * CLUE_INTERVAL : null) : null
+  const clueInterval = getClueInterval(scenario)
+  const nextClueAt = run ? (run.cluesRevealed < clues.length ? (run.cluesRevealed + 1) * clueInterval : null) : null
 
   // 문 수가 단서 공개 기준을 넘었으면 자동 공개 — 페널티로 한 번에 여러 기준을
   // 넘을 수도 있으므로 while로 따라잡는다.
   const syncClues = (next) => {
-    while (next.cluesRevealed < clues.length && next.questionCount >= (next.cluesRevealed + 1) * CLUE_INTERVAL) {
+    while (next.cluesRevealed < clues.length && next.questionCount >= (next.cluesRevealed + 1) * clueInterval) {
       next.cluesRevealed += 1
       next.log = [...next.log, { type: 'clue', index: next.cluesRevealed - 1 }]
     }
@@ -373,13 +375,25 @@ function TanmunInner({ scenario }) {
           </p>
         </div>
 
+        {scenario.initialCaseFiles?.length > 0 && (
+          <div className="card col" style={{ borderLeft: '2px solid var(--gold)' }}>
+            <div className="kicker" style={{ marginBottom: 2 }}>초동 수사 파일 — 무료 열람 {scenario.initialCaseFiles.length}건</div>
+            {scenario.initialCaseFiles.map((file, i) => (
+              <div key={i}>
+                <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>{file.title}</strong>
+                <p className="dim" style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.7 }}>{file.content}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="card col">
           <strong style={{ fontFamily: 'var(--font-head)', fontSize: 14 }}>수사 규칙</strong>
           <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
             <li>AI 기록관에게 <strong>예/아니오로 답할 수 있는 질문</strong>을 던져 진상을 추리하세요.</li>
             <li>판정은 5가지 — <strong style={{ color: '#4caf7d' }}>네</strong> · <strong style={{ color: '#e05d5d' }}>아니오</strong> · <strong style={{ color: '#d9b23d' }}>그럴수도</strong> · <strong style={{ color: '#9a9a9a' }}>중요하지않음</strong> · 반려(개방형 질문, 문 수 미포함)</li>
             <li>질문 1개 = <strong>+1문</strong>. 문 수가 낮을수록 좋은 등급을 받습니다.</li>
-            <li>{CLUE_INTERVAL}문마다 단서가 1장씩 공개됩니다 (총 {clues.length}장). 급하면 +{EMERGENCY_CLUE_COST}문으로 미리 열람할 수 있어요.</li>
+            <li>{clueInterval}문마다 단서가 1장씩 공개됩니다 (총 {clues.length}장). 급하면 +{EMERGENCY_CLUE_COST}문으로 미리 열람할 수 있어요.</li>
             <li>확신이 서면 <strong>최종 추리</strong>를 서술로 제출하세요 (총 {MAX_DEDUCTION_ATTEMPTS}회). 오답이면 +{WRONG_ATTEMPT_PENALTY}문 후 수사를 계속하고, 마지막 시도가 빗나가면 적중한 요소만큼 감면된 점수로 수사가 종료됩니다.</li>
             <li>{questionCap}문에 도달하면 질문이 마감되고 최종 답안 1회만 남습니다.</li>
           </ul>
@@ -570,6 +584,24 @@ function TanmunInner({ scenario }) {
         <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{scenario.publicInfo}</p>
       </div>
 
+      {scenario.initialCaseFiles?.length > 0 && (
+        <div className="card col">
+          <button
+            onClick={() => setCaseFilesOpen((v) => !v)}
+            style={{ border: 'none', background: 'none', padding: 0, fontSize: 12, color: 'var(--gold-light)', textAlign: 'left' }}
+          >
+            {caseFilesOpen ? `초동 수사 파일 접기 ▲` : `초동 수사 파일 ${scenario.initialCaseFiles.length}건 보기 ▼`}
+          </button>
+          {caseFilesOpen &&
+            scenario.initialCaseFiles.map((file, i) => (
+              <div key={i}>
+                <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>{file.title}</strong>
+                <p className="dim" style={{ margin: '4px 0 0', fontSize: 12, lineHeight: 1.7 }}>{file.content}</p>
+              </div>
+            ))}
+        </div>
+      )}
+
       {run.cluesRevealed > 0 && (
         <div className="col" style={{ marginBottom: 12 }}>
           {clues.slice(0, run.cluesRevealed).map((clue, i) => (
@@ -600,14 +632,19 @@ function TanmunInner({ scenario }) {
       <div className="col" style={{ maxHeight: 380, overflowY: 'auto', marginBottom: 12, paddingRight: 4 }}>
         {run.log.length === 0 && (
           <p className="dim" style={{ fontSize: 13 }}>
-            아직 질문이 없습니다. 기록관에게 예/아니오로 답할 수 있는 질문을 던져보세요 — 예: "강태오는 병에 걸렸습니까?"
+            아직 질문이 없습니다. 기록관에게 예/아니오로 답할 수 있는 질문을 던져보세요 — 예: "{scenario.fewShots?.[0]?.question ?? '범인이 있습니까?'}"
           </p>
         )}
         {run.log.map((entry, i) =>
           entry.type === 'question' ? (
-            <div key={i} className="card row" style={{ marginBottom: 0, justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
-              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{entry.text}</p>
-              <VerdictPill verdict={entry.verdict} />
+            <div key={i} className="card col" style={{ marginBottom: 0, gap: 4 }}>
+              <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start', gap: 10 }}>
+                <p style={{ margin: 0, fontSize: 13, lineHeight: 1.6 }}>{entry.text}</p>
+                <VerdictPill verdict={entry.verdict} />
+              </div>
+              {entry.verdict === '반려' && scenario.rejectionNote && (
+                <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.5 }}>{scenario.rejectionNote}</p>
+              )}
             </div>
           ) : entry.type === 'clue' ? (
             <div key={i} className="card" style={{ marginBottom: 0, borderLeft: '2px solid var(--gold)' }}>
@@ -684,7 +721,7 @@ function TanmunInner({ scenario }) {
             <ul style={{ margin: 0, paddingLeft: 18, fontSize: 13, lineHeight: 1.8 }}>
               <li>질문 1개 = +1문 (반려된 개방형 질문은 문 수에 안 들어감)</li>
               <li>오답 제출 = +{WRONG_ATTEMPT_PENALTY}문 · 긴급 단서 열람 = +{EMERGENCY_CLUE_COST}문</li>
-              <li>{CLUE_INTERVAL}문마다 단서 1장 자동 공개 (총 {clues.length}장)</li>
+              <li>{clueInterval}문마다 단서 1장 자동 공개 (총 {clues.length}장)</li>
               <li>최종 추리는 총 {MAX_DEDUCTION_ATTEMPTS}회까지 제출 가능 · {questionCap}문 도달 시 질문 마감</li>
               <li>미해결 종료 시 +25문 (핵심 요소 1개 적중당 -4문 감면, 최소 +10문)</li>
               <li>등급: {gradeLineText(scenario)}</li>

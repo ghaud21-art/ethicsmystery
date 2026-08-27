@@ -34,7 +34,12 @@ export function clearTanmunRun(scenarioId) {
   localStorage.removeItem(KEY_PREFIX + scenarioId)
 }
 
-export const CLUE_INTERVAL = 15 // 15문마다 단서 1장 공개
+// 단서 자동 공개 간격(문) — 기본 15문마다 1장. 난이도 보정으로 간격을 줄이는
+// 시나리오(clueInterval)가 우선한다.
+export function getClueInterval(scenario) {
+  return scenario?.clueInterval ?? 15
+}
+
 export const EMERGENCY_CLUE_COST = 10 // 긴급 단서 열람 비용(문)
 export const WRONG_ATTEMPT_PENALTY = 5 // 오답 제출 페널티(문)
 // 최종 추리는 총 3회까지 — 3회 모두 빗나가면 포기 없이도 수사가 종료되고,
