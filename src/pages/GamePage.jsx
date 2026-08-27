@@ -10,6 +10,7 @@ import APBar from '../components/APBar.jsx'
 import PhaseTimer from '../components/PhaseTimer.jsx'
 import MyCluesPanel from '../components/MyCluesPanel.jsx'
 import JudgingReferenceModal from '../components/JudgingReferenceModal.jsx'
+import CulpritBanner from '../components/CulpritBanner.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { getPhaseApBudget, getApFieldName, isSharedApPool } from '../engine/apEngine.js'
@@ -32,6 +33,8 @@ function BriefingScreen({ character, secretLayers, onContinue }) {
       <h1 className="page-title">{character?.name}</h1>
       <p className="dim" style={{ marginBottom: 14 }}>{character?.role}</p>
       <div className="page-title-rule" />
+
+      <CulpritBanner isCulprit={!!character?.isCulprit} />
 
       <p className="dim" style={{ fontSize: 12 }}>공개 정보</p>
       <p style={{ fontSize: 14, lineHeight: 1.75 }}>{character?.publicInfo}</p>

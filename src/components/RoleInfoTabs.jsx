@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import CulpritBanner from './CulpritBanner.jsx'
 
 export default function RoleInfoTabs({ character, secretLayers }) {
   const [tab, setTab] = useState('public')
@@ -29,6 +30,7 @@ export default function RoleInfoTabs({ character, secretLayers }) {
       {tab === 'detail' && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.75, opacity: 0.92 }}>{character.detailInfo}</p>}
       {tab === 'secret' && (
         <div className="col">
+          <CulpritBanner isCulprit={!!character.isCulprit} />
           {secretLayers?.length ? (
             secretLayers.map((layer) => (
               <p
