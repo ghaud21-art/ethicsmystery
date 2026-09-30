@@ -58,7 +58,7 @@ export default function SoloResultsPage() {
   // (AI 피드백까지 반영된 다음) 자동으로 결과 이미지를 저장한다.
   useEffect(() => {
     if (autoExportPending && exportRef.current && scenario) {
-      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.png`)
+      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.jpg`)
       setAutoExportPending(false)
     }
   }, [autoExportPending, scenario])
@@ -302,7 +302,7 @@ export default function SoloResultsPage() {
       </div>
 
       <div style={{ marginTop: 12, marginBottom: 18 }}>
-        <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-my-record.png`} />
+        <ResultExportButton targetRef={exportRef} filename={`${scenario.scenarioId}-my-record.jpg`} />
       </div>
 
       <hr className="divider" />

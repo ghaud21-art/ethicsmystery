@@ -116,7 +116,10 @@ function TanmunInner({ scenario }) {
   const [question, setQuestion] = useState('')
   const [deduction, setDeduction] = useState('')
   const [deductionOpen, setDeductionOpen] = useState(false)
-  const [busy, setBusy] = useState(false)
+  // 질문 판정과 추리 채점의 진행 상태를 분리한다 — 하나로 묶으면 채점이 느릴 때
+  // 질문 입력창까지 통째로 잠겨 "질문이 안 된다"는 오해를 낳는다.
+  const [askBusy, setAskBusy] = useState(false)
+  const [gradeBusy, setGradeBusy] = useState(false)
   const [error, setError] = useState(null)
   const [rulesOpen, setRulesOpen] = useState(false)
   const [caseFilesOpen, setCaseFilesOpen] = useState(false)
@@ -145,7 +148,7 @@ function TanmunInner({ scenario }) {
 
   useEffect(() => {
     if (autoExportPending && exportRef.current) {
-      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-tanmun-record.png`)
+      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-tanmun-record.jpg`)
       setAutoExportPending(false)
     }
   }, [autoExportPending, scenario.scenarioId])
@@ -175,8 +178,8 @@ function TanmunInner({ scenario }) {
 
   const handleAsk = async () => {
     const q = question.trim()
-    if (!q) return
-    setBusy(true)
+    if (!q || askBusy) return
+    setAskBusy(true)
     setError(null)
     try {
       const { verdict } = await judgeTanmunQuestion(scenarioId, q)
@@ -193,7 +196,7 @@ function TanmunInner({ scenario }) {
     } catch (e) {
       setError(e.message)
     } finally {
-      setBusy(false)
+      setAskBusy(false)
     }
   }
 
@@ -235,8 +238,8 @@ function TanmunInner({ scenario }) {
 
   const handleSubmitDeduction = async () => {
     const text = deduction.trim()
-    if (!text) return
-    setBusy(true)
+    if (!text || gradeBusy) return
+    setGradeBusy(true)
     setError(null)
     try {
       const { slotHits, bonusHit } = await gradeTanmunDeduction(scenarioId, text)
@@ -255,8 +258,8 @@ function TanmunInner({ scenario }) {
           ),
         )
       } else {
-        setDeduction('')
-        setDeductionOpen(false)
+        // 오답이어도 작성한 추리는 지우지 않는다 — 학생이 이어서 고쳐 쓸 수 있게
+        // 텍스트와 패널을 그대로 유지한다.
         setRun((prev) => {
           const next = {
             ...prev,
@@ -273,7 +276,7 @@ function TanmunInner({ scenario }) {
     } catch (e) {
       setError(e.message)
     } finally {
-      setBusy(false)
+      setGradeBusy(false)
     }
   }
 
@@ -546,7 +549,7 @@ function TanmunInner({ scenario }) {
         <div style={{ marginTop: 12, marginBottom: 18 }}>
           <ResultExportButton
             targetRef={exportRef}
-            filename={`${scenario.scenarioId}-tanmun-record.png`}
+            filename={`${scenario.scenarioId}-tanmun-record.jpg`}
             label={tier === 'homeSchoolStudent' ? '이미지 다시 저장하기' : '결과 이미지로 저장'}
           />
         </div>
@@ -623,7 +626,7 @@ function TanmunInner({ scenario }) {
             : `단서 ${clues.length}장 모두 공개됨`}
         </span>
         {nextClueAt != null && (
-          <button onClick={handleEmergencyClue} disabled={busy} style={{ fontSize: 11, padding: '3px 8px' }}>
+          <button onClick={handleEmergencyClue} style={{ fontSize: 11, padding: '3px 8px' }}>
             긴급 열람 (+{EMERGENCY_CLUE_COST}문)
           </button>
         )}
@@ -666,12 +669,16 @@ function TanmunInner({ scenario }) {
             placeholder="예/아니오로 답할 수 있는 질문을 입력하세요"
             value={question}
             onChange={(e) => setQuestion(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter' && !busy) handleAsk() }}
-            disabled={busy}
+            onKeyDown={(e) => {
+              // 한글 IME 조합 확정용 Enter(keyCode 229)는 무시 — 중복/미완성 전송 방지
+              if (e.nativeEvent.isComposing || e.keyCode === 229) return
+              if (e.key === 'Enter' && !askBusy) handleAsk()
+            }}
+            disabled={askBusy}
             style={{ flex: 1 }}
           />
-          <button className="primary" onClick={handleAsk} disabled={busy || !question.trim()}>
-            {busy ? '판정 중...' : '질문하기'}
+          <button className="primary" onClick={handleAsk} disabled={askBusy || !question.trim()}>
+            {askBusy ? '판정 중...' : '질문하기'}
           </button>
         </div>
       ) : (
@@ -696,13 +703,13 @@ function TanmunInner({ scenario }) {
             value={deduction}
             onChange={(e) => setDeduction(e.target.value)}
             placeholder="사건의 전말을 자신의 말로 서술해보세요"
-            disabled={busy}
+            disabled={gradeBusy}
           />
           <div className="row">
-            <button className="primary" onClick={handleSubmitDeduction} disabled={busy || !deduction.trim()}>
-              {busy ? '채점 중...' : '최종 추리 제출하기'}
+            <button className="primary" onClick={handleSubmitDeduction} disabled={gradeBusy || !deduction.trim()}>
+              {gradeBusy ? '채점 중...' : '최종 추리 제출하기'}
             </button>
-            {!questionsLocked && <button onClick={() => setDeductionOpen(false)} disabled={busy}>접기</button>}
+            {!questionsLocked && <button onClick={() => setDeductionOpen(false)} disabled={gradeBusy}>접기</button>}
           </div>
         </div>
       ) : (

@@ -113,7 +113,7 @@ function ResultsInner({ scenario }) {
   // 커밋된 뒤에 캡처해야 하므로 상태 변경 직후가 아니라 effect에서 처리한다.
   useEffect(() => {
     if (autoExportPending && exportRef.current) {
-      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.png`)
+      exportElementAsImage(exportRef.current, `${scenario.scenarioId}-my-record.jpg`)
       setAutoExportPending(false)
     }
   }, [autoExportPending, scenario.scenarioId])
@@ -377,7 +377,7 @@ function ResultsInner({ scenario }) {
       <div style={{ marginTop: 12, marginBottom: 18 }}>
         <ResultExportButton
           targetRef={exportRef}
-          filename={`${scenario.scenarioId}-my-record.png`}
+          filename={`${scenario.scenarioId}-my-record.jpg`}
           label={tier === 'homeSchoolStudent' ? '이미지 다시 저장하기' : '결과 이미지로 저장'}
         />
       </div>
