@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom'
 import { loadRegistry } from '../engine/scenarioLoader'
 import Masthead from '../components/Masthead.jsx'
 import { useSiteConfig } from '../firebase/useSiteConfig.js'
+import { isLocalMode } from '../mysteryroom/store.js'
+import { loadLocalRegistry } from '../mysteryroom/loader.js'
 
 const MOODS = ['mood-1', 'mood-2', 'mood-3']
 const TAG_TONES = ['pill-blue', 'pill-rose', 'pill-violet', 'pill-slate']
@@ -10,9 +12,11 @@ const TANMUN_KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
 
 function ScenarioCard({ s, index }) {
   const isTanmun = s.contentType === 'tanmun'
+  const isMystery = s.contentType === 'mysteryroom'
+  const counts = s.supportedPlayerCounts ?? []
   return (
     <Link
-      to={isTanmun ? `/tanmun/${s.scenarioId}` : `/scenario/${s.scenarioId}`}
+      to={isTanmun ? `/tanmun/${s.scenarioId}` : isMystery ? `/mystery/${s.scenarioId}${isLocalMode() ? '?local=1' : ''}` : `/scenario/${s.scenarioId}`}
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}>
@@ -49,7 +53,7 @@ function ScenarioCard({ s, index }) {
             </span>
             <span className="stat-chip">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-              {isTanmun ? '1인' : `${s.supportedPlayerCounts?.join('~')}인`}
+              {isTanmun ? '1인' : isMystery ? `${Math.min(...counts)}~${Math.max(...counts)}인` : `${s.supportedPlayerCounts?.join('~')}인`}
             </span>
           </div>
           <div className="row" style={{ marginTop: 4 }}>
@@ -69,15 +73,16 @@ function ScenarioCard({ s, index }) {
 export default function ScenarioSelectPage() {
   const [scenarios, setScenarios] = useState(null)
   const [error, setError] = useState(null)
-  const [tab, setTab] = useState('murder') // 'murder' | 'tanmun'
+  const [tab, setTab] = useState('murder') // 'murder' | 'tanmun' | 'mysteryroom'
   const siteConfig = useSiteConfig()
   const heroSrc = siteConfig?.mainImageDataUrl || `${import.meta.env.BASE_URL}hero-main.webp`
 
   useEffect(() => {
-    loadRegistry().then(setScenarios).catch(setError)
+    // 로컬 테스트 모드에서는 Firestore 대신 견본 룸만 보여 준다.
+    ;(isLocalMode() ? loadLocalRegistry() : loadRegistry()).then(setScenarios).catch(setError)
   }, [])
 
-  const visible = scenarios?.filter((s) => (tab === 'tanmun' ? s.contentType === 'tanmun' : s.contentType !== 'tanmun'))
+  const visible = scenarios?.filter((s) => (tab === 'murder' ? !['tanmun', 'mysteryroom'].includes(s.contentType) : s.contentType === tab))
 
   return (
     <div className="page-wide">
@@ -101,12 +106,15 @@ export default function ScenarioSelectPage() {
         <button className={`tab-button ${tab === 'tanmun' ? 'active' : ''}`} onClick={() => setTab('tanmun')}>
           탐문 수사
         </button>
+        <button className={`tab-button ${tab === 'mysteryroom' ? 'active' : ''}`} onClick={() => setTab('mysteryroom')}>
+          미스터리 룸
+        </button>
       </div>
 
       <div className="row" style={{ marginBottom: 18 }}>
         <div style={{ width: 4, height: 20, background: 'var(--gold)', borderRadius: 2 }} />
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: 0 }}>
-          {tab === 'murder' ? '머더미스터리' : '탐문 수사'}
+          {{ murder: '머더미스터리', tanmun: '탐문 수사', mysteryroom: '미스터리 룸' }[tab]}
         </h2>
       </div>
 
@@ -128,11 +136,18 @@ export default function ScenarioSelectPage() {
         </p>
       )}
 
+      {tab === 'mysteryroom' && (
+        <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+          모둠이 각자 기기로 같은 방에 들어가, 장면을 함께 읽고 세 개의 방을 추리와 토론으로 풀어 탈출하는 협력 방탈출입니다.
+          역할마다 다른 관점과 자료를 가지고 있어서, 말하고 공유해야 문이 열립니다.
+        </p>
+      )}
+
       {error && <div className="card">시나리오 목록을 불러오지 못했습니다.</div>}
       {!scenarios && !error && <div className="dim">불러오는 중...</div>}
       {visible && visible.length === 0 && (
         <div className="card">
-          <p style={{ margin: 0 }}>{tab === 'tanmun' ? '탐문 수사 시나리오를 준비 중이에요. 곧 만나볼 수 있습니다.' : '아직 등록된 시나리오가 없어요.'}</p>
+          <p style={{ margin: 0 }}>{tab === 'tanmun' ? '탐문 수사 시나리오를 준비 중이에요. 곧 만나볼 수 있습니다.' : tab === 'mysteryroom' ? '미스터리 룸을 준비 중이에요. 곧 만나볼 수 있습니다.' : '아직 등록된 시나리오가 없어요.'}</p>
         </div>
       )}
 

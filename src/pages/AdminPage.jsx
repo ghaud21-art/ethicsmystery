@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { validateRoom } from '../mysteryroom/schema.js'
 import { Link } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import AiFeedbackView from '../components/AiFeedbackView.jsx'
@@ -278,6 +279,11 @@ function ScenarioUploadSection({ onSaved }) {
     try {
       const parsed = JSON.parse(draftText)
       if (!parsed.scenarioId) throw new Error('scenarioId 필드가 필요합니다')
+      // 미스터리룸(room-2.0)은 저장 전에 형식·연결을 검사한다.
+      if (parsed.contentType === 'mysteryroom' || String(parsed.schemaVersion).startsWith('room-')) {
+        const errors = validateRoom(parsed)
+        if (errors.length) throw new Error(`미스터리룸 검사 실패 ${errors.length}건:\n- ${errors.join('\n- ')}`)
+      }
       await saveScenario(parsed)
       setDraftText('')
       setFile(null)
@@ -315,7 +321,7 @@ function ScenarioUploadSection({ onSaved }) {
           </button>
         </>
       )}
-      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12, whiteSpace: 'pre-line' }}>{error}</p>}
     </div>
   )
 }

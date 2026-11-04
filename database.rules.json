@@ -43,6 +43,15 @@
         },
         ".write": "auth != null && (!data.exists() || auth.uid === data.child('meta').child('hostUid').val())"
       }
+    },
+    "mysteryRooms": {
+      "$code": {
+        ".read": "auth != null",
+        ".write": "auth != null && (!data.exists() || data.child('players').child(auth.uid).exists() || (newData.child('players').child(auth.uid).exists() && data.child('meta/status').val() === 'waiting'))",
+        "meta": {
+          ".validate": "newData.hasChildren(['scenarioId', 'hostUid', 'playerCount'])"
+        }
+      }
     }
   }
 }

@@ -11,6 +11,8 @@ import StudentResultsPage from './pages/StudentResultsPage.jsx'
 import SoloGamePage from './pages/SoloGamePage.jsx'
 import SoloResultsPage from './pages/SoloResultsPage.jsx'
 import TanmunPlayPage from './pages/TanmunPlayPage.jsx'
+import MysteryIntroPage from './mysteryroom/pages/MysteryIntroPage.jsx'
+import MysteryRoomPage from './mysteryroom/pages/MysteryRoomPage.jsx'
 
 export default function App() {
   return (
@@ -27,6 +29,8 @@ export default function App() {
       <Route path="/scenario/:scenarioId/solo/play" element={<SoloGamePage />} />
       <Route path="/scenario/:scenarioId/solo/results" element={<SoloResultsPage />} />
       <Route path="/tanmun/:scenarioId" element={<TanmunPlayPage />} />
+      <Route path="/mystery/:scenarioId" element={<MysteryIntroPage />} />
+      <Route path="/mystery/:scenarioId/:code" element={<MysteryRoomPage />} />
     </Routes>
   )
 }
