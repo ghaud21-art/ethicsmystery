@@ -13,6 +13,7 @@ import SoloResultsPage from './pages/SoloResultsPage.jsx'
 import TanmunPlayPage from './pages/TanmunPlayPage.jsx'
 import MysteryIntroPage from './mysteryroom/pages/MysteryIntroPage.jsx'
 import MysteryRoomPage from './mysteryroom/pages/MysteryRoomPage.jsx'
+import MysteryRoomEditor from './mysteryroom/admin/MysteryRoomEditor.jsx'
 
 export default function App() {
   return (
@@ -25,6 +26,7 @@ export default function App() {
       <Route path="/scenario/:scenarioId/room/:roomCode/results" element={<ResultsPage />} />
       <Route path="/admin" element={<AdminPage />} />
       <Route path="/admin/preview/:scenarioId" element={<AdminPreviewPage />} />
+      <Route path="/admin/mystery/:scenarioId" element={<MysteryRoomEditor />} />
       <Route path="/my-results" element={<StudentResultsPage />} />
       <Route path="/scenario/:scenarioId/solo/play" element={<SoloGamePage />} />
       <Route path="/scenario/:scenarioId/solo/results" element={<SoloResultsPage />} />

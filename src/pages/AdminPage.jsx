@@ -544,7 +544,7 @@ function ScenarioListSection({ scenarios, onChanged }) {
             <button onClick={() => handleTogglePublished(s)} disabled={busy}>
               {s.published ? '준비 중으로 전환' : '플레이 가능으로 전환'}
             </button>
-            {tab !== 'mysteryroom' && <Link to={`/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>}
+            <Link to={tab === 'mysteryroom' ? `/admin/mystery/${s.scenarioId}` : `/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>
             {tab === 'mysteryroom' && (
               <button
                 className="primary"
