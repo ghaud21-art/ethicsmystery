@@ -136,7 +136,7 @@ export default function ScenarioSelectPage() {
 
       {tab === 'mysteryroom' && (
         <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-          모둠이 각자 기기로 같은 방에 들어가, 장면을 함께 읽고 세 개의 방을 추리와 토론으로 풀어 탈출하는 협력 방탈출입니다.
+          모둠이 같은 방에 들어가, 추리와 토론으로 문제를 해결하는 협력 게임입니다.
           역할마다 다른 관점과 자료를 가지고 있어서, 말하고 공유해야 문이 열립니다.
         </p>
       )}
