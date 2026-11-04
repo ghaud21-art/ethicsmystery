@@ -41,6 +41,20 @@ service cloud.firestore {
       allow read, write: if false;
     }
 
+    // 미스터리룸 결과 — 학생(익명 로그인 포함)은 자기 결과를 만들기만 한다.
+    // 이름·학번은 학교 인증(homeSchoolStudent) 사용자만 함께 저장할 수 있다.
+    // 읽기·삭제는 관리자만(관리자 페이지의 결과 내역).
+    match /mysteryRoomResults/{docId} {
+      allow read, delete: if isAdmin();
+      allow create: if request.auth != null
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.nickname is string
+                    && request.resource.data.nickname.size() > 0
+                    && request.resource.data.nickname.size() <= 20
+                    && (!('studentName' in request.resource.data) || request.auth.token.homeSchoolStudent == true);
+      allow update: if false;
+    }
+
     match /{document=**} {
       allow read, write: if false;
     }

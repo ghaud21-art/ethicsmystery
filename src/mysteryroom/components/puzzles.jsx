@@ -294,7 +294,7 @@ export function PuzzleArea({ sceneId, puzzle }) {
     <div className="col" style={{ gap: 12 }}>
       <Comp config={puzzle.config} sceneId={sceneId} />
 
-      {puzzle.hints?.length > 0 && fails >= HINT_AFTER_FAILS && (
+      {puzzle.hints?.length > 0 && (fails >= HINT_AFTER_FAILS || mr.state.hintsUnlocked?.[sceneId]) && (
         hintOpen ? (
           <div className="mr-hint">
             <div className="row" style={{ gap: 6, marginBottom: 4 }}><Icon name="bulb" /><strong>힌트</strong></div>

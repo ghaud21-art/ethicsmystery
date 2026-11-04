@@ -110,3 +110,9 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
   color: var(--gold-light); text-shadow: 0 0 24px rgba(201, 162, 39, 0.35);
 }
 .mr-banner { padding: 8px 12px; border-radius: var(--radius-sm); font-size: 12px; margin-bottom: 12px; background: rgba(94, 145, 224, 0.12); color: #9db8e8; border: 1px solid rgba(94, 145, 224, 0.35); }
+
+.mr-result-card { width: 100%; padding: 18px; border-radius: var(--radius); background: var(--panel); border: 1px solid var(--gold-dark); }
+.mr-result-card .mr-table th { width: 96px; white-space: nowrap; }
+.mr-board-row { display: grid; grid-template-columns: 70px minmax(0, 1.4fr) minmax(0, 1fr) repeat(3, 70px) 120px; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
+.mr-board-head { font-size: 11px; color: var(--ink-dim); font-weight: 700; }
+@media (max-width: 860px) { .mr-board-row { grid-template-columns: 1fr 1fr; } }

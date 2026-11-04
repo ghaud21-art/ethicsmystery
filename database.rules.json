@@ -45,9 +45,10 @@
       }
     },
     "mysteryRooms": {
+      ".read": "auth != null && auth.token.email === 'ghaud21@gmail.com' && auth.token.email_verified === true",
       "$code": {
         ".read": "auth != null",
-        ".write": "auth != null && (!data.exists() || data.child('players').child(auth.uid).exists() || (newData.child('players').child(auth.uid).exists() && data.child('meta/status').val() === 'waiting'))",
+        ".write": "auth != null && (!data.exists() || data.child('players').child(auth.uid).exists() || (newData.child('players').child(auth.uid).exists() && data.child('meta/status').val() === 'waiting') || (auth.token.email === 'ghaud21@gmail.com' && auth.token.email_verified === true))",
         "meta": {
           ".validate": "newData.hasChildren(['scenarioId', 'hostUid', 'playerCount'])"
         }

@@ -31,3 +31,8 @@ export async function setScenarioThumbnail(scenarioId, thumbnailDataUrl) {
 export async function deleteScenario(scenarioId) {
   await deleteDoc(doc(scenariosCol(), scenarioId))
 }
+
+// 관리자 전용 — 일부 필드만 바꾼다(예: 미스터리룸 AI 피드백 켜기/끄기).
+export async function updateScenarioFields(scenarioId, patch) {
+  await updateDoc(doc(scenariosCol(), scenarioId), patch)
+}

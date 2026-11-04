@@ -12,7 +12,7 @@ function firebaseStore() {
   const r = (path) => ref(db, `${ROOT}/${path}`)
   return {
     kind: 'firebase',
-    subscribe: (path, cb) => onValue(r(path), (snap) => cb(snap.val())),
+    subscribe: (path, cb, onError) => onValue(r(path), (snap) => cb(snap.val()), (e) => onError?.(e)),
     get: async (path) => (await get(r(path))).val(),
     set: (path, value) => set(r(path), value),
     update: (path, patch) => update(r(path), patch),

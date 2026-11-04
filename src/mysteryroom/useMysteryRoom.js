@@ -225,8 +225,8 @@ export function useMysteryRoom(room, code) {
       confirmTainted: () => goTo(state.scene, scene.puzzle.onSolve, (n) => (n.pendingSolve = null)),
       openHint: () => store.set(`${code}/state/hintsUsed/${state.scene}`, true),
       retry: (to) => goTo(state.scene, to),
-      // 4단계(토론)에서 실제 토론 화면으로 바뀐다
-      finishDebatePlaceholder: () => goTo(state.scene, scene.next, (n) => (n.debateDone = true)),
+      // BAD 엔딩에서 다시 도전하지 않고 끝내기 (등급 B로 결과 화면)
+      finishHere: () => store.set(`${code}/state/finished`, true),
       learnConcept: (k) => k && store.set(`${code}/state/concepts/${k}`, true),
     }),
     [store, code, uid, players, room, state, board, scene, goTo],
@@ -234,6 +234,7 @@ export function useMysteryRoom(room, code) {
 
   return {
     loading: data === undefined,
+    code,
     data,
     uid,
     meta,

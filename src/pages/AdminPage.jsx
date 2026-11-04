@@ -5,10 +5,13 @@ import Masthead from '../components/Masthead.jsx'
 import AiFeedbackView from '../components/AiFeedbackView.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
-import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario } from '../firebase/scenariosApi.js'
+import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario, updateScenarioFields } from '../firebase/scenariosApi.js'
 import { parseScenarioDoc } from '../firebase/functionsApi.js'
 import { getAdminConfig, saveAdminConfig } from '../firebase/adminConfigApi.js'
-import { listAllReflectionLogs, deleteReflectionLog } from '../firebase/reflectionApi.js'
+import { listAllReflectionLogs, deleteReflectionLog, deleteReflectionLogs } from '../firebase/reflectionApi.js'
+import { listMysteryResults, deleteMysteryResult, deleteMysteryResults } from '../mysteryroom/resultsApi.js'
+import { CONTENT_TYPES, contentTypeOf, TypeTabs, usePaged, Pager } from '../components/AdminListTools.jsx'
+import MysteryLiveBoard from '../mysteryroom/admin/MysteryLiveBoard.jsx'
 import { fileToBase64, resizeImageToDataUrl } from '../utils/fileHelpers.js'
 
 function formatDate(ms) {
@@ -17,112 +20,198 @@ function formatDate(ms) {
   return `${d.getFullYear()}.${String(d.getMonth() + 1).padStart(2, '0')}.${String(d.getDate()).padStart(2, '0')}`
 }
 
+// 미스터리룸 결과 한 건 (mysteryRoomResults)
+function MysteryResultCard({ r, open, onToggle, onDelete, busy }) {
+  const who = r.studentId ? `${r.studentId} ${r.studentName}` : r.nickname
+  return (
+    <div className="card col">
+      <div className="row" style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={onToggle}>
+        <div>
+          <strong>{who}</strong>
+          {r.studentId && <span className="dim" style={{ fontSize: 12, marginLeft: 6 }}>({r.nickname})</span>}
+          <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>
+            {r.roomTitle} · 방 {r.roomCode} · {formatDate(r.createdAt)}
+          </span>
+        </div>
+        <span className="pill pill-outline">{r.grade} · {r.endingName}</span>
+      </div>
+      {open && (
+        <div className="col">
+          <hr className="divider" style={{ margin: '4px 0 10px' }} />
+          <div className="row">
+            <span className="pill pill-outline">역할: {r.roles}</span>
+            <span className="pill pill-outline">실패 {r.failedTotal}회 · 힌트 {r.hintsUsed}회</span>
+            {r.stanceBefore && <span className="pill pill-outline">입장 {r.stanceBefore} → {r.stanceAfter ?? '-'}</span>}
+            {r.debate?.conclusion && <span className="pill pill-outline">모둠 결론 {r.debate.conclusion}</span>}
+          </div>
+          {r.debate?.acknowledge && <p style={{ fontSize: 13, margin: 0 }}><strong>인정한 근거</strong> {r.debate.acknowledge}</p>}
+          {r.debate?.concession && <p style={{ fontSize: 13, margin: 0 }}><strong>조건부 양보</strong> {r.debate.concession}</p>}
+          {(r.reflection ?? []).map((q, i) => (
+            <div key={i}>
+              <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>[{q.link}] {q.question}</p>
+              <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{q.answer || '(무응답)'}</p>
+            </div>
+          ))}
+          <button onClick={onDelete} disabled={busy} style={{ alignSelf: 'flex-start', marginTop: 6 }}>이 기록 삭제</button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 function StudentLogsSection({ scenarios }) {
   const [logs, setLogs] = useState(null)
+  const [mrResults, setMrResults] = useState(null)
+  const [tab, setTab] = useState('murder')
   const [openId, setOpenId] = useState(null)
-  const [busyId, setBusyId] = useState(null)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
   const [query, setQuery] = useState('')
 
-  const titleMap = Object.fromEntries((scenarios ?? []).map((s) => [s.scenarioId, s.meta?.title ?? s.scenarioId]))
+  const byId = Object.fromEntries((scenarios ?? []).map((s) => [s.scenarioId, s]))
+  const titleOf = (id) => byId[id]?.meta?.title ?? id
+  // 시나리오가 삭제돼 종류를 알 수 없는 기록은 머더미스터리로 분류한다.
+  const typeOfLog = (log) => contentTypeOf(byId[log.scenarioId])
 
-  const refresh = () => listAllReflectionLogs().then(setLogs).catch((e) => setError(e.message))
-
+  const refresh = () => {
+    listAllReflectionLogs().then(setLogs).catch((e) => setError(e.message))
+    listMysteryResults().then(setMrResults).catch(() => setMrResults([]))
+  }
   useEffect(() => {
     refresh()
   }, [])
 
+  const q = query.trim().toLowerCase()
+  const inTab = tab === 'mysteryroom' ? mrResults : logs?.filter((l) => typeOfLog(l) === tab)
+  const filtered = !inTab
+    ? null
+    : !q
+      ? inTab
+      : inTab.filter((r) =>
+          (tab === 'mysteryroom' ? [r.studentId, r.studentName, r.nickname, r.roomTitle, r.roomCode] : [r.studentId, r.studentName, titleOf(r.scenarioId)]).some((v) =>
+            String(v ?? '').toLowerCase().includes(q),
+          ),
+        )
+  const counts = {
+    murder: logs?.filter((l) => typeOfLog(l) === 'murder').length ?? 0,
+    tanmun: logs?.filter((l) => typeOfLog(l) === 'tanmun').length ?? 0,
+    mysteryroom: mrResults?.length ?? 0,
+  }
+  const paged = usePaged(filtered, 15, `${tab}|${q}`)
+  const tabLabel = CONTENT_TYPES.find(([k]) => k === tab)[1]
+
+  const removeLocal = (ids) => {
+    const set = new Set(ids)
+    if (tab === 'mysteryroom') setMrResults((prev) => prev.filter((r) => !set.has(r.id)))
+    else setLogs((prev) => prev.filter((l) => !set.has(l.id)))
+  }
+
   const handleDelete = async (id) => {
     if (!confirm('이 학생 기록을 삭제할까요? 되돌릴 수 없습니다.')) return
-    setBusyId(id)
+    setBusy(true)
     setError(null)
     try {
-      await deleteReflectionLog(id)
-      setLogs((prev) => prev.filter((l) => l.id !== id))
+      await (tab === 'mysteryroom' ? deleteMysteryResult(id) : deleteReflectionLog(id))
+      removeLocal([id])
     } catch (e) {
       setError(e.message)
     } finally {
-      setBusyId(null)
+      setBusy(false)
     }
   }
 
-  // 이름/학번/시나리오 제목으로 클라이언트 사이드 검색 — 기록이 이미 전부
-  // 메모리에 로드돼 있어(listAllReflectionLogs가 한 번에 다 가져옴) 별도 API
-  // 호출 없이 바로 필터링한다.
-  const normalizedQuery = query.trim().toLowerCase()
-  const filteredLogs = !logs
-    ? logs
-    : !normalizedQuery
-      ? logs
-      : logs.filter((log) => {
-          const title = titleMap[log.scenarioId] ?? log.scenarioId
-          return [log.studentId, log.studentName, title].some((v) => v?.toLowerCase().includes(normalizedQuery))
-        })
+  // 지금 보이는 목록(검색 중이면 검색 결과)을 한 번에 지운다. 두 번 확인한다.
+  const handleDeleteAll = async () => {
+    const ids = filtered.map((r) => r.id)
+    const what = q ? `검색 결과 ${ids.length}건` : `${tabLabel} 기록 전체 ${ids.length}건`
+    if (!confirm(`${what}을 삭제할까요?`)) return
+    if (!confirm(`정말 삭제할까요? ${ids.length}건이 지워지며 되돌릴 수 없습니다.`)) return
+    setBusy(true)
+    setError(null)
+    try {
+      await (tab === 'mysteryroom' ? deleteMysteryResults(ids) : deleteReflectionLogs(ids))
+      removeLocal(ids)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(false)
+    }
+  }
 
   return (
     <div className="col">
-      <h2 className="page-title" style={{ fontSize: 19 }}>학생 기록 (학번순)</h2>
+      <h2 className="page-title" style={{ fontSize: 19 }}>학생 기록</h2>
+      <TypeTabs value={tab} onChange={setTab} counts={counts} />
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
-      {logs && logs.length > 0 && (
+      <div className="row">
         <input
-          placeholder="이름, 학번, 시나리오 제목으로 검색"
+          placeholder={tab === 'mysteryroom' ? '이름, 학번, 닉네임, 룸 제목, 방 코드로 검색' : '이름, 학번, 시나리오 제목으로 검색'}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          style={{ marginBottom: 4 }}
+          style={{ flex: 1, minWidth: 200 }}
         />
-      )}
-      {!logs ? (
+        <button onClick={refresh} disabled={busy}>새로고침</button>
+        <button onClick={handleDeleteAll} disabled={busy || !filtered?.length} style={{ borderColor: 'var(--blood-light)', color: 'var(--blood-light)' }}>
+          {q ? `검색 결과 ${filtered?.length ?? 0}건 삭제` : `${tabLabel} 전체 삭제`}
+        </button>
+      </div>
+      {!filtered ? (
         error ? null : <div className="dim">불러오는 중...</div>
-      ) : logs.length === 0 ? (
-        <p className="dim">아직 저장된 학생 기록이 없어요.</p>
-      ) : filteredLogs.length === 0 ? (
+      ) : inTab.length === 0 ? (
+        <p className="dim">아직 저장된 {tabLabel} 기록이 없어요.</p>
+      ) : filtered.length === 0 ? (
         <p className="dim">검색 결과가 없어요.</p>
       ) : (
-        <div className="col" style={{ maxHeight: 600, overflowY: 'auto', paddingRight: 4 }}>
+        <div className="col">
           <p className="dim" style={{ fontSize: 11, margin: '0 0 4px' }}>
-            {filteredLogs.length}건{normalizedQuery ? ` (전체 ${logs.length}건 중 검색됨)` : ''}
+            {filtered.length}건{q ? ` (전체 ${inTab.length}건 중 검색됨)` : ''} · {tab === 'mysteryroom' ? '최근 제출순' : '학번순'}
           </p>
-          {filteredLogs.map((log) => (
-          <div key={log.id} className="card col">
-            <div className="row" style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpenId(openId === log.id ? null : log.id)}>
-              <div>
-                <strong>{log.studentId}</strong>
-                <span style={{ marginLeft: 8 }}>{log.studentName}</span>
-                <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>
-                  {titleMap[log.scenarioId] ?? log.scenarioId} · {formatDate(log.createdAt)}
-                </span>
-              </div>
-              <span className="pill pill-outline">{log.resultSummary?.endingTitle ?? '결말 정보 없음'}</span>
-            </div>
+          {tab === 'mysteryroom'
+            ? paged.items.map((r) => (
+                <MysteryResultCard key={r.id} r={r} busy={busy} open={openId === r.id} onToggle={() => setOpenId(openId === r.id ? null : r.id)} onDelete={() => handleDelete(r.id)} />
+              ))
+            : paged.items.map((log) => (
+                <div key={log.id} className="card col">
+                  <div className="row" style={{ justifyContent: 'space-between', cursor: 'pointer' }} onClick={() => setOpenId(openId === log.id ? null : log.id)}>
+                    <div>
+                      <strong>{log.studentId}</strong>
+                      <span style={{ marginLeft: 8 }}>{log.studentName}</span>
+                      <span className="dim" style={{ fontSize: 12, marginLeft: 8 }}>
+                        {titleOf(log.scenarioId)} · {formatDate(log.createdAt)}
+                      </span>
+                    </div>
+                    <span className="pill pill-outline">{log.resultSummary?.endingTitle ?? '결말 정보 없음'}</span>
+                  </div>
 
-            {openId === log.id && (
-              <div className="col">
-                <hr className="divider" style={{ margin: '4px 0 10px' }} />
-                {(log.resultSummary?.accusedLabel || log.resultSummary?.moralChoiceLabel) && (
-                  <div className="row">
-                    {log.resultSummary?.accusedLabel && <span className="pill pill-outline">지목: {log.resultSummary.accusedLabel}</span>}
-                    {log.resultSummary?.moralChoiceLabel && <span className="pill pill-outline">{log.resultSummary.moralChoiceLabel}</span>}
-                  </div>
-                )}
-                {Object.entries(log.answers ?? {}).map(([i, a]) => (
-                  <div key={i}>
-                    <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>{log.reflectionPrompts?.[i] ?? `질문 ${Number(i) + 1}`}</p>
-                    <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{a}</p>
-                  </div>
-                ))}
-                {log.aiFeedback && (
-                  <>
-                    <p className="dim" style={{ fontSize: 12, margin: '4px 0 8px' }}>AI 피드백</p>
-                    <AiFeedbackView feedback={log.aiFeedback} />
-                  </>
-                )}
-                <button onClick={() => handleDelete(log.id)} disabled={busyId === log.id} style={{ alignSelf: 'flex-start', marginTop: 6 }}>
-                  {busyId === log.id ? '삭제 중...' : '이 기록 삭제'}
-                </button>
-              </div>
-            )}
-          </div>
-          ))}
+                  {openId === log.id && (
+                    <div className="col">
+                      <hr className="divider" style={{ margin: '4px 0 10px' }} />
+                      {(log.resultSummary?.accusedLabel || log.resultSummary?.moralChoiceLabel) && (
+                        <div className="row">
+                          {log.resultSummary?.accusedLabel && <span className="pill pill-outline">지목: {log.resultSummary.accusedLabel}</span>}
+                          {log.resultSummary?.moralChoiceLabel && <span className="pill pill-outline">{log.resultSummary.moralChoiceLabel}</span>}
+                        </div>
+                      )}
+                      {Object.entries(log.answers ?? {}).map(([i, a]) => (
+                        <div key={i}>
+                          <p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>{log.reflectionPrompts?.[i] ?? `질문 ${Number(i) + 1}`}</p>
+                          <p style={{ fontSize: 13, lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>{a}</p>
+                        </div>
+                      ))}
+                      {log.aiFeedback && (
+                        <>
+                          <p className="dim" style={{ fontSize: 12, margin: '4px 0 8px' }}>AI 피드백</p>
+                          <AiFeedbackView feedback={log.aiFeedback} />
+                        </>
+                      )}
+                      <button onClick={() => handleDelete(log.id)} disabled={busy} style={{ alignSelf: 'flex-start', marginTop: 6 }}>
+                        이 기록 삭제
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
+          <Pager page={paged.page} pages={paged.pages} setPage={paged.setPage} />
         </div>
       )}
     </div>
@@ -327,6 +416,7 @@ function ScenarioUploadSection({ onSaved }) {
 }
 
 function ScenarioListSection({ scenarios, onChanged }) {
+  const [tab, setTab] = useState('murder')
   const [editingId, setEditingId] = useState(null)
   const [editText, setEditText] = useState('')
   const [busy, setBusy] = useState(false)
@@ -355,6 +445,10 @@ function ScenarioListSection({ scenarios, onChanged }) {
     setError(null)
     try {
       const parsed = JSON.parse(editText)
+      if (parsed.contentType === 'mysteryroom') {
+        const errors = validateRoom(parsed)
+        if (errors.length) throw new Error(`미스터리룸 검사 실패 ${errors.length}건:\n- ${errors.join('\n- ')}`)
+      }
       await saveScenario(parsed)
       setEditingId(null)
       onChanged()
@@ -396,10 +490,29 @@ function ScenarioListSection({ scenarios, onChanged }) {
     }
   }
 
+  const handleToggleAi = async (s) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await updateScenarioFields(s.scenarioId, { aiEnabled: s.aiEnabled === false })
+      onChanged()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const counts = Object.fromEntries(CONTENT_TYPES.map(([k]) => [k, scenarios.filter((s) => contentTypeOf(s) === k).length]))
+  const inTab = scenarios.filter((s) => contentTypeOf(s) === tab)
+  const paged = usePaged(inTab, 6, tab)
+
   return (
     <div className="col">
-      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
-      {scenarios.map((s) => (
+      <TypeTabs value={tab} onChange={setTab} counts={counts} />
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12, whiteSpace: 'pre-line' }}>{error}</p>}
+      {inTab.length === 0 && <p className="dim">등록된 {CONTENT_TYPES.find(([k]) => k === tab)[1]} 시나리오가 없어요.</p>}
+      {paged.items.map((s) => (
         <div key={s.scenarioId} className="card col">
           <div className="row" style={{ justifyContent: 'space-between' }}>
             <div>
@@ -423,7 +536,12 @@ function ScenarioListSection({ scenarios, onChanged }) {
             <button onClick={() => handleTogglePublished(s)} disabled={busy}>
               {s.published ? '준비 중으로 전환' : '플레이 가능으로 전환'}
             </button>
-            <Link to={`/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>
+            {tab !== 'mysteryroom' && <Link to={`/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>}
+            {tab === 'mysteryroom' && (
+              <button onClick={() => handleToggleAi(s)} disabled={busy}>
+                AI 피드백 {s.aiEnabled === false ? '꺼짐 → 켜기' : '켜짐 → 끄기'}
+              </button>
+            )}
             <button onClick={() => startEdit(s)} disabled={busy}>JSON 편집</button>
             <button onClick={() => handleDelete(s)} disabled={busy}>삭제</button>
           </div>
@@ -444,6 +562,7 @@ function ScenarioListSection({ scenarios, onChanged }) {
           )}
         </div>
       ))}
+      <Pager page={paged.page} pages={paged.pages} setPage={paged.setPage} />
     </div>
   )
 }
@@ -495,6 +614,8 @@ export default function AdminPage() {
 
           <h2 className="page-title" style={{ fontSize: 19 }}>시나리오 관리</h2>
           {!scenarios ? <div className="dim">불러오는 중...</div> : <ScenarioListSection scenarios={scenarios} onChanged={refreshScenarios} />}
+
+          <MysteryLiveBoard />
 
           <StudentLogsSection scenarios={scenarios} />
         </div>

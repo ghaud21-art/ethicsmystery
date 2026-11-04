@@ -1,4 +1,4 @@
-import { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp } from 'firebase/firestore'
+import { addDoc, collection, deleteDoc, doc, getDocs, serverTimestamp, writeBatch } from 'firebase/firestore'
 import { firestore } from './firebaseConfig'
 
 // homeSchoolStudent 등급 전용. 서버(firestore.rules)가 실제 권한을 강제하므로
@@ -34,4 +34,13 @@ export async function listAllReflectionLogs() {
 
 export async function deleteReflectionLog(id) {
   await deleteDoc(doc(firestore, 'reflectionLogs', id))
+}
+
+// 관리자 전용 — 여러 기록을 한 번에 삭제한다(일괄 쓰기 한 번에 최대 500건이라 나눠서).
+export async function deleteReflectionLogs(ids) {
+  for (let i = 0; i < ids.length; i += 400) {
+    const batch = writeBatch(firestore)
+    ids.slice(i, i + 400).forEach((id) => batch.delete(doc(firestore, 'reflectionLogs', id)))
+    await batch.commit()
+  }
 }
