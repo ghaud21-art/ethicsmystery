@@ -1,4 +1,5 @@
 import { Icon, MaterialCard, NoteCard, PlayerDots, fmtTime, useMr } from './common'
+import { roleById } from '../roles'
 import { PuzzleArea } from './puzzles'
 import { computeGrade, GRADE_TEXT } from '../engine'
 import DebateView from './DebateView'
@@ -102,6 +103,28 @@ function Ending({ scene }) {
   )
 }
 
+// 장면 안에 보여 주는 '내 관점 카드' (통합된 역할이면 함께 맡은 역할도)
+function RoleCardBlock() {
+  const { room, mr } = useMr()
+  const included = mr.roleInfo.includes[mr.me?.role] ?? []
+  const stance = (sid) => room.debate?.stances?.find((s) => s.id === sid)?.label
+  return (
+    <div className="col" style={{ gap: 8, marginBottom: 12 }}>
+      {included.map((rid) => {
+        const r = roleById(room, rid)
+        return (
+          <div key={rid} className="mr-mat" style={{ borderColor: 'var(--gold)', background: 'rgba(201,162,39,0.07)' }}>
+            <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="user" />내 관점 카드 · {r.name} ({r.job})</span></div>
+            <p className="dim" style={{ marginBottom: 6 }}>{r.profile}</p>
+            <p><strong style={{ color: 'var(--gold-light)' }}>나의 관점</strong> {r.perspective}</p>
+            {stance(r.stance) && <p><strong style={{ color: 'var(--gold-light)' }}>토론에서 맡을 입장</strong> {stance(r.stance)}</p>}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 export default function SceneView() {
   const { room, mr } = useMr()
   const sceneId = mr.state.scene
@@ -123,10 +146,30 @@ export default function SceneView() {
     <div className="card">
       <div className="mr-scene-kicker">{scene.kicker ?? roomInfo?.name ?? '미스터리룸'}</div>
       <h2 className="mr-scene-title">{scene.title}</h2>
+      {scene.readAloud && !mr.solo && (
+        <div className="mr-banner">한 문단씩 돌아가며 소리 내어 읽어 주세요. 금색 테두리 문단이 내 차례입니다.</div>
+      )}
       <div className="mr-body">
-        {(scene.body ?? []).map((b, i) =>
-          typeof b === 'string' ? <p key={i}>{b}</p> : b.material ? <MaterialCard key={i} id={b.material} /> : <NoteCard key={i} block={b} keyPrefix={`l:${sceneId}:${i}`} />,
-        )}
+        {(() => {
+          let para = 0
+          return (scene.body ?? []).map((b, i) => {
+            if (typeof b === 'string') {
+              if (!scene.readAloud || mr.solo) return <p key={i}>{b}</p>
+              // 낭독 장면: 문단마다 읽을 사람을 입장 순서대로 돌아가며 정한다.
+              const reader = mr.playerUids[para++ % mr.playerUids.length]
+              const mine = reader === mr.uid
+              return (
+                <div key={i} className="mr-read" style={{ borderColor: mine ? 'var(--gold)' : undefined }}>
+                  <span className={`mr-tag ${mine ? '' : 'blue'}`}>{mine ? '내가 읽기' : `${mr.players[reader]?.name} 읽기`}</span>
+                  <p style={{ margin: '6px 0 0' }}>{b}</p>
+                </div>
+              )
+            }
+            if (b.roleCard) return <RoleCardBlock key={i} />
+            if (b.material) return <MaterialCard key={i} id={b.material} />
+            return <NoteCard key={i} block={b} keyPrefix={`l:${sceneId}:${i}`} />
+          })
+        })()}
       </div>
       {interaction && <div style={{ marginTop: 14 }}>{interaction}</div>}
     </div>

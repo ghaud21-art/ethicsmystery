@@ -102,7 +102,7 @@ export function LensBlock({ lens, keyPrefix }) {
         }
         return (
           <div key={rid} className="mr-lens-hint">
-            <Icon name="lens" size={11} />{holder}에게만 더 보이는 것이 있어요. 물어보세요.
+            <Icon name="lens" size={11} />{holder === who ? `${holder}에게만` : `${holder}에게 ${who}의 시선으로`} 더 보이는 것이 있어요. 물어보세요.
           </div>
         )
       })}

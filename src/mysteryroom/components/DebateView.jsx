@@ -1,30 +1,80 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Icon, PlayerDots, fmtTime, useMr } from './common'
+import { Icon, MaterialTable, PlayerDots, fmtTime, useMr } from './common'
 import { ISSUE_CARDS, STAGE_LABEL, useDebate } from '../useDebate'
 import { roleById } from '../roles'
 
 const len = (s) => String(s ?? '').trim().length
 
-// 발언에 붙일 수 있는 근거: 얻은 단서, 볼 수 있는 자료, 공유된 렌즈, 배운 개념
+// 발언에 붙일 수 있는 근거: 얻은 단서, 볼 수 있는 자료, 공유된 렌즈, 배운 개념.
+// 고를 때 무엇인지 알 수 있도록 설명(detail)과 원문을 함께 담는다.
+function lensText(room, key) {
+  const parts = key.split(':')
+  const rid = parts.pop()
+  if (parts[0] === 'ml') return room.materials[parts[1]]?.lens?.[rid]?.text
+  return room.scenes[parts[1]]?.body?.[Number(parts[2])]?.lens?.[rid]?.text
+}
+
 function useEvidence() {
   const { room, mr } = useMr()
   return useMemo(() => {
     const list = []
     room.rooms.forEach((r) => {
-      if (mr.state.clues?.[r.clue]) list.push({ key: `clue:${r.clue}`, label: `단서 ${r.clue}: ${room.clueNames?.[r.clue] ?? r.name}` })
+      if (mr.state.clues?.[r.clue]) list.push({ key: `clue:${r.clue}`, group: '단서', label: `단서 ${r.clue} · ${r.name}`, detail: room.clueNames?.[r.clue] })
     })
     Object.entries(room.materials).forEach(([id, m]) => {
-      if (mr.canSee(m.owner, `m:${id}`)) list.push({ key: `m:${id}`, label: m.title })
+      if (mr.canSee(m.owner, `m:${id}`)) list.push({ key: `m:${id}`, group: '자료', label: m.title, detail: m.kind === 'table' ? null : m.text, material: id })
     })
     Object.keys(mr.shared).forEach((k) => {
       if (k.startsWith('l:') || k.startsWith('ml:')) {
         const rid = k.split(':').pop()
-        list.push({ key: k, label: `${roleById(room, rid)?.name}의 시선` })
+        list.push({ key: k, group: '관점 렌즈', label: `${roleById(room, rid)?.name}의 시선`, detail: lensText(room, k) })
       }
     })
-    room.concepts.forEach((c) => mr.state.concepts?.[c.k] && list.push({ key: `k:${c.k}`, label: c.name }))
+    room.concepts.forEach((c) => mr.state.concepts?.[c.k] && list.push({ key: `k:${c.k}`, group: '개념', label: c.name, detail: c.lines.join(' ') }))
     return list
   }, [room, mr.state, mr.shared, mr.canSee])
+}
+
+function EvidencePicker({ evidence, chips, setChips }) {
+  const { room } = useMr()
+  const [open, setOpen] = useState({})
+  const groups = ['단서', '자료', '관점 렌즈', '개념']
+  return (
+    <div className="col" style={{ gap: 6 }}>
+      {groups.map((g) => {
+        const items = evidence.filter((e) => e.group === g)
+        if (!items.length) return null
+        return (
+          <div key={g} className="col" style={{ gap: 6 }}>
+            <div className="mr-ev-group">{g}</div>
+            {items.map((e) => {
+              const on = chips.includes(e.key)
+              const m = e.material ? room.materials[e.material] : null
+              return (
+                <div key={e.key} className={`mr-ev ${on ? 'on' : ''}`} onClick={() => setChips((c) => (c.includes(e.key) ? c.filter((x) => x !== e.key) : [...c, e.key]))}>
+                  <div className="row" style={{ justifyContent: 'space-between', gap: 6 }}>
+                    <span className="row" style={{ gap: 6, fontSize: 13 }}>
+                      <span className="mr-radio" style={{ borderRadius: 4, ...(on ? { background: 'var(--gold)', borderColor: 'var(--gold)' } : {}) }} />
+                      <strong>{e.label}</strong>
+                    </span>
+                    {m?.kind === 'table' && (
+                      <button className="mr-small mr-ghost" onClick={(ev) => (ev.stopPropagation(), setOpen((o) => ({ ...o, [e.key]: !o[e.key] })))}>
+                        {open[e.key] ? '접기' : '보기'}
+                      </button>
+                    )}
+                  </div>
+                  {e.detail && <div className="mr-ev-detail">{e.detail}</div>}
+                  {m && open[e.key] && m.kind === 'table' && (
+                    <div style={{ marginTop: 6 }} onClick={(ev) => ev.stopPropagation()}><MaterialTable m={m} /></div>
+                  )}
+                </div>
+              )
+            })}
+          </div>
+        )
+      })}
+    </div>
+  )
 }
 
 function chipLabel(room, key) {
@@ -182,14 +232,8 @@ export default function DebateView() {
           })}
           {speaker === me && (
             <div className="col" style={{ gap: 8 }}>
-              <strong style={{ fontSize: 13 }}>내 발언에 붙일 근거</strong>
-              <div className="row" style={{ gap: 6 }}>
-                {evidence.map((e) => (
-                  <button key={e.key} className={`mr-small ${chips.includes(e.key) ? 'mr-selected' : 'mr-ghost'}`} onClick={() => setChips((c) => (c.includes(e.key) ? c.filter((x) => x !== e.key) : [...c, e.key]))}>
-                    {e.label}
-                  </button>
-                ))}
-              </div>
+              <strong style={{ fontSize: 13 }}>내 발언에 붙일 근거 (눌러서 고르기, 여러 개 가능)</strong>
+              <EvidencePicker evidence={evidence} chips={chips} setChips={setChips} />
               <textarea rows={2} value={line} onChange={(e) => setLine(e.target.value)} placeholder="말한 내용을 한 줄로 남기기 (선택)" />
               <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!chips.length} onClick={() => actions.speak(chips, line.trim())}>발언 완료</button>
             </div>

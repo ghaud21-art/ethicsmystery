@@ -116,3 +116,9 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-board-row { display: grid; grid-template-columns: 70px minmax(0, 1.4fr) minmax(0, 1fr) repeat(3, 70px) 120px; gap: 8px; align-items: center; padding: 10px 12px; border-bottom: 1px solid var(--line); font-size: 13px; }
 .mr-board-head { font-size: 11px; color: var(--ink-dim); font-weight: 700; }
 @media (max-width: 860px) { .mr-board-row { grid-template-columns: 1fr 1fr; } }
+
+.mr-read { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; margin-bottom: 10px; }
+.mr-ev-group { font-size: 12px; font-weight: 700; color: var(--gold-light); margin: 6px 0 2px; }
+.mr-ev { border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 8px 10px; cursor: pointer; }
+.mr-ev.on { border-color: var(--gold); background: rgba(201, 162, 39, 0.08); }
+.mr-ev-detail { font-size: 12px; line-height: 1.6; color: var(--ink-dim); margin-top: 4px; }

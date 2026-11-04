@@ -64,8 +64,18 @@ export function evaluateVerify(config, board) {
 
 export function evaluateTest(config, board) {
   const r = placementResult(config.cards, board?.placements, (c) => (c.testId ? config.slots.find((s) => s.testId === c.testId)?.id : null))
+  // 검사 결과(results)가 있으면 두 단계로 푼다:
+  //   1단계 검사 질문 카드를 칸에 놓고 제출 → 맞으면 검사 결과가 공개된다(stagePass, 실패로 세지 않음)
+  //   2단계 결과를 읽고 수정 원리를 골라 제출
+  if (config.results && !board?.stage2) {
+    if (r.hits === r.total) return { correct: false, stagePass: true, hits: r.hits, total: r.total, why: null }
+    return { correct: false, hits: r.hits, total: r.total, why: r.why }
+  }
   const okPrinciple = board?.principle === config.correctPrincipleId
   const pc = config.principleChoices.find((p) => p.id === board?.principle)
+  if (config.results) {
+    return { correct: okPrinciple && r.hits === r.total, hits: okPrinciple ? 1 : 0, total: 1, why: okPrinciple ? null : pc?.whyNot ?? '수정 원리를 골라 주세요.' }
+  }
   return {
     correct: r.hits === r.total && okPrinciple,
     hits: r.hits + (okPrinciple ? 1 : 0),

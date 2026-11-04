@@ -6,7 +6,7 @@ import Masthead from '../components/Masthead.jsx'
 import AiFeedbackView from '../components/AiFeedbackView.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useSiteConfig, setMainImage } from '../firebase/useSiteConfig.js'
-import { listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario, updateScenarioFields } from '../firebase/scenariosApi.js'
+import { getScenario, listScenarios, saveScenario, setScenarioPublished, setScenarioThumbnail, deleteScenario, updateScenarioFields } from '../firebase/scenariosApi.js'
 import { parseScenarioDoc } from '../firebase/functionsApi.js'
 import { getAdminConfig, saveAdminConfig } from '../firebase/adminConfigApi.js'
 import { listAllReflectionLogs, deleteReflectionLog, deleteReflectionLogs } from '../firebase/reflectionApi.js'
@@ -373,6 +373,14 @@ function ScenarioUploadSection({ onSaved }) {
       if (parsed.contentType === 'mysteryroom' || String(parsed.schemaVersion).startsWith('room-')) {
         const errors = validateRoom(parsed)
         if (errors.length) throw new Error(`미스터리룸 검사 실패 ${errors.length}건:\n- ${errors.join('\n- ')}`)
+      }
+      // 같은 ID가 이미 있으면 덮어쓸지 묻고, 공개 상태·썸네일·AI 설정은 그대로 둔다.
+      const existing = await getScenario(parsed.scenarioId)
+      if (existing) {
+        if (!confirm(`같은 ID(${parsed.scenarioId})의 시나리오가 이미 있습니다. 새 내용으로 덮어쓸까요?\n(공개 상태, 썸네일, AI 설정은 그대로 유지됩니다)`)) return
+        for (const k of ['published', 'thumbnailDataUrl', 'aiEnabled', 'guestAllowed']) {
+          if (existing[k] !== undefined) parsed[k] = existing[k]
+        }
       }
       await saveScenario(parsed)
       setDraftText('')

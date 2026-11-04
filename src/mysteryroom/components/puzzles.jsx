@@ -4,11 +4,11 @@ import { HINT_AFTER_FAILS } from '../useMysteryRoom'
 
 // ---- 카드 배치형 공통 (분류, 원리 검사, 문장 배열) ----
 // 카드를 눌러 고르고, 칸을 눌러 놓는다. 앞면은 주인과 공유받은 사람만 본다.
-function PlacementBoard({ cards, zones, trayLabel }) {
+function PlacementBoard({ cards, zones, trayLabel, frozen }) {
   const { room, mr } = useMr()
   const [sel, setSel] = useState(null)
   const placements = mr.board.placements ?? {}
-  const locked = !!mr.state.feedback
+  const locked = !!mr.state.feedback || !!frozen
 
   // zoneId가 null이면 '놓지 않은 카드' 칸으로 되돌린다.
   const place = (zoneId) => {
@@ -109,12 +109,44 @@ function Options({ options, value, onPick, disabled }) {
 
 function TestPuzzle({ config }) {
   const { mr } = useMr()
+  const twoStage = !!config.results
+  const stage2 = !!mr.board.stage2
   return (
     <div className="mr-puzzle">
       <div className="mr-note"><div className="mr-note-cap">시험할 원리</div><p>{config.principle}</p></div>
-      <PlacementBoard cards={config.cards} zones={config.slots.map((s) => ({ id: s.id, label: s.label, count: 1 }))} trayLabel="검사에 쓰지 않는 카드 (사실 질문은 여기에)" />
-      <strong style={{ fontSize: 13 }}>수정 원리를 고르세요</strong>
-      <Options options={config.principleChoices} value={mr.board.principle} disabled={!!mr.state.feedback} onPick={(id) => mr.actions.updateBoard((b) => ({ ...b, principle: id }))} />
+      {twoStage && (
+        <div className="mr-status">
+          <span className={`mr-dot ${!stage2 ? 'on' : ''}`} />1단계 검사 질문 놓기
+          <span className={`mr-dot ${stage2 ? 'on' : ''}`} style={{ marginLeft: 8 }} />2단계 검사 결과 읽고 수정 원리 고르기
+        </div>
+      )}
+      <PlacementBoard
+        cards={config.cards}
+        zones={config.slots.map((s) => ({ id: s.id, label: s.label, count: 1 }))}
+        trayLabel="검사에 쓰지 않는 카드 (사실 질문은 여기에)"
+        frozen={stage2}
+      />
+      {twoStage && !stage2 && (
+        <p className="dim" style={{ margin: 0, fontSize: 12 }}>세 검사 칸에 알맞은 질문을 하나씩 놓고 제출하면, 검사 결과가 공개됩니다.</p>
+      )}
+      {stage2 && (
+        <div className="col" style={{ gap: 8 }}>
+          <strong style={{ fontSize: 13 }}>검사 결과</strong>
+          {config.slots.map((s) => (
+            <div key={s.id} className="mr-split" style={{ marginBottom: 0 }}>
+              <strong>{s.label}</strong>
+              <br />
+              {config.results[s.testId]}
+            </div>
+          ))}
+        </div>
+      )}
+      {(!twoStage || stage2) && (
+        <>
+          <strong style={{ fontSize: 13 }}>{stage2 ? '세 검사 결과를 모두 견딜 수 있는 수정 원리를 고르세요' : '수정 원리를 고르세요'}</strong>
+          <Options options={config.principleChoices} value={mr.board.principle} disabled={!!mr.state.feedback} onPick={(id) => mr.actions.updateBoard((b) => ({ ...b, principle: id }))} />
+        </>
+      )}
     </div>
   )
 }
@@ -288,7 +320,8 @@ export function PuzzleArea({ sceneId, puzzle }) {
   const hintOpen = !!mr.state.hintsUsed?.[sceneId]
   const fb = mr.state.feedback
   const tainted = mr.state.pendingSolve?.scene === sceneId && mr.state.pendingSolve.tainted
-  const empty = rev === 0
+  // 원리 검사 2단계에서는 수정 원리를 골라야 제출할 수 있다.
+  const empty = rev === 0 || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
 
   return (
     <div className="col" style={{ gap: 12 }}>

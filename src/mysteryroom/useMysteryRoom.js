@@ -169,6 +169,7 @@ export function useMysteryRoom(room, code) {
       .transaction(`${code}/state`, (cur) => {
         if (!cur || cur.scene !== sceneId || cur.evalRev?.[sceneId] === rev) return undefined
         const next = { ...cur, evalRev: { ...(cur.evalRev ?? {}), [sceneId]: rev } }
+        if (result.stagePass) return next // 다음 단계 공개는 아래에서 보드에 표시
         if (result.correct) {
           if (puzzle.clue) next.clues = { ...(cur.clues ?? {}), [puzzle.clue]: result.tainted ? 'tainted' : 'clean' }
           if (puzzle.learn) next.concepts = { ...(cur.concepts ?? {}), ...Object.fromEntries(puzzle.learn.map((k) => [k, true])) }
@@ -181,7 +182,13 @@ export function useMysteryRoom(room, code) {
         }
         return next
       })
-      .then(() => store.remove(`${code}/agree/${sceneId}`))
+      .then(async (res) => {
+        // 원리 검사 1단계 통과: 검사 결과를 공개하고 수정 원리 고르기로 넘어간다.
+        if (res.committed && result.stagePass) {
+          await store.transaction(`${code}/boards/${sceneId}`, (cur) => ({ ...(cur ?? {}), stage2: true, rev: (cur?.rev ?? 0) + 1 }))
+        }
+        await store.remove(`${code}/agree/${sceneId}`)
+      })
       .finally(() => {
         busyRef.current = false
       })
