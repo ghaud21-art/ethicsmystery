@@ -161,6 +161,7 @@ export default function ResultsPanel({ scene, grade }) {
             <tr><th>실패·힌트</th><td>실패 {mr.state.failedTotal ?? 0}회 · 힌트 {Object.keys(mr.state.hintsUsed ?? {}).length}회{visitedBad.length ? ` · 거친 BAD 엔딩: ${visitedBad.join(', ')}` : ''}</td></tr>
             <tr><th>내 생각</th><td>토론 전 {stance(d.before?.[mr.uid])} → 토론 후 {stance(d.after?.[mr.uid])}</td></tr>
             {dr && <tr><th>모둠 결론</th><td>{stance(dr.conclusion)}{dr.conditions?.filter(Boolean).length ? ` (조건: ${dr.conditions.filter(Boolean).join(' / ')})` : ''}</td></tr>}
+            {dr?.valueSentence && <tr><th>가치 충돌</th><td>{(dr.values ?? []).join(' ↔ ')}{dr.values?.length ? ' · ' : ''}{dr.valueSentence}</td></tr>}
             {dr?.acknowledge && <tr><th>인정한 근거</th><td>{dr.acknowledge}</td></tr>}
             {dr?.concession && <tr><th>조건부 양보</th><td>{dr.concession}</td></tr>}
             <tr><th>모은 개념</th><td>{concepts.map((c) => c.name).join(', ') || '-'}</td></tr>

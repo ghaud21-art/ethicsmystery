@@ -242,12 +242,39 @@ function VerifyPuzzle({ config }) {
   )
 }
 
+// 앞 퍼즐에서 모둠이 놓았던 카드 배치를 다시 보여 준다(자물쇠를 풀 때 기억을 돕는 기록).
+function RecallBoard({ sceneId }) {
+  const { room, mr } = useMr()
+  const pz = room.scenes[sceneId]?.puzzle
+  const placements = mr.data?.boards?.[sceneId]?.placements ?? {}
+  if (!pz) return null
+  const c = pz.config
+  const zones = pz.module === 'classify' ? c.bins.map((b) => ({ id: b.id, label: b.label })) : (c.slots ?? []).map((s) => ({ id: s.id, label: s.label }))
+  const trayLabel = pz.module === 'test' ? '검사에 쓰지 않은 카드 (사실 질문)' : pz.module === 'order' ? '넣지 않은 문장' : null
+  const rows = [...zones, ...(trayLabel ? [{ id: null, label: trayLabel }] : [])]
+  return (
+    <div className="mr-mat">
+      <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="note" />앞 퍼즐 기록: {room.scenes[sceneId].title}</span></div>
+      {rows.map((z) => {
+        const cards = c.cards.filter((card) => (placements[card.id] ?? null) === z.id)
+        return (
+          <div key={z.id ?? 'tray'} style={{ marginTop: 6 }}>
+            <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--gold-light)' }}>{z.label}</div>
+            {cards.map((card) => <div key={card.id} style={{ fontSize: 12, lineHeight: 1.6 }}>· {card.text}</div>)}
+          </div>
+        )
+      })}
+    </div>
+  )
+}
+
 function LockPuzzle({ config, sceneId }) {
   const { room, mr } = useMr()
   const [value, setValue] = useState('')
   const paint = mr.board.paint ?? {}
   return (
     <div className="mr-puzzle">
+      {config.recall && <RecallBoard sceneId={config.recall} />}
       {config.fragments?.map((f, i) => {
         const key = `f:${sceneId}:${i}`
         const visible = mr.canSee(f.owner, key)

@@ -130,7 +130,7 @@ export default function DebateView() {
   const { room, mr } = useMr()
   const code = mr.code
   const db = useDebate(room, mr, code)
-  const { d, cfg, stage, stages, stageDone, stanceOf, stanceById, team, conclusion, teamOk, allAgreed, actions } = db
+  const { d, cfg, stage, stages, stageDone, stanceOf, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid } = db
   const evidence = useEvidence()
   const uids = mr.playerUids
   const me = mr.uid
@@ -320,6 +320,41 @@ export default function DebateView() {
           <StanceOptions stances={cfg.stances} value={d.votes?.[me]} onPick={actions.vote} />
           {conclusion ? <div className="mr-status">모둠 결론: <strong style={{ color: 'var(--gold-light)' }}>{stanceById(conclusion)?.label}</strong></div> : !mr.solo && <PlayerDots map={d.votes} label="투표" />}
 
+          {cfg.valueConflict && (
+            <div className="mr-mat col" style={{ gap: 8 }}>
+              <strong style={{ fontSize: 13 }}>이 쟁점에서 충돌하는 두 가치 (두 장 고르기)</strong>
+              <div className="row" style={{ gap: 6 }}>
+                {cfg.valueConflict.cards.map((v) => {
+                  const on = (team.values ?? []).includes(v)
+                  return (
+                    <button
+                      key={v}
+                      className={`mr-small ${on ? 'mr-selected' : 'mr-ghost'}`}
+                      onClick={() => {
+                        const cur = team.values ?? []
+                        const next = on ? cur.filter((x) => x !== v) : [...cur, v].slice(-2)
+                        actions.editTeam({ values: next })
+                      }}
+                    >
+                      {v}
+                    </button>
+                  )
+                })}
+              </div>
+              {(team.values ?? []).length === 2 && !pairValid && (
+                <span style={{ fontSize: 12, color: 'var(--blood-light)' }}>이 두 가치는 이 쟁점에서 서로 부딪친다고 보기 어려워요. 무엇과 무엇이 맞서는지 다시 생각해 보세요.</span>
+              )}
+              <SavedField
+                label="가치 충돌 문장"
+                value={team.valueSentence}
+                minChars={cfg.valueConflict.minChars ?? 30}
+                placeholder={cfg.valueConflict.template ?? '‘___’와(과) ‘___’이(가) 충돌한다. 왜냐하면 ___ 때문이다.'}
+                onSave={(v) => actions.editTeam({ valueSentence: v })}
+                rows={3}
+              />
+            </div>
+          )}
+
           <SavedField label="조건 1" value={team.conditions?.[0]} minChars={5} placeholder="예: 대리변수 점검을 마친 뒤 사용한다" onSave={(v) => actions.editTeam({ conditions: [v, team.conditions?.[1] ?? ''] })} />
           <SavedField label="조건 2" value={team.conditions?.[1]} minChars={5} placeholder="예: 성별별 추천 결과를 매 학기 공개한다" onSave={(v) => actions.editTeam({ conditions: [team.conditions?.[0] ?? '', v] })} />
           <SavedField label="반대 입장의 가장 강한 근거 인정" value={team.acknowledge} minChars={cfg.conditions?.acknowledgeMinChars ?? 20} placeholder="‘~라는 점은 인정한다. 왜냐하면 ~’" onSave={(v) => actions.editTeam({ acknowledge: v })} rows={3} />
@@ -334,7 +369,7 @@ export default function DebateView() {
             <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!teamOk || d.agree?.[me] === (team.rev ?? 0)} onClick={actions.agree}>
               {mr.solo ? '마지막 문에 제출' : '이 합의문에 동의'}
             </button>
-            <span className="dim" style={{ fontSize: 11 }}>결론 투표, 조건 2개, 인정 문장, 양보 문장, 모두의 ‘토론 후 생각’이 채워져야 제출할 수 있어요. 합의문이 바뀌면 동의가 풀립니다.</span>
+            <span className="dim" style={{ fontSize: 11 }}>결론 투표{cfg.valueConflict ? ', 가치 충돌 문장' : ''}, 조건 2개, 인정 문장, 양보 문장, 모두의 ‘토론 후 생각’이 채워져야 제출할 수 있어요. 합의문이 바뀌면 동의가 풀립니다.</span>
           </div>
         </div>
       )}

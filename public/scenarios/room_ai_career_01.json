@@ -698,6 +698,7 @@
           "input": "number",
           "length": 4,
           "prompt": "숫자 4자리",
+          "recall": "4",
           "answer": [
             "7249"
           ],

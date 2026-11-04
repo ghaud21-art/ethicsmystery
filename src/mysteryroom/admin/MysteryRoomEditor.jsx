@@ -465,6 +465,7 @@ function DebateTab({ draft, setDraft }) {
         <JsonField label="쟁점 카드 (fairness, transparency, accountability, privacy, safety, autonomy 중)" value={d.issueCards} rows={2} onChange={(v) => setD({ issueCards: v })} />
         <JsonField label="단계별 시간(초)" value={d.stageSeconds} rows={4} onChange={(v) => setD({ stageSeconds: v })} />
         <JsonField label="합의 조건 (글자 수)" value={d.conditions} rows={4} onChange={(v) => setD({ conditions: v })} />
+        <JsonField label="가치 충돌 문장 (선택: cards, validPairs, minChars, template)" value={d.valueConflict} rows={8} onChange={(v) => setD({ valueConflict: v })} />
       </div>
       <div className="card col">
         <strong>성찰 질문 4개</strong>

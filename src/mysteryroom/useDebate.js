@@ -55,8 +55,14 @@ export function useDebate(room, mr, code) {
 
   const team = d.team ?? {}
   const conclusion = teamConclusion(d.votes, uids, mr.meta?.hostUid)
+  // 가치 충돌 문장(선택 설정): 두 가치 카드 + 이유 문장. 정해 둔 유효한 쌍이어야 통과.
+  const vc = cfg.valueConflict
+  const pair = team.values ?? []
+  const pairValid = !vc || (pair.length === 2 && (vc.validPairs ?? []).some(([a, b]) => (a === pair[0] && b === pair[1]) || (a === pair[1] && b === pair[0])))
+  const valueOk = !vc || (pairValid && len(team.valueSentence) >= (vc.minChars ?? 30))
   const teamOk =
     !!conclusion &&
+    valueOk &&
     len(team.conditions?.[0]) >= 5 &&
     len(team.conditions?.[1]) >= 5 &&
     len(team.acknowledge) >= (conds.acknowledgeMinChars ?? 20) &&
@@ -106,7 +112,14 @@ export function useDebate(room, mr, code) {
           return {
             ...cur,
             debateDone: true,
-            debateResult: { conclusion, conditions: team.conditions ?? [], acknowledge: team.acknowledge ?? '', concession: team.concession ?? '', minority: team.minority ?? '' },
+            debateResult: {
+              conclusion,
+              conditions: team.conditions ?? [],
+              acknowledge: team.acknowledge ?? '',
+              concession: team.concession ?? '',
+              minority: team.minority ?? '',
+              ...(vc ? { values: team.values ?? [], valueSentence: team.valueSentence ?? '' } : {}),
+            },
             scene: to,
             sceneAt: Date.now(),
             history: [...(cur.history ?? []), to],
@@ -114,8 +127,8 @@ export function useDebate(room, mr, code) {
           }
         }),
     }),
-    [store, code, mr, stage, stages, d.speakIdx, team.rev, team.conditions, team.acknowledge, team.concession, team.minority, conclusion],
+    [store, code, mr, stage, stages, d.speakIdx, team, vc, conclusion],
   )
 
-  return { d, cfg, stage, stages, stageDone, stanceOf, roleStance, stanceById, team, conclusion, teamOk, allAgreed, actions }
+  return { d, cfg, stage, stages, stageDone, stanceOf, roleStance, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid }
 }
