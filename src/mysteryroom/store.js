@@ -118,10 +118,18 @@ function localStore() {
   }
 }
 
+// 로컬 저장소를 쓰는 두 가지 경우
+//   ?local=1  개발용: 견본 룸 파일(public/scenarios)로, Firebase 없이
+//   ?test=1   선생님 테스트 플레이: 관리자가 올린 룸으로, 이 브라우저의 탭끼리만 동기화
+// 어느 쪽이든 방 상태와 결과는 실제 데이터베이스에 저장하지 않는다.
+export function isTestMode() {
+  return typeof window !== 'undefined' && new URLSearchParams(window.location.search).get('test') === '1'
+}
+
 export function isLocalMode() {
   if (typeof window === 'undefined') return false
   const params = new URLSearchParams(window.location.search)
-  if (params.get('local') === '1') return true
+  if (params.get('local') === '1' || params.get('test') === '1') return true
   return import.meta.env.DEV && !import.meta.env.VITE_FIREBASE_DATABASE_URL
 }
 
@@ -132,6 +140,11 @@ export function getStore() {
 }
 
 // 로컬 모드에서는 탭마다 다른 플레이어로 취급한다.
+// 새 탭으로 연 "학생 한 명 더"는 주소에 fresh=1이 붙어 있어 새 플레이어로 시작한다
+// (window.open으로 연 탭은 sessionStorage를 복사해 오기 때문).
+if (typeof window !== 'undefined' && window.location.hash.includes('fresh=1')) {
+  sessionStorage.removeItem('ethicsmystery.mysteryroom.localUid')
+}
 export function getLocalUid() {
   let id = sessionStorage.getItem('ethicsmystery.mysteryroom.localUid')
   if (!id) {

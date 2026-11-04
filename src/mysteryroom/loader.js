@@ -1,7 +1,7 @@
 // 룸 파일 불러오기. 실제 서비스는 Firestore(scenarios 컬렉션, 관리자 업로드)에서 읽는다.
 // 로컬(개발) 모드에서는 public/scenarios/<id>.json 견본 파일을 읽는다.
 import { loadScenario } from '../engine/scenarioLoader'
-import { isLocalMode } from './store'
+import { isLocalMode, isTestMode } from './store'
 import { validateRoom } from './schema'
 import { decodeNested } from './firestoreCodec'
 
@@ -17,7 +17,8 @@ async function fetchSample(id) {
 
 export async function loadMysteryRoom(scenarioId) {
   if (cache.has(scenarioId)) return cache.get(scenarioId)
-  const room = isLocalMode() ? await fetchSample(scenarioId) : decodeNested(await loadScenario(scenarioId))
+  // 테스트 플레이는 관리자가 올린 룸(Firestore)을, 개발용 로컬 모드는 견본 파일을 쓴다.
+  const room = isLocalMode() && !isTestMode() ? await fetchSample(scenarioId) : decodeNested(await loadScenario(scenarioId))
   const errors = validateRoom(room)
   if (errors.length) {
     console.error(`[미스터리룸] ${scenarioId} 검사 실패`, errors)

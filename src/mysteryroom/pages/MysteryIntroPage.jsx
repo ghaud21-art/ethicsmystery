@@ -1,9 +1,10 @@
 import { useEffect, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Masthead from '../../components/Masthead.jsx'
 import { loadMysteryRoom } from '../loader'
 import { createMysteryRoom, joinMysteryRoom, useMrUid } from '../useMysteryRoom'
-import { isLocalMode } from '../store'
+import { isLocalMode, isTestMode } from '../store'
+import { useAuth } from '../../context/AuthContext.jsx'
 import { Icon } from '../components/common'
 import '../mysteryroom.css'
 
@@ -13,11 +14,14 @@ export default function MysteryIntroPage() {
   const { scenarioId } = useParams()
   const navigate = useNavigate()
   const uid = useMrUid()
+  const { isAdmin } = useAuth()
+  const [params] = useSearchParams()
+  const joinCode = params.get('join') ?? ''
   const [room, setRoom] = useState(null)
   const [loadError, setLoadError] = useState(null)
-  const [name, setName] = useState(() => localStorage.getItem(NICK_KEY) ?? '')
+  const [name, setName] = useState(() => (joinCode ? `학생${Math.floor(Math.random() * 90) + 10}` : localStorage.getItem(NICK_KEY) ?? ''))
   const [count, setCount] = useState(4)
-  const [code, setCode] = useState('')
+  const [code, setCode] = useState(joinCode)
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
 
@@ -34,7 +38,8 @@ export default function MysteryIntroPage() {
   if (loadError) return <div className="page"><Masthead showBack /><div className="card">룸을 불러오지 못했습니다: {loadError.message}</div></div>
   if (!room) return <div className="page dim">불러오는 중...</div>
 
-  const playable = isLocalMode() || room.published
+  // 미발행 룸도 관리자와 테스트 플레이에서는 열린다.
+  const playable = isLocalMode() || isAdmin || room.published
 
   const run = async (fn) => {
     if (!name.trim()) return setError('닉네임을 입력해 주세요')
@@ -42,7 +47,7 @@ export default function MysteryIntroPage() {
     setBusy(true)
     setError(null)
     try {
-      localStorage.setItem(NICK_KEY, name.trim())
+      if (!joinCode) localStorage.setItem(NICK_KEY, name.trim())
       const c = await fn()
       navigate(`/mystery/${scenarioId}/${c}${window.location.search ? '' : ''}`)
     } catch (e) {
@@ -55,7 +60,14 @@ export default function MysteryIntroPage() {
   return (
     <div className="page">
       <Masthead showBack />
-      {isLocalMode() && <div className="mr-banner">로컬 테스트 모드: Firebase 없이 이 브라우저의 탭끼리만 동기화됩니다.</div>}
+      {isLocalMode() && (
+        <div className="mr-banner">
+          {isTestMode()
+            ? '선생님 테스트 플레이: 이 브라우저의 탭끼리만 동기화되고, 기록은 저장되지 않습니다. 탭 하나가 학생 한 명입니다.'
+            : '로컬 테스트 모드: Firebase 없이 이 브라우저의 탭끼리만 동기화됩니다.'}
+        </div>
+      )}
+      {!isLocalMode() && isAdmin && !room?.published && <div className="mr-banner">관리자 미리보기: 아직 학생에게 공개되지 않은 룸입니다.</div>}
       <div className="kicker"><Icon name="door" />MYSTERY ROOM</div>
       <h1 className="page-title">{room.meta.title}</h1>
       <div className="page-title-rule" />

@@ -3,7 +3,7 @@ import { useParams } from 'react-router-dom'
 import Masthead from '../../components/Masthead.jsx'
 import { loadMysteryRoom } from '../loader'
 import { useMysteryRoom } from '../useMysteryRoom'
-import { isLocalMode } from '../store'
+import { getStore, isLocalMode, isTestMode } from '../store'
 import { roleById } from '../roles'
 import { Icon, MrContext, fmtTime } from '../components/common'
 import SceneView from '../components/SceneView'
@@ -50,6 +50,21 @@ function WaitingRoom({ room, mr, code }) {
         {error && <p style={{ color: 'var(--blood-light)', fontSize: 12, margin: 0 }}>{error}</p>}
       </div>
 
+      {isLocalMode() && joined < mr.meta.playerCount && (
+        <div className="card col">
+          <strong>테스트: 학생 더 들어오게 하기</strong>
+          <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.6 }}>
+            버튼을 누르면 새 탭이 열립니다. 새 탭에서 ‘들어가기’를 누르면 다른 학생으로 입장합니다. 탭을 오가며 역할을 고르고, 이 탭(방장)에서 시작하세요.
+          </p>
+          <button
+            style={{ alignSelf: 'flex-start' }}
+            onClick={() => window.open(`${window.location.pathname}${window.location.search}#/mystery/${room.scenarioId}?join=${code}&fresh=1`, '_blank')}
+          >
+            학생 한 명 더 들어오기 (새 탭) · {joined}/{mr.meta.playerCount}
+          </button>
+        </div>
+      )}
+
       <div className="card col">
         <strong>입장한 사람</strong>
         {mr.playerUids.map((u) => (
@@ -70,6 +85,30 @@ function WaitingRoom({ room, mr, code }) {
   )
 }
 
+// 테스트 플레이 전용 도구: 원하는 장면으로 바로 가기, 단서 채우기
+function TestTools({ room, mr }) {
+  const [to, setTo] = useState('')
+  const store = getStore()
+  const jump = () =>
+    to &&
+    store.transaction(`${mr.code}/state`, (cur) => ({ ...cur, scene: to, sceneAt: Date.now(), history: [...(cur.history ?? []), to], feedback: null, split: null, voteRound: 1 }))
+  const giveClues = () => store.set(`${mr.code}/state/clues`, Object.fromEntries(room.rooms.map((r) => [r.clue, 'clean'])))
+  return (
+    <div className="mr-banner row" style={{ gap: 8 }}>
+      <strong>테스트 도구</strong>
+      <select value={to} onChange={(e) => setTo(e.target.value)} style={{ padding: '4px 8px', fontSize: 12 }}>
+        <option value="">장면으로 바로 가기</option>
+        {Object.entries(room.scenes).map(([id, s]) => (
+          <option key={id} value={id}>{id} · {s.title}</option>
+        ))}
+      </select>
+      <button className="mr-small" disabled={!to} onClick={jump}>이동</button>
+      <button className="mr-small" onClick={giveClues}>단서 A·B·C 모두 얻기</button>
+      <span className="dim" style={{ fontSize: 11 }}>모든 탭에 함께 적용됩니다.</span>
+    </div>
+  )
+}
+
 function Play({ room, mr }) {
   const scene = mr.scene
   const curRoomIdx = room.rooms.findIndex((r) => r.id === scene?.room)
@@ -82,6 +121,7 @@ function Play({ room, mr }) {
         </span>
         <span className={`mr-timer ${mr.remaining < 300 ? 'warn' : ''}`}><Icon name="clock" size={16} />{fmtTime(mr.remaining)}</span>
       </div>
+      {isLocalMode() && <TestTools room={room} mr={mr} />}
       <div className="mr-rooms">
         {room.rooms.map((r, i) => {
           const got = mr.state.clues?.[r.clue]
@@ -108,7 +148,7 @@ function RoomInner({ room, code }) {
   if (!mr.me) return <div className="page"><Masthead showBack /><div className="card">이 방의 참가자가 아닙니다. 룸 소개 화면에서 방 코드로 들어와 주세요.</div></div>
   return (
     <MrContext.Provider value={{ room, mr }}>
-      {isLocalMode() && <div className="mr-banner page-wide">로컬 테스트 모드</div>}
+      {isLocalMode() && <div className="mr-banner page-wide">{isTestMode() ? '선생님 테스트 플레이 · 기록은 저장되지 않습니다' : '로컬 테스트 모드'}</div>}
       {mr.state ? <Play room={room} mr={mr} /> : <WaitingRoom room={room} mr={mr} code={code} />}
     </MrContext.Provider>
   )

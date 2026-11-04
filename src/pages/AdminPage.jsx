@@ -513,6 +513,12 @@ function ScenarioListSection({ scenarios, onChanged }) {
     <div className="col">
       <TypeTabs value={tab} onChange={setTab} counts={counts} />
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12, whiteSpace: 'pre-line' }}>{error}</p>}
+      {tab === 'mysteryroom' && inTab.length > 0 && (
+        <p className="dim" style={{ fontSize: 12, margin: 0, lineHeight: 1.6 }}>
+          ‘테스트 플레이’를 누르면 새 탭에서 학생 화면이 열립니다. 대기실의 ‘학생 한 명 더 들어오기’로 탭을 늘리면 혼자서 여러 학생 역할을 해 볼 수 있어요.
+          테스트 기록은 저장되지 않으며, 아직 ‘준비 중’인 룸도 테스트할 수 있습니다.
+        </p>
+      )}
       {inTab.length === 0 && <p className="dim">등록된 {CONTENT_TYPES.find(([k]) => k === tab)[1]} 시나리오가 없어요.</p>}
       {paged.items.map((s) => (
         <div key={s.scenarioId} className="card col">
@@ -539,6 +545,15 @@ function ScenarioListSection({ scenarios, onChanged }) {
               {s.published ? '준비 중으로 전환' : '플레이 가능으로 전환'}
             </button>
             {tab !== 'mysteryroom' && <Link to={`/admin/preview/${s.scenarioId}`}><button disabled={busy}>플레이형 편집</button></Link>}
+            {tab === 'mysteryroom' && (
+              <button
+                className="primary"
+                onClick={() => window.open(`${window.location.pathname}?test=1#/mystery/${s.scenarioId}`, '_blank')}
+                title="이 브라우저의 탭끼리만 동기화되는 테스트 방을 엽니다. 기록은 저장되지 않습니다."
+              >
+                테스트 플레이
+              </button>
+            )}
             {tab === 'mysteryroom' && (
               <button onClick={() => handleToggleAi(s)} disabled={busy}>
                 AI 피드백 {s.aiEnabled === false ? '꺼짐 → 켜기' : '켜짐 → 끄기'}
