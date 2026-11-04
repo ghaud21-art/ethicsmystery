@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { validateRoom } from '../mysteryroom/schema.js'
+import { decodeNested } from '../mysteryroom/firestoreCodec.js'
 import { Link } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import AiFeedbackView from '../components/AiFeedbackView.jsx'
@@ -424,7 +425,8 @@ function ScenarioListSection({ scenarios, onChanged }) {
 
   const startEdit = (s) => {
     setEditingId(s.scenarioId)
-    setEditText(JSON.stringify(s, null, 2))
+    // 미스터리룸은 Firestore 저장용 감싸기를 풀어 원래 룸 파일 모양으로 보여 준다.
+    setEditText(JSON.stringify(s.contentType === 'mysteryroom' ? decodeNested(s) : s, null, 2))
   }
 
   const handleTogglePublished = async (s) => {

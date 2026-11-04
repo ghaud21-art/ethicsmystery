@@ -3,6 +3,7 @@
 import { loadScenario } from '../engine/scenarioLoader'
 import { isLocalMode } from './store'
 import { validateRoom } from './schema'
+import { decodeNested } from './firestoreCodec'
 
 export const LOCAL_SAMPLE_ROOMS = ['room_ai_career_01']
 
@@ -16,7 +17,7 @@ async function fetchSample(id) {
 
 export async function loadMysteryRoom(scenarioId) {
   if (cache.has(scenarioId)) return cache.get(scenarioId)
-  const room = isLocalMode() ? await fetchSample(scenarioId) : await loadScenario(scenarioId)
+  const room = isLocalMode() ? await fetchSample(scenarioId) : decodeNested(await loadScenario(scenarioId))
   const errors = validateRoom(room)
   if (errors.length) {
     console.error(`[미스터리룸] ${scenarioId} 검사 실패`, errors)
