@@ -1,6 +1,6 @@
 import { collection, doc, getDoc, getDocs, setDoc, updateDoc, deleteDoc } from 'firebase/firestore'
 import { firestore } from './firebaseConfig'
-import { encodeNested } from '../mysteryroom/firestoreCodec'
+import { encodeNested, stripUndefined } from '../mysteryroom/firestoreCodec'
 
 const scenariosCol = () => collection(firestore, 'scenarios')
 
@@ -19,7 +19,9 @@ export async function getScenario(scenarioId) {
 // 관리자 전용 — Firestore 보안 규칙이 실제 권한을 강제한다.
 export async function saveScenario(scenario) {
   // 미스터리룸 파일에는 표처럼 배열 안의 배열이 있어 Firestore 저장용으로 감싼다.
-  const data = scenario.contentType === 'mysteryroom' ? encodeNested(scenario) : scenario
+  // 비운 칸(undefined)은 Firestore가 거부하므로 빼고 저장한다.
+  const clean = stripUndefined(scenario)
+  const data = clean.contentType === 'mysteryroom' ? encodeNested(clean) : clean
   await setDoc(doc(scenariosCol(), scenario.scenarioId), data)
 }
 

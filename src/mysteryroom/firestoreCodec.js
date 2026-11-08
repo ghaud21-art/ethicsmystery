@@ -23,3 +23,15 @@ export function decodeNested(value) {
   }
   return value
 }
+
+// Firestore는 undefined 값을 저장하지 못한다. 편집 화면에서 비운 칸(undefined)은
+// 키째 빼고, 배열 안의 undefined는 null로 바꾼다.
+export function stripUndefined(value) {
+  if (Array.isArray(value)) return value.map((v) => (v === undefined ? null : stripUndefined(v)))
+  if (value && typeof value === 'object') {
+    const out = {}
+    for (const [k, v] of Object.entries(value)) if (v !== undefined) out[k] = stripUndefined(v)
+    return out
+  }
+  return value
+}
