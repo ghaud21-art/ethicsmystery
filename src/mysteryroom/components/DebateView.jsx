@@ -135,6 +135,7 @@ export default function DebateView() {
   const uids = mr.playerUids
   const me = mr.uid
   const myStance = stanceById(stanceOf(me))
+  const myBefore = stanceById(d.before?.[me])
   const sec = cfg.stageSeconds?.[stage]
   const left = sec && d.stageAt ? Math.max(0, sec - Math.floor((mr.now - d.stageAt) / 1000)) : null
   const nameOf = (u) => mr.players[u]?.name ?? '?'
@@ -195,9 +196,22 @@ export default function DebateView() {
 
       {myStance && (
         <div className="mr-mat" style={{ borderColor: 'var(--gold-dark)' }}>
-          <div className="mr-mat-title"><span>내가 맡은 입장: {myStance.label}</span>{d.swaps?.[me] && <span className="mr-tag">교환함</span>}</div>
+          <div className="mr-mat-title">
+            <span>내 역할이 맡은 토론 입장: {myStance.label}</span>
+            {d.swaps?.[me] && <span className="mr-tag">교환함</span>}
+          </div>
           <p>{myStance.claim}</p>
-          <p className="dim" style={{ fontSize: 11, marginTop: 4 }}>배정된 입장이 내 생각과 달라도 괜찮아요. 그 입장의 가장 좋은 근거를 찾아 말해 보세요.</p>
+          {myBefore ? (
+            <p style={{ marginTop: 6 }}>
+              <strong style={{ color: 'var(--gold-light)' }}>토론 전 내 생각</strong> {myBefore.label}
+              {myBefore.id !== myStance.id && <span className="dim"> · 내 생각과 다른 입장을 맡았어요.</span>}
+            </p>
+          ) : (
+            <p className="dim" style={{ marginTop: 6, fontSize: 12 }}>아래에서 ‘토론 전 내 생각’을 고르면 여기에 함께 표시됩니다.</p>
+          )}
+          <p className="dim" style={{ fontSize: 11, marginTop: 4 }}>
+            발언은 역할이 맡은 입장으로 합니다. 내 생각과 달라도 그 입장의 가장 좋은 근거를 찾아 말해 보세요. 반전 카드 단계에서 입장을 한 번 바꿀 수 있어요.
+          </p>
         </div>
       )}
 
@@ -218,7 +232,10 @@ export default function DebateView() {
             return (
               <div key={u} className="mr-mat" style={{ borderColor: u === speaker ? 'var(--gold)' : undefined }}>
                 <div className="mr-mat-title">
-                  <span>{i + 1}. {nameOf(u)} · {stanceById(stanceOf(u))?.label}</span>
+                  <span>
+                    {i + 1}. {nameOf(u)} · 맡은 입장 {stanceById(stanceOf(u))?.label}
+                    {stageDone.pre && d.before?.[u] && <span className="dim" style={{ fontWeight: 400 }}> (내 생각: {stanceById(d.before[u])?.label})</span>}
+                  </span>
                   {sp ? <span className="mr-tag">발언 완료</span> : u === speaker ? <span className="mr-tag blue">발언 차례</span> : null}
                 </div>
                 {sp && (
@@ -233,6 +250,7 @@ export default function DebateView() {
           {speaker === me && (
             <div className="col" style={{ gap: 8 }}>
               <strong style={{ fontSize: 13 }}>내 발언에 붙일 근거 (눌러서 고르기, 여러 개 가능)</strong>
+              <span className="dim" style={{ fontSize: 11 }}>앞에서 본 장면과 퍼즐 결과는 옆의 ‘지난 장면’ 탭에서 다시 볼 수 있어요.</span>
               <EvidencePicker evidence={evidence} chips={chips} setChips={setChips} />
               <textarea rows={2} value={line} onChange={(e) => setLine(e.target.value)} placeholder="말한 내용을 한 줄로 남기기 (선택)" />
               <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!chips.length} onClick={() => actions.speak(chips, line.trim())}>발언 완료</button>

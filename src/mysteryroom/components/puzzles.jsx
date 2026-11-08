@@ -243,7 +243,7 @@ function VerifyPuzzle({ config }) {
 }
 
 // 앞 퍼즐에서 모둠이 놓았던 카드 배치를 다시 보여 준다(자물쇠를 풀 때 기억을 돕는 기록).
-function RecallBoard({ sceneId }) {
+export function RecallBoard({ sceneId }) {
   const { room, mr } = useMr()
   const pz = room.scenes[sceneId]?.puzzle
   const placements = mr.data?.boards?.[sceneId]?.placements ?? {}
