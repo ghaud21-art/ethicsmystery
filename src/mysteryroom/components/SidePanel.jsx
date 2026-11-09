@@ -17,9 +17,9 @@ export default function SidePanel() {
     <div className="card mr-side">
       <div className="tabs">
         {[
-          ['role', '내 역할'],
-          ['mine', `내 자료 ${myMaterials.length}`],
-          ['shared', `공유됨 ${sharedMaterials.length}`],
+          ['role', '역할'],
+          ['mine', `자료 ${myMaterials.length}`],
+          ['shared', `공유 ${sharedMaterials.length}`],
           ['notes', '수첩'],
           ['history', '지난 장면'],
         ].map(([k, l]) => (

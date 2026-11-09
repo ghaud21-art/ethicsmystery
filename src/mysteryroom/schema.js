@@ -76,6 +76,7 @@ export function validateRoom(room) {
   let hasTrue = false
   let hasBad = false
   let hasDebate = false
+  let hasForm = false
   let hasTimeout = false
 
   for (const [id, s] of Object.entries(scenes)) {
@@ -96,6 +97,11 @@ export function validateRoom(room) {
     ;(s.learn ?? []).forEach((k) => !conceptKeys.has(k) && err(`${where}: 없는 개념 '${k}'`))
     ;(s.requireShared ?? []).forEach((m) => !materials[m] && err(`${where} requireShared: 없는 자료 '${m}'`))
     if (s.type === 'debate') hasDebate = true
+    if (s.type === 'form') {
+      hasForm = true
+      if (!s.next) err(`${where}: 최종 문 양식에는 next가 필요합니다`)
+      if (!isArr(s.form?.fields) || !s.form.fields.length) err(`${where}: form.fields가 필요합니다`)
+    }
     if (s.end) {
       if (!['true', 'good', 'bad', 'timeout'].includes(s.end.kind)) err(`${where}: end.kind는 true/good/bad/timeout 중 하나`)
       if (s.end.kind === 'true') hasTrue = true
@@ -103,7 +109,7 @@ export function validateRoom(room) {
       if (s.end.kind === 'timeout') hasTimeout = true
       if (s.end.retry) ref(s.end.retry, `${where} end.retry`)
     }
-    const hasExit = s.end || s.next || s.gate?.length || s.choices?.length || s.puzzle || s.type === 'debate'
+    const hasExit = s.end || s.next || s.gate?.length || s.choices?.length || s.puzzle || s.type === 'debate' || s.type === 'form'
     if (!hasExit) err(`${where}: 다음으로 갈 길(choices, next, gate, puzzle, end)이 없습니다`)
 
     if (s.puzzle) {
@@ -123,7 +129,9 @@ export function validateRoom(room) {
   if (!hasTrue) err('TRUE 엔딩(end.kind="true")이 1개 이상 필요합니다')
   if (!hasBad) err('BAD 엔딩(end.kind="bad")이 1개 이상 필요합니다')
   if (!hasTimeout) err('시간 초과 엔딩(end.kind="timeout")이 필요합니다')
-  if (!hasDebate || !room.debate) err('최종 토론 장면(type="debate")과 debate 설정이 필요합니다')
+  // 최종 문: 토론(type="debate" + debate 설정) 또는 양식(type="form") 가운데 하나가 있어야 한다.
+  if (hasDebate && !room.debate) err('토론 장면이 있으면 debate 설정이 필요합니다')
+  if (!hasDebate && !hasForm) err('최종 토론 장면(type="debate") 또는 최종 문 양식(type="form")이 필요합니다')
   if (!isArr(room.reflection) || room.reflection.length !== 4) err('성찰 질문(reflection)은 정확히 4개여야 합니다')
 
   return errors
@@ -150,7 +158,7 @@ function validatePuzzleConfig(p, where, err, checkOwner, materials) {
     case 'verify':
       if (c.mode === 'diagnose') {
         ;(c.tables ?? []).forEach((t) => !materials[t] && err(`${where}: 없는 표 자료 '${t}'`))
-        if (!c.cause?.correctId || !c.remedy?.correctId) err(`${where}: cause, remedy의 correctId가 필요합니다`)
+        if (!(c.cause?.correctId || c.cause?.correctIds?.length) || !c.remedy?.correctId) err(`${where}: cause(correctId 또는 correctIds), remedy의 correctId가 필요합니다`)
       } else {
         cards(c.docs, 'docs')
         if (!isArr(c.correctIds) || !Number.isInteger(c.pickCount)) err(`${where}: pickCount와 correctIds가 필요합니다`)

@@ -36,15 +36,23 @@ export function evaluateScale(config, board) {
 
 export function evaluateVerify(config, board) {
   if (config.mode === 'diagnose') {
-    const cause = config.cause.options.find((o) => o.id === board?.cause)
+    // 원인은 하나(correctId) 또는 여러 개(correctIds, pick개 고르기)일 수 있다.
+    const multi = Array.isArray(config.cause.correctIds)
+    const picked = multi ? Object.keys(board?.causes ?? {}).filter((k) => board.causes[k]) : [board?.cause].filter(Boolean)
+    const want = multi ? config.cause.correctIds : [config.cause.correctId]
+    const okC = picked.length === want.length && want.every((id) => picked.includes(id))
+    const wrongCause = config.cause.options.find((o) => picked.includes(o.id) && !want.includes(o.id))
     const remedy = config.remedy.options.find((o) => o.id === board?.remedy)
-    const okC = board?.cause === config.cause.correctId
     const okR = board?.remedy === config.remedy.correctId
+    // 거짓 출구 개선안: 원인은 맞혔는데 겉으로만 고치는 개선안을 고르면 문은 열리되 단서가 오염된다.
+    if (okC && remedy?.tainted) {
+      return { correct: true, tainted: true, hits: 1, total: 2, why: remedy.whyNot ?? null }
+    }
     return {
       correct: okC && okR,
       hits: (okC ? 1 : 0) + (okR ? 1 : 0),
       total: 2,
-      why: (!okC && cause?.whyNot) || (!okR && remedy?.whyNot) || null,
+      why: (!okC && (wrongCause?.whyNot || (multi && picked.length !== want.length ? `원인을 ${want.length}개 골라야 합니다.` : null))) || (!okR && remedy?.whyNot) || null,
     }
   }
   // pick
@@ -55,6 +63,14 @@ export function evaluateVerify(config, board) {
   const wrongDoc = config.docs.find((d) => picked.includes(d.id) && !want.has(d.id))
   if (picked.length !== config.pickCount) {
     return { correct: false, hits, total: config.pickCount, why: `자료 ${config.pickCount}개를 골라야 합니다.` }
+  }
+  // taintIds: 이 자료들로만(정답 자료와 섞여도) 고르면 문은 열리지만 단서가 오염된다(거짓 출구).
+  // 그 밖의 자료가 섞이면 오답이다.
+  if (!exact && config.taintIds) {
+    const okish = picked.every((id) => want.has(id) || config.taintIds.includes(id))
+    if (okish) return { correct: true, tainted: true, hits, total: config.pickCount, why: wrongDoc?.note ?? null }
+    const hard = config.docs.find((d) => picked.includes(d.id) && !want.has(d.id) && !config.taintIds.includes(d.id))
+    return { correct: false, hits, total: config.pickCount, why: hard?.note ?? null }
   }
   if (!exact && config.acceptAnyPair) {
     return { correct: true, tainted: true, hits, total: config.pickCount, why: wrongDoc?.note ?? null }

@@ -319,6 +319,7 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
         </>
       )}
 
+      {s.type === 'form' && <JsonField label="최종 문 양식 (title, note, fields: id·label·minChars·placeholder)" value={s.form} rows={12} onChange={(v) => set({ form: v })} />}
       {s.gate && <JsonField label="관문 조건 (위에서부터 처음 맞는 것으로 이동)" value={s.gate} rows={6} onChange={(v) => set({ gate: v })} />}
       {s.requireShared && <JsonField label="공유해야 넘어가는 자료 id" value={s.requireShared} rows={3} onChange={(v) => set({ requireShared: v })} />}
       <JsonField label="이 장면에서 얻는 개념 (learn)" value={s.learn} rows={2} onChange={(v) => set({ learn: v })} />

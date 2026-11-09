@@ -152,7 +152,7 @@ function TestPuzzle({ config }) {
 }
 
 function OrderPuzzle({ config }) {
-  return <PlacementBoard cards={config.cards} zones={config.slots} trayLabel="발표문에 넣지 않을 문장" />
+  return <PlacementBoard cards={config.cards} zones={config.slots} trayLabel={config.trayLabel ?? '발표문에 넣지 않을 문장'} />
 }
 
 function ScalePuzzle({ config }) {
@@ -202,8 +202,27 @@ function VerifyPuzzle({ config }) {
     return (
       <div className="mr-puzzle">
         {config.tables.map((t) => <MaterialCard key={t} id={t} />)}
-        <strong style={{ fontSize: 13 }}>{config.cause.label}</strong>
-        <Options options={config.cause.options} value={mr.board.cause} disabled={locked} onPick={(id) => mr.actions.updateBoard((b) => ({ ...b, cause: id }))} />
+        <strong style={{ fontSize: 13 }}>{config.cause.label}{Array.isArray(config.cause.correctIds) ? ` (${config.cause.correctIds.length}개 고르기)` : ''}</strong>
+        {Array.isArray(config.cause.correctIds) ? (
+          <div className="col" style={{ gap: 6 }}>
+            {config.cause.options.map((o) => {
+              const on = !!mr.board.causes?.[o.id]
+              const count = Object.values(mr.board.causes ?? {}).filter(Boolean).length
+              return (
+                <div
+                  key={o.id}
+                  className={`mr-option ${on ? 'on' : ''}`}
+                  onClick={() => !locked && (on || count < config.cause.correctIds.length) && mr.actions.updateBoard((b) => ({ ...b, causes: { ...(b.causes ?? {}), [o.id]: !on } }))}
+                >
+                  <span className="mr-radio" style={{ borderRadius: 4 }} />
+                  <span>{o.text}</span>
+                </div>
+              )
+            })}
+          </div>
+        ) : (
+          <Options options={config.cause.options} value={mr.board.cause} disabled={locked} onPick={(id) => mr.actions.updateBoard((b) => ({ ...b, cause: id }))} />
+        )}
         <strong style={{ fontSize: 13 }}>{config.remedy.label}</strong>
         <Options options={config.remedy.options} value={mr.board.remedy} disabled={locked} onPick={(id) => mr.actions.updateBoard((b) => ({ ...b, remedy: id }))} />
       </div>
@@ -250,7 +269,7 @@ export function RecallBoard({ sceneId }) {
   if (!pz) return null
   const c = pz.config
   const zones = pz.module === 'classify' ? c.bins.map((b) => ({ id: b.id, label: b.label })) : (c.slots ?? []).map((s) => ({ id: s.id, label: s.label }))
-  const trayLabel = pz.module === 'test' ? '검사에 쓰지 않은 카드 (사실 질문)' : pz.module === 'order' ? '넣지 않은 문장' : null
+  const trayLabel = pz.module === 'test' ? '검사에 쓰지 않은 카드 (사실 질문)' : pz.module === 'order' ? c.trayLabel ?? '넣지 않은 문장' : null
   const rows = [...zones, ...(trayLabel ? [{ id: null, label: trayLabel }] : [])]
   return (
     <div className="mr-mat">
@@ -370,7 +389,7 @@ export function PuzzleArea({ sceneId, puzzle }) {
       {tainted ? (
         <div className="mr-feedback">
           <div className="mr-feedback-line">문이 열렸지만 경고등이 켜졌다.</div>
-          <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.6 }}>고른 자료가 한쪽에 치우쳤거나 출처가 불분명하다. 이 단서는 ‘오염된 단서’로 기록된다. {mr.state.pendingSolve.why}</p>
+          <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.6 }}>{puzzle.taintLine ?? '고른 자료가 한쪽에 치우쳤거나 출처가 불분명하다.'} 이 단서는 ‘오염된 단서’로 기록된다. {mr.state.pendingSolve.why}</p>
           <button onClick={mr.actions.confirmTainted}>그래도 진행한다</button>
         </div>
       ) : fb && fb.scene === sceneId ? (

@@ -21,6 +21,7 @@ export const ISSUE_CARDS = {
   privacy: { label: '프라이버시', question: '어떤 정보가 어디까지 쓰이는가? 본인이 통제할 수 있는가?' },
   safety: { label: '안전', question: '잘못되었을 때 가장 큰 피해는 무엇이고 누가 입는가?' },
   autonomy: { label: '인간의 자율성', question: '최종 결정은 누가 하는가? 사람이 거절할 수 있는가?' },
+  environment: { label: '환경', question: '이 기술이 쓰는 전력과 자원, 탄소 비용은 누가 떠안는가? 그 비용은 정당한가?' },
 }
 
 export const STAGES = ['pre', 'speak', 'question', 'twist', 'agree']

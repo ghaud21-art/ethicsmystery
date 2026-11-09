@@ -45,6 +45,7 @@ function MysteryResultCard({ r, open, onToggle, onDelete, busy }) {
             {r.stanceBefore && <span className="pill pill-outline">입장 {r.stanceBefore} → {r.stanceAfter ?? '-'}</span>}
             {r.debate?.conclusion && <span className="pill pill-outline">모둠 결론 {r.debate.conclusion}</span>}
           </div>
+          {(r.formResult?.fields ?? []).map((f) => <p key={f.label} style={{ fontSize: 13, margin: 0 }}><strong>{f.label}</strong> {f.value}</p>)}
           {r.debate?.valueSentence && <p style={{ fontSize: 13, margin: 0 }}><strong>가치 충돌</strong> {(r.debate.values ?? []).join(' ↔ ')} · {r.debate.valueSentence}</p>}
           {r.debate?.acknowledge && <p style={{ fontSize: 13, margin: 0 }}><strong>인정한 근거</strong> {r.debate.acknowledge}</p>}
           {r.debate?.concession && <p style={{ fontSize: 13, margin: 0 }}><strong>조건부 양보</strong> {r.debate.concession}</p>}

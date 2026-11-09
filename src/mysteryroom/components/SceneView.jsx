@@ -3,6 +3,7 @@ import { roleById } from '../roles'
 import { PuzzleArea } from './puzzles'
 import { computeGrade, GRADE_TEXT } from '../engine'
 import DebateView from './DebateView'
+import FinalForm from './FinalForm'
 import ResultsPanel from './ResultsPanel'
 
 function ChoiceVote({ scene }) {
@@ -136,6 +137,7 @@ export default function SceneView() {
   if (scene.end) interaction = <Ending scene={scene} />
   else if (scene.puzzle) interaction = <PuzzleArea key={sceneId} sceneId={sceneId} puzzle={scene.puzzle} />
   else if (scene.type === 'debate') interaction = <DebateView />
+  else if (scene.type === 'form') interaction = <FinalForm scene={scene} />
   else if (scene.requireShared) interaction = <RequireShared scene={scene} />
   else if (scene.choices?.length > 1) interaction = <ChoiceVote key={sceneId} scene={scene} />
   else if (singleChoice) interaction = <ReadyButton label={scene.choices[0].t} />
