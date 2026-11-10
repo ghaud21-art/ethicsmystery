@@ -354,7 +354,104 @@ function LockPuzzle({ config, sceneId }) {
   )
 }
 
-const MODULES = { classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle }
+// 아이디어 방: 각자 한 줄 아이디어 → 모두 내면 공개 → 가장 기발한 것에 한 표씩
+function IdeaPuzzle({ config }) {
+  const { mr } = useMr()
+  const ideas = mr.board.ideas ?? {}
+  const votes = mr.board.votes ?? {}
+  const mine = ideas[mr.uid]?.text ?? ''
+  const [text, setText] = useState(mine)
+  const max = config.maxChars ?? 80
+  const min = config.minChars ?? 5
+  const allIn = mr.playerUids.every((u) => (ideas[u]?.text ?? '').trim().length >= min)
+  const submitted = Object.fromEntries(mr.playerUids.map((u) => [u, (ideas[u]?.text ?? '').trim().length >= min]))
+  const voted = Object.fromEntries(mr.playerUids.map((u) => [u, !!votes[u]]))
+  const locked = !!mr.state.feedback
+  return (
+    <div className="mr-puzzle">
+      <div className="mr-note">
+        <div className="mr-note-cap"><Icon name="bulb" size={12} />아이디어 미션</div>
+        <p style={{ fontSize: 15 }}>{config.prompt}</p>
+        {config.example && <p className="dim" style={{ fontSize: 12, marginTop: 4 }}>예: {config.example}</p>}
+      </div>
+      <div className="col" style={{ gap: 6 }}>
+        <textarea rows={2} maxLength={max} value={text} placeholder={`한 줄로, ${max}자 이내`} disabled={locked} onChange={(e) => setText(e.target.value)} />
+        <div className="row">
+          <button
+            className="mr-small"
+            disabled={locked || text.trim().length < min || text.trim() === mine}
+            onClick={() => mr.actions.updateBoard((b) => ({ ...b, ideas: { ...(b.ideas ?? {}), [mr.uid]: { text: text.trim(), name: mr.me?.name ?? '' } }, votes: mr.solo ? { [mr.uid]: mr.uid } : {} }))}
+          >
+            {mine ? '아이디어 고치기' : '아이디어 내기'}
+          </button>
+          <span className="dim" style={{ fontSize: 11 }}>{text.trim().length}/{max}자 · 고치면 투표가 처음부터 다시 시작됩니다.</span>
+        </div>
+      </div>
+      {!mr.solo && !allIn && <PlayerDots map={submitted} label="아이디어 낸 사람" />}
+      {!mr.solo && !allIn && <span className="dim" style={{ fontSize: 12 }}>모두 아이디어를 내면 한꺼번에 공개됩니다.</span>}
+      {allIn && (
+        <div className="col" style={{ gap: 6 }}>
+          <strong style={{ fontSize: 13 }}>{mr.solo ? '내 아이디어' : '가장 기발한 아이디어에 한 표! (내 것에는 투표할 수 없어요)'}</strong>
+          {mr.playerUids.map((u) => {
+            const on = votes[mr.uid] === u
+            const self = u === mr.uid && !mr.solo
+            const n = Object.values(votes).filter((v) => v === u).length
+            return (
+              <div
+                key={u}
+                className={`mr-option ${on ? 'on' : ''}`}
+                style={{ cursor: self || locked ? 'default' : 'pointer', opacity: self ? 0.7 : 1 }}
+                onClick={() => !self && !locked && mr.actions.updateBoard((b) => ({ ...b, votes: { ...(b.votes ?? {}), [mr.uid]: u } }))}
+              >
+                <span className="mr-radio" />
+                <span style={{ flex: 1 }}>
+                  {ideas[u].text}
+                  <span className="dim" style={{ display: 'block', fontSize: 11 }}>{ideas[u].name}{self ? ' (나)' : ''}</span>
+                </span>
+                {Object.keys(votes).length === mr.playerUids.length && <span className="mr-tag">{n}표</span>}
+              </div>
+            )
+          })}
+          {!mr.solo && <PlayerDots map={voted} label="투표한 사람" />}
+        </div>
+      )}
+    </div>
+  )
+}
+
+const MODULES = { classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle, idea: IdeaPuzzle }
+
+// '문제를 해결했습니다!' 창: 얻은 단서와(아이디어 방이면) 뽑힌 아이디어를 보여 준다.
+function SolvedModal({ puzzle }) {
+  const { room, mr } = useMr()
+  const ps = mr.state.pendingSolve
+  const clueName = puzzle.clue ? room.clueNames?.[puzzle.clue] : null
+  const learned = (puzzle.learn ?? []).map((k) => room.concepts.find((c) => c.k === k)?.name).filter(Boolean)
+  return (
+    <div className="modal-overlay" style={{ zIndex: 50 }}>
+      <div className="modal-panel col" style={{ gap: 12, textAlign: 'center', maxWidth: 440 }}>
+        <div style={{ color: 'var(--gold)', display: 'flex', justifyContent: 'center' }}><Icon name="key" size={40} /></div>
+        <div className="mr-ending-grade" style={{ fontSize: 26 }}>문제를 해결했습니다!</div>
+        {puzzle.solvedLine && <p style={{ margin: 0, fontSize: 14, lineHeight: 1.7 }}>{puzzle.solvedLine}</p>}
+        {ps.winner && (
+          <div className="mr-mat" style={{ textAlign: 'left' }}>
+            <div className="mr-mat-title"><span>모둠이 뽑은 아이디어</span></div>
+            {ps.winner.map((w, i) => <p key={i}>{w}</p>)}
+          </div>
+        )}
+        {clueName && (
+          <div className="mr-mat" style={{ textAlign: 'left' }}>
+            <div className="mr-mat-title"><span>단서 {puzzle.clue} 획득</span></div>
+            <p>{clueName}</p>
+          </div>
+        )}
+        {learned.length > 0 && <p className="dim" style={{ margin: 0, fontSize: 12 }}>개념 노트에 추가: {learned.join(', ')}</p>}
+        <button className="primary" onClick={mr.actions.confirmSolve}>계속 →</button>
+        {!mr.solo && <span className="dim" style={{ fontSize: 11 }}>누구든 누르면 모두 다음 장면으로 넘어갑니다.</span>}
+      </div>
+    </div>
+  )
+}
 
 export function PuzzleArea({ sceneId, puzzle }) {
   const { mr } = useMr()
@@ -366,8 +463,10 @@ export function PuzzleArea({ sceneId, puzzle }) {
   const hintOpen = !!mr.state.hintsUsed?.[sceneId]
   const fb = mr.state.feedback
   const tainted = mr.state.pendingSolve?.scene === sceneId && mr.state.pendingSolve.tainted
+  const solved = mr.state.pendingSolve?.scene === sceneId && !mr.state.pendingSolve.tainted
   // 원리 검사 2단계에서는 수정 원리를 골라야 제출할 수 있다.
-  const empty = rev === 0 || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
+  const ideaReady = puzzle.module !== 'idea' || mr.playerUids.every((u) => mr.board.votes?.[u] && mr.board.ideas?.[u])
+  const empty = rev === 0 || !ideaReady || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
 
   return (
     <div className="col" style={{ gap: 12 }}>
@@ -386,7 +485,8 @@ export function PuzzleArea({ sceneId, puzzle }) {
         )
       )}
 
-      {tainted ? (
+      {solved && <SolvedModal puzzle={puzzle} />}
+      {solved ? null : tainted ? (
         <div className="mr-feedback">
           <div className="mr-feedback-line">문이 열렸지만 경고등이 켜졌다.</div>
           <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.6 }}>{puzzle.taintLine ?? '고른 자료가 한쪽에 치우쳤거나 출처가 불분명하다.'} 이 단서는 ‘오염된 단서’로 기록된다. {mr.state.pendingSolve.why}</p>

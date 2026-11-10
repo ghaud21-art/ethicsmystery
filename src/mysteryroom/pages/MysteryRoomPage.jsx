@@ -8,6 +8,7 @@ import { roleById } from '../roles'
 import { Icon, MrContext, fmtTime } from '../components/common'
 import SceneView from '../components/SceneView'
 import SidePanel from '../components/SidePanel'
+import ClueBox from '../components/ClueBox'
 import '../mysteryroom.css'
 
 function WaitingRoom({ room, mr, code }) {
@@ -119,6 +120,7 @@ function Play({ room, mr }) {
         <span className="dim" style={{ fontSize: 12 }}>
           {mr.me?.name} · {(mr.roleInfo.includes[mr.me?.role] ?? []).map((rid) => roleById(room, rid)?.name).join(', ')}
         </span>
+        <ClueBox />
         <span className={`mr-timer ${mr.remaining < 300 ? 'warn' : ''}`}><Icon name="clock" size={16} />{fmtTime(mr.remaining)}</span>
       </div>
       {isLocalMode() && <TestTools room={room} mr={mr} />}

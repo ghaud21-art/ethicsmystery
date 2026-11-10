@@ -1,6 +1,7 @@
+import { useState, useEffect } from 'react'
 import { Icon, MaterialCard, NoteCard, PlayerDots, fmtTime, useMr } from './common'
 import { roleById } from '../roles'
-import { PuzzleArea } from './puzzles'
+import { PuzzleArea, RecallBoard } from './puzzles'
 import { computeGrade, GRADE_TEXT } from '../engine'
 import DebateView from './DebateView'
 import FinalForm from './FinalForm'
@@ -126,10 +127,67 @@ function RoleCardBlock() {
   )
 }
 
+// 지나온 장면 목록(관문 장면 제외, 같은 장면이 이어지면 한 번만)
+export function visitedScenes(room, history) {
+  const out = []
+  for (const id of history ?? []) {
+    const s = room.scenes[id]
+    if (!s || s.gate) continue
+    if (out[out.length - 1] !== id) out.push(id)
+  }
+  return out
+}
+
+// 내 화면에서만 지난 장면을 넘겨 본다. 모둠의 진행은 바뀌지 않는다.
+function PastScene({ id, onPrev, onNext, onNow, canPrev }) {
+  const { room, mr } = useMr()
+  const s = room.scenes[id]
+  const roomInfo = room.rooms.find((r) => r.id === s.room)
+  return (
+    <div className="card" style={{ borderColor: 'rgba(94,145,224,0.5)' }}>
+      <div className="mr-banner row" style={{ justifyContent: 'space-between' }}>
+        <span>지난 장면을 보는 중입니다. 모둠은 지금 ‘{mr.scene.title}’에 있어요.</span>
+        <button className="mr-small primary" onClick={onNow}>현재 장면으로 돌아가기</button>
+      </div>
+      <div className="mr-scene-kicker">{s.kicker ?? roomInfo?.name ?? '미스터리룸'}</div>
+      <h2 className="mr-scene-title">{s.title}</h2>
+      <div className="mr-body">
+        {(s.body ?? []).map((b, i) =>
+          typeof b === 'string' ? <p key={i}>{b}</p> : b.roleCard ? <RoleCardBlock key={i} /> : b.material ? <MaterialCard key={i} id={b.material} /> : <NoteCard key={i} block={b} keyPrefix={`l:${id}:${i}`} />,
+        )}
+        {s.puzzle && ['classify', 'test', 'order'].includes(s.puzzle.module) && <RecallBoard sceneId={id} />}
+        {s.puzzle?.module === 'idea' && mr.state.ideaWinners?.[id] && (
+          <div className="mr-mat"><div className="mr-mat-title"><span>모둠이 뽑은 아이디어</span></div>{mr.state.ideaWinners[id].map((w, i) => <p key={i}>{w}</p>)}</div>
+        )}
+        {s.end && <div className="mr-note"><div className="mr-note-cap">{s.end.name}</div><p>{s.end.line}</p></div>}
+      </div>
+      <div className="row" style={{ marginTop: 10 }}>
+        <button className="mr-small" disabled={!canPrev} onClick={onPrev}>◀ 더 이전 장면</button>
+        <button className="mr-small" onClick={onNext}>다음 장면 ▶</button>
+      </div>
+    </div>
+  )
+}
+
 export default function SceneView() {
   const { room, mr } = useMr()
   const sceneId = mr.state.scene
   const scene = mr.scene
+  const visited = visitedScenes(room, mr.state.history)
+  const curIdx = visited.lastIndexOf(sceneId)
+  const [viewIdx, setViewIdx] = useState(null)
+  useEffect(() => setViewIdx(null), [sceneId])
+  if (viewIdx !== null && viewIdx < curIdx) {
+    return (
+      <PastScene
+        id={visited[viewIdx]}
+        canPrev={viewIdx > 0}
+        onPrev={() => setViewIdx(viewIdx - 1)}
+        onNext={() => setViewIdx(viewIdx + 1 >= curIdx ? null : viewIdx + 1)}
+        onNow={() => setViewIdx(null)}
+      />
+    )
+  }
   const roomInfo = room.rooms.find((r) => r.id === scene.room)
   const singleChoice = scene.choices?.length === 1
 
@@ -146,7 +204,12 @@ export default function SceneView() {
 
   return (
     <div className="card">
-      <div className="mr-scene-kicker">{scene.kicker ?? roomInfo?.name ?? '미스터리룸'}</div>
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+        <div className="mr-scene-kicker">{scene.kicker ?? roomInfo?.name ?? '미스터리룸'}</div>
+        {curIdx > 0 && (
+          <button className="mr-small mr-ghost" onClick={() => setViewIdx(curIdx - 1)} title="내 화면에서만 지난 장면을 봅니다">◀ 이전 장면 보기</button>
+        )}
+      </div>
       <h2 className="mr-scene-title">{scene.title}</h2>
       {scene.readAloud && !mr.solo && (
         <div className="mr-banner">한 문단씩 돌아가며 소리 내어 읽어 주세요. 금색 테두리 문단이 내 차례입니다.</div>

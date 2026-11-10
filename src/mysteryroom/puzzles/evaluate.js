@@ -116,7 +116,24 @@ export function evaluateLock(config, board) {
   return { correct: ok, hits: ok ? 1 : 0, total: 1, why: ok ? null : config.wrongHint ?? null }
 }
 
+// 아이디어 방: 각자 한 줄 아이디어를 내고, 모두 공개된 뒤 가장 기발한 것에 투표한다.
+// 모두 내고 모두 투표하면 통과. 가장 많이 표를 받은 아이디어(동점이면 모두)가 뽑힌다.
+export function evaluateIdea(config, board) {
+  const ideas = board?.ideas ?? {}
+  const votes = board?.votes ?? {}
+  const authors = Object.keys(ideas).filter((u) => norm(ideas[u]?.text).length >= (config.minChars ?? 5))
+  if (!authors.length) return { correct: false, hits: 0, total: 1, why: '아이디어를 한 줄씩 적어 주세요.' }
+  const voters = Object.keys(votes).filter((u) => authors.includes(votes[u]))
+  if (voters.length < authors.length) return { correct: false, hits: 0, total: 1, why: '모두 한 표씩 투표해야 합니다.' }
+  const count = {}
+  voters.forEach((u) => (count[votes[u]] = (count[votes[u]] ?? 0) + 1))
+  const max = Math.max(...Object.values(count))
+  const winner = Object.keys(count).filter((u) => count[u] === max).map((u) => ideas[u].text)
+  return { correct: true, hits: 1, total: 1, why: null, winner }
+}
+
 const EVALUATORS = {
+  idea: evaluateIdea,
   classify: evaluateClassify,
   scale: evaluateScale,
   verify: evaluateVerify,

@@ -47,7 +47,11 @@ export function useDebate(room, mr, code) {
   const uids = mr.playerUids
   const solo = mr.solo
   const stage = d.stage ?? 'pre'
-  const stages = solo ? STAGES.filter((s) => s !== 'question') : STAGES
+  // 룸 설정으로 단계를 줄일 수 있다(debate.stages). 혼자면 질문 카드 단계는 뺀다.
+  const baseStages = (cfg.stages ?? STAGES).filter((s) => STAGES.includes(s))
+  const stages = solo ? baseStages.filter((s) => s !== 'question') : baseStages
+  // 합의 단계에서 쓸 칸(debate.agree). 정하지 않으면 모두 쓴다.
+  const need = { conditions: true, acknowledge: true, concession: true, ...(cfg.agree ?? {}) }
   const conds = cfg.conditions ?? {}
 
   const roleStance = (uid) => room.roles.find((r) => r.id === mr.players[uid]?.role)?.stance
@@ -64,10 +68,9 @@ export function useDebate(room, mr, code) {
   const teamOk =
     !!conclusion &&
     valueOk &&
-    len(team.conditions?.[0]) >= 5 &&
-    len(team.conditions?.[1]) >= 5 &&
-    len(team.acknowledge) >= (conds.acknowledgeMinChars ?? 20) &&
-    len(team.concession) >= (conds.concessionMinChars ?? 15) &&
+    (!need.conditions || (len(team.conditions?.[0]) >= 5 && len(team.conditions?.[1]) >= 5)) &&
+    (!need.acknowledge || len(team.acknowledge) >= (conds.acknowledgeMinChars ?? 20)) &&
+    (!need.concession || len(team.concession) >= (conds.concessionMinChars ?? 15)) &&
     uids.every((u) => d.after?.[u])
   const allAgreed = teamOk && uids.every((u) => d.agree?.[u] === (team.rev ?? 0))
 
@@ -131,5 +134,5 @@ export function useDebate(room, mr, code) {
     [store, code, mr, stage, stages, d.speakIdx, team, vc, conclusion],
   )
 
-  return { d, cfg, stage, stages, stageDone, stanceOf, roleStance, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid }
+  return { need, d, cfg, stage, stages, stageDone, stanceOf, roleStance, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid }
 }

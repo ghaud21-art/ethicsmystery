@@ -173,7 +173,8 @@ export function useMysteryRoom(room, code) {
         if (result.correct) {
           if (puzzle.clue) next.clues = { ...(cur.clues ?? {}), [puzzle.clue]: result.tainted ? 'tainted' : 'clean' }
           if (puzzle.learn) next.concepts = { ...(cur.concepts ?? {}), ...Object.fromEntries(puzzle.learn.map((k) => [k, true])) }
-          next.pendingSolve = { scene: sceneId, tainted: !!result.tainted, why: result.why ?? null }
+          next.pendingSolve = { scene: sceneId, tainted: !!result.tainted, why: result.why ?? null, ...(result.winner ? { winner: result.winner } : {}) }
+          if (result.winner) next.ideaWinners = { ...(cur.ideaWinners ?? {}), [sceneId]: result.winner }
         } else {
           const counted = (puzzle.attempts ?? 3) < 99
           next.attempts = { ...(cur.attempts ?? {}), [sceneId]: (cur.attempts?.[sceneId] ?? 0) + 1 }
@@ -194,12 +195,7 @@ export function useMysteryRoom(room, code) {
       })
   }, [agreeMap, board, state, scene, playerUids, store, code])
 
-  // 정답 처리 후 다음 장면으로 (거짓 출구면 경고를 먼저 보여 준다)
-  useEffect(() => {
-    if (!state?.pendingSolve || state.pendingSolve.scene !== state.scene) return
-    if (state.pendingSolve.tainted) return // 화면에서 확인 버튼으로 넘어간다
-    goTo(state.scene, scene.puzzle.onSolve, (n) => (n.pendingSolve = null))
-  }, [state, scene, goTo])
+  // 정답이면 바로 넘어가지 않고 '문제를 해결했습니다' 창을 띄운다. 창의 '계속'으로 넘어간다.
 
   // ---- 행동 ----
   const actions = useMemo(
@@ -230,6 +226,7 @@ export function useMysteryRoom(room, code) {
       dismissFeedback: () =>
         store.transaction(`${code}/state`, (cur) => (cur?.feedback ? { ...cur, feedback: null } : undefined)),
       confirmTainted: () => goTo(state.scene, scene.puzzle.onSolve, (n) => (n.pendingSolve = null)),
+      confirmSolve: () => goTo(state.scene, scene.puzzle.onSolve, (n) => (n.pendingSolve = null)),
       openHint: () => store.set(`${code}/state/hintsUsed/${state.scene}`, true),
       retry: (to) => goTo(state.scene, to),
       // BAD 엔딩에서 다시 도전하지 않고 끝내기 (등급 B로 결과 화면)

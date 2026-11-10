@@ -73,6 +73,7 @@ export default function ResultsPanel({ scene, grade }) {
     swapped: d.swaps?.[mr.uid]?.to ?? null,
     debate: dr ?? null,
     formResult: mr.state.formResult ?? null,
+    ideas: Object.values(mr.state.ideaWinners ?? {}).flat(),
     concepts: concepts.map((c) => c.name),
     reflection: room.reflection.map((q, i) => ({ question: q.text, link: q.link, answer: answers[i] ?? '' })),
   })
@@ -166,6 +167,7 @@ export default function ResultsPanel({ scene, grade }) {
             {dr?.acknowledge && <tr><th>인정한 근거</th><td>{dr.acknowledge}</td></tr>}
             {dr?.concession && <tr><th>조건부 양보</th><td>{dr.concession}</td></tr>}
             {mr.state.formResult?.fields?.map((f) => <tr key={f.label}><th>{f.label}</th><td>{f.value}</td></tr>)}
+            {Object.keys(mr.state.ideaWinners ?? {}).length > 0 && <tr><th>모둠 아이디어</th><td>{Object.values(mr.state.ideaWinners).flat().join(' / ')}</td></tr>}
             <tr><th>모은 개념</th><td>{concepts.map((c) => c.name).join(', ') || '-'}</td></tr>
           </tbody>
         </table>

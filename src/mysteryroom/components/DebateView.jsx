@@ -130,7 +130,7 @@ export default function DebateView() {
   const { room, mr } = useMr()
   const code = mr.code
   const db = useDebate(room, mr, code)
-  const { d, cfg, stage, stages, stageDone, stanceOf, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid } = db
+  const { need, d, cfg, stage, stages, stageDone, stanceOf, stanceById, team, conclusion, teamOk, allAgreed, actions, pairValid } = db
   const evidence = useEvidence()
   const uids = mr.playerUids
   const me = mr.uid
@@ -373,11 +373,11 @@ export default function DebateView() {
             </div>
           )}
 
-          <SavedField label="조건 1" value={team.conditions?.[0]} minChars={5} placeholder="예: 대리변수 점검을 마친 뒤 사용한다" onSave={(v) => actions.editTeam({ conditions: [v, team.conditions?.[1] ?? ''] })} />
-          <SavedField label="조건 2" value={team.conditions?.[1]} minChars={5} placeholder="예: 성별별 추천 결과를 매 학기 공개한다" onSave={(v) => actions.editTeam({ conditions: [team.conditions?.[0] ?? '', v] })} />
-          <SavedField label="반대 입장의 가장 강한 근거 인정" value={team.acknowledge} minChars={cfg.conditions?.acknowledgeMinChars ?? 20} placeholder="‘~라는 점은 인정한다. 왜냐하면 ~’" onSave={(v) => actions.editTeam({ acknowledge: v })} rows={3} />
-          <SavedField label="조건부 양보" value={team.concession} minChars={cfg.conditions?.concessionMinChars ?? 15} placeholder="‘~라면 우리는 ~까지 받아들일 수 있다’" onSave={(v) => actions.editTeam({ concession: v })} />
-          <SavedField label="소수 의견" value={team.minority} placeholder="결론과 다른 생각이 있다면 남겨 두세요" onSave={(v) => actions.editTeam({ minority: v })} />
+          {need.conditions && <SavedField label="조건 1" value={team.conditions?.[0]} minChars={5} placeholder="예: 대리변수 점검을 마친 뒤 사용한다" onSave={(v) => actions.editTeam({ conditions: [v, team.conditions?.[1] ?? ''] })} />}
+          {need.conditions && <SavedField label="조건 2" value={team.conditions?.[1]} minChars={5} placeholder="예: 성별별 추천 결과를 매 학기 공개한다" onSave={(v) => actions.editTeam({ conditions: [team.conditions?.[0] ?? '', v] })} />}
+          {need.acknowledge && <SavedField label="반대 입장의 가장 강한 근거 인정" value={team.acknowledge} minChars={cfg.conditions?.acknowledgeMinChars ?? 20} placeholder="‘~라는 점은 인정한다. 왜냐하면 ~’" onSave={(v) => actions.editTeam({ acknowledge: v })} rows={need.conditions ? 3 : 2} />}
+          {need.concession && <SavedField label="조건부 양보" value={team.concession} minChars={cfg.conditions?.concessionMinChars ?? 15} placeholder="‘~라면 우리는 ~까지 받아들일 수 있다’" onSave={(v) => actions.editTeam({ concession: v })} />}
+          {need.minority !== false && <SavedField label="소수 의견" value={team.minority} placeholder="결론과 다른 생각이 있다면 남겨 두세요" onSave={(v) => actions.editTeam({ minority: v })} />}
 
           <strong style={{ fontSize: 13 }}>토론 후, 내 생각은?</strong>
           <StanceOptions stances={cfg.stances} value={d.after?.[me]} onPick={actions.setAfter} />
@@ -387,7 +387,7 @@ export default function DebateView() {
             <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!teamOk || d.agree?.[me] === (team.rev ?? 0)} onClick={actions.agree}>
               {mr.solo ? '마지막 문에 제출' : '이 합의문에 동의'}
             </button>
-            <span className="dim" style={{ fontSize: 11 }}>결론 투표{cfg.valueConflict ? ', 가치 충돌 문장' : ''}, 조건 2개, 인정 문장, 양보 문장, 모두의 ‘토론 후 생각’이 채워져야 제출할 수 있어요. 합의문이 바뀌면 동의가 풀립니다.</span>
+            <span className="dim" style={{ fontSize: 11 }}>결론 투표{cfg.valueConflict ? ', 가치 충돌 문장' : ''}{need.conditions ? ', 조건 2개' : ''}{need.acknowledge ? ', 인정 문장' : ''}{need.concession ? ', 양보 문장' : ''}, 모두의 ‘토론 후 생각’이 채워져야 제출할 수 있어요. 합의문이 바뀌면 동의가 풀립니다.</span>
           </div>
         </div>
       )}

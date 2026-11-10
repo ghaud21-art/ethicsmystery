@@ -131,7 +131,6 @@ export function validateRoom(room) {
   if (!hasTimeout) err('시간 초과 엔딩(end.kind="timeout")이 필요합니다')
   // 최종 문: 토론(type="debate" + debate 설정) 또는 양식(type="form") 가운데 하나가 있어야 한다.
   if (hasDebate && !room.debate) err('토론 장면이 있으면 debate 설정이 필요합니다')
-  if (!hasDebate && !hasForm) err('최종 토론 장면(type="debate") 또는 최종 문 양식(type="form")이 필요합니다')
   if (!isArr(room.reflection) || room.reflection.length !== 4) err('성찰 질문(reflection)은 정확히 4개여야 합니다')
 
   return errors
@@ -175,6 +174,9 @@ function validatePuzzleConfig(p, where, err, checkOwner, materials) {
       ;(c.cards ?? []).forEach((x) => x.slot && !slots.has(x.slot) && err(`${where}: 카드 ${x.id}의 slot '${x.slot}'이 없습니다`))
       break
     }
+    case 'idea':
+      if (!isStr(c.prompt)) err(`${where}: 아이디어 미션 prompt가 필요합니다`)
+      break
     case 'lock':
       if (c.answer == null) err(`${where}: 자물쇠 answer가 필요합니다`)
       ;(c.fragments ?? []).forEach((f, i) => checkOwner(f.owner, `${where} 조각 ${i + 1}`))
