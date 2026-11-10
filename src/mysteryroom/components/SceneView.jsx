@@ -153,7 +153,7 @@ function PastScene({ id, onPrev, onNext, onNow, canPrev }) {
       <h2 className="mr-scene-title">{s.title}</h2>
       <div className="mr-body">
         {(s.body ?? []).map((b, i) =>
-          typeof b === 'string' ? <p key={i}>{b}</p> : b.roleCard ? <RoleCardBlock key={i} /> : b.material ? <MaterialCard key={i} id={b.material} /> : <NoteCard key={i} block={b} keyPrefix={`l:${id}:${i}`} />,
+          typeof b === 'string' ? <p key={i}>{b}</p> : b.voice ? <div key={i} className="mr-voice"><div className="mr-voice-who">{b.voice}</div>{b.text}</div> : b.roleCard ? <RoleCardBlock key={i} /> : b.material ? <MaterialCard key={i} id={b.material} /> : <NoteCard key={i} block={b} keyPrefix={`l:${id}:${i}`} />,
         )}
         {s.puzzle && ['classify', 'test', 'order'].includes(s.puzzle.module) && <RecallBoard sceneId={id} />}
         {s.puzzle?.module === 'idea' && mr.state.ideaWinners?.[id] && (
@@ -230,6 +230,7 @@ export default function SceneView() {
                 </div>
               )
             }
+            if (b.voice) return <div key={i} className="mr-voice"><div className="mr-voice-who">{b.voice}</div>{b.text}</div>
             if (b.roleCard) return <RoleCardBlock key={i} />
             if (b.material) return <MaterialCard key={i} id={b.material} />
             return <NoteCard key={i} block={b} keyPrefix={`l:${sceneId}:${i}`} />

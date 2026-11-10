@@ -101,6 +101,8 @@ function ScenePreview({ room, id, go }) {
         {(s.body ?? []).map((b, i) =>
           typeof b === 'string' ? (
             <p key={i}>{b}</p>
+          ) : b.voice ? (
+            <div key={i} className="mr-voice"><div className="mr-voice-who">{b.voice}</div>{b.text}</div>
           ) : b.roleCard ? (
             <div key={i} className="mr-mat" style={{ borderColor: 'var(--gold)' }}><div className="mr-mat-title">내 관점 카드 (학생마다 자기 역할 카드가 보임)</div></div>
           ) : b.material ? (
@@ -180,7 +182,7 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
       {body.map((b, i) => (
         <div key={i} className="mr-mat">
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-            <span className="mr-tag">{typeof b === 'string' ? '문단' : b.roleCard ? '관점 카드' : b.material ? '자료' : '메모 카드'}</span>
+            <span className="mr-tag">{typeof b === 'string' ? '문단' : b.voice ? '말풍선' : b.roleCard ? '관점 카드' : b.material ? '자료' : '메모 카드'}</span>
             <span className="row" style={{ gap: 4 }}>
               <button className="mr-small" onClick={() => move(i, -1)}>위로</button>
               <button className="mr-small" onClick={() => move(i, 1)}>아래로</button>
@@ -189,6 +191,11 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
           </div>
           {typeof b === 'string' ? (
             <Field label="문단" multiline value={b} onChange={(v) => setBody(body.map((x, j) => (j === i ? v : x)))} />
+          ) : b.voice ? (
+            <div className="row" style={{ gap: 8 }}>
+              <Field label="말하는 이" value={b.voice} width={120} onChange={(v) => setBody(body.map((x, j) => (j === i ? { ...x, voice: v } : x)))} />
+              <Field label="대사" multiline rows={2} value={b.text} onChange={(v) => setBody(body.map((x, j) => (j === i ? { ...x, text: v } : x)))} />
+            </div>
           ) : b.roleCard ? (
             <span className="dim" style={{ fontSize: 12 }}>이 자리에 학생마다 자기 관점 카드가 나옵니다.</span>
           ) : b.material ? (
@@ -239,6 +246,7 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
         <button className="mr-small" onClick={() => setBody([...body, ''])}>+ 문단</button>
         <button className="mr-small" onClick={() => setBody([...body, { note: '메모', lines: [''] }])}>+ 메모 카드</button>
         <button className="mr-small" onClick={() => setBody([...body, { roleCard: true }])}>+ 관점 카드</button>
+        <button className="mr-small" onClick={() => setBody([...body, { voice: '든든이', text: '' }])}>+ 말풍선</button>
         <label className="row" style={{ gap: 4, fontSize: 12 }}>
           <input type="checkbox" checked={!!s.readAloud} onChange={(e) => set({ readAloud: e.target.checked || undefined })} />
           돌아가며 소리 내어 읽기 (문단마다 읽을 사람 표시)

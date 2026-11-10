@@ -299,8 +299,8 @@ function LockPuzzle({ config, sceneId }) {
         const visible = mr.canSee(f.owner, key)
         return (
           <div key={i} className="mr-mat">
-            <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="key" />{ownerLabel(room, mr.roleInfo, f.owner)}의 조각</span>{mr.shared[key] && <span className="mr-tag">공유됨</span>}</div>
-            <p>{visible ? f.text : '이 조각은 주인 화면에만 보입니다. 말로 알려 달라고 하세요.'}</p>
+            <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="key" />{f.label ?? `${ownerLabel(room, mr.roleInfo, f.owner)}의 조각`}</span>{mr.shared[key] ? <span className="mr-tag">공유됨</span> : f.label && <span className="mr-tag blue">{ownerLabel(room, mr.roleInfo, f.owner)}</span>}</div>
+            <p className={visible ? '' : 'dim'}>{visible ? f.text : `${ownerLabel(room, mr.roleInfo, f.owner)} 화면에만 보입니다. 말로 알려 달라고 하세요.`}</p>
             {mr.owns(f.owner) && !mr.shared[key] && !mr.solo && <button className="mr-small" style={{ marginTop: 6 }} onClick={() => mr.actions.share(key)}>공유</button>}
           </div>
         )
@@ -563,7 +563,7 @@ export function PuzzleArea({ sceneId, puzzle }) {
       ) : fb && fb.scene === sceneId ? (
         <div className="mr-feedback">
           {fb.line && <div className="mr-feedback-line">{fb.line}</div>}
-          <div style={{ fontSize: 13, marginBottom: 6 }}>{fb.total} 중 {fb.hits} 맞음</div>
+          {puzzle.module !== 'lock' && <div style={{ fontSize: 13, marginBottom: 6 }}>{fb.total} 중 {fb.hits} 맞음</div>}
           {fb.why && <p style={{ margin: '0 0 8px', fontSize: 13, lineHeight: 1.6 }}>{fb.why}</p>}
           <button onClick={mr.actions.dismissFeedback}>다시 도전</button>
         </div>

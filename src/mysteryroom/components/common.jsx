@@ -110,11 +110,34 @@ export function LensBlock({ lens, keyPrefix }) {
   )
 }
 
+// 거울 암호: 글자가 좌우로 뒤집혀 보인다. 거울을 가진 역할(mirror.owner)만 바로 비춰 볼 수 있다.
+function MirrorLines({ block }) {
+  const { room, mr } = useMr()
+  const [flip, setFlip] = useState(false)
+  const owner = block.mirror?.owner
+  const mine = !owner || mr.owns(owner)
+  const readable = flip && mine
+  return (
+    <>
+      {block.lines.map((l, i) => (
+        <p key={i} className={readable ? '' : 'mr-mirror'}>{l}</p>
+      ))}
+      {mine ? (
+        <button className="mr-small" style={{ marginTop: 6 }} onClick={() => setFlip((f) => !f)}>
+          {readable ? '거울 내리기' : '거울에 비춰 보기'}
+        </button>
+      ) : (
+        <div className="mr-lens-hint"><Icon name="eye" size={11} />거울은 {ownerLabel(room, mr.roleInfo, owner)}에게 있어요. 읽어 달라고 하세요.</div>
+      )}
+    </>
+  )
+}
+
 export function NoteCard({ block, keyPrefix }) {
   return (
     <div className="mr-note">
       <div className="mr-note-cap"><Icon name="note" size={12} />{block.note}</div>
-      {block.lines.map((l, i) => <p key={i}>{l}</p>)}
+      {block.mirror ? <MirrorLines block={block} /> : block.lines.map((l, i) => <p key={i}>{l}</p>)}
       <LensBlock lens={block.lens} keyPrefix={keyPrefix} />
     </div>
   )

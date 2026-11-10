@@ -132,6 +132,8 @@ function HistoryTab() {
                 {(s.body ?? []).map((b, i) =>
                   typeof b === 'string' ? (
                     <p key={i} style={{ fontSize: 12, lineHeight: 1.65 }}>{b}</p>
+                  ) : b.voice ? (
+                    <div key={i} className="mr-voice"><div className="mr-voice-who">{b.voice}</div>{b.text}</div>
                   ) : b.roleCard ? null : b.material ? (
                     <MaterialCard key={i} id={b.material} compact />
                   ) : (
