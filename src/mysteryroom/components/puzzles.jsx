@@ -419,7 +419,68 @@ function IdeaPuzzle({ config }) {
   )
 }
 
-const MODULES = { classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle, idea: IdeaPuzzle }
+// 협력 퀴즈: 문제는 모두에게, 풀이에 필요한 단서는 문제마다 한 사람에게만 보인다.
+function QuizPuzzle({ config, sceneId }) {
+  const { room, mr } = useMr()
+  const answers = mr.board.answers ?? {}
+  const locked = !!mr.state.feedback
+  const [texts, setTexts] = useState({})
+  const setAnswer = (qid, v) => mr.actions.updateBoard((b) => ({ ...b, answers: { ...(b.answers ?? {}), [qid]: v } }))
+  return (
+    <div className="mr-puzzle">
+      {config.intro && <p className="dim" style={{ margin: 0, fontSize: 12 }}>{config.intro}</p>}
+      {config.questions.map((q, i) => {
+        const key = `q:${sceneId}:${q.id}`
+        const clueVisible = q.clue && mr.canSee(q.clue.owner, key)
+        return (
+          <div key={q.id} className="mr-mat" style={{ padding: 12 }}>
+            <div className="mr-mat-title">
+              <span>{i + 1}. {q.q}</span>
+              {q.area && <span className={`mr-tag ${q.area.includes('AI') ? 'blue' : ''}`}>{q.area}</span>}
+            </div>
+            {q.clue && (
+              clueVisible ? (
+                <div className="mr-lens" style={{ marginTop: 4 }}>
+                  <div className="mr-lens-who">{ownerLabel(room, mr.roleInfo, q.clue.owner)}의 단서{mr.shared[key] ? ' · 팀 공유됨' : ''}</div>
+                  {q.clue.text}
+                  {mr.owns(q.clue.owner) && !mr.shared[key] && !mr.solo && (
+                    <div style={{ marginTop: 6 }}><button className="mr-small" onClick={() => mr.actions.share(key)}><span className="row" style={{ gap: 4 }}><Icon name="share" size={11} />팀에 공유</span></button></div>
+                  )}
+                </div>
+              ) : (
+                <div className="mr-lens-hint"><Icon name="lens" size={11} />풀이에 필요한 단서가 {ownerLabel(room, mr.roleInfo, q.clue.owner)}의 화면에 있어요. 물어보세요.</div>
+              )
+            )}
+            <div style={{ marginTop: 8 }}>
+              {q.options ? (
+                <div className="col" style={{ gap: 6 }}>
+                  {q.options.map((o) => (
+                    <div key={o.id} className={`mr-option ${answers[q.id] === o.id ? 'on' : ''}`} style={{ padding: '8px 10px' }} onClick={() => !locked && setAnswer(q.id, o.id)}>
+                      <span className="mr-radio" />
+                      <span>{o.text}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="row">
+                  <input value={texts[q.id] ?? answers[q.id] ?? ''} placeholder={q.placeholder ?? '답 입력'} disabled={locked} onChange={(e) => setTexts((t) => ({ ...t, [q.id]: e.target.value }))} />
+                  <button className="mr-small" disabled={locked || !(texts[q.id] ?? '').trim()} onClick={() => setAnswer(q.id, texts[q.id].trim())}>답 적기</button>
+                  {answers[q.id] && <span className="dim" style={{ fontSize: 12 }}>적은 답: {answers[q.id]}</span>}
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })}
+      <span className="dim" style={{ fontSize: 11 }}>
+        답한 문제 {config.questions.filter((q) => answers[q.id]).length}/{config.questions.length} · 모든 문제를 맞혀야 문이 열립니다. 누구나 답을 고를 수 있어요.
+      </span>
+    </div>
+  )
+}
+
+const MODULES = {
+  quiz: QuizPuzzle, classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle, idea: IdeaPuzzle }
 
 // '문제를 해결했습니다!' 창: 얻은 단서와(아이디어 방이면) 뽑힌 아이디어를 보여 준다.
 function SolvedModal({ puzzle }) {
@@ -445,6 +506,12 @@ function SolvedModal({ puzzle }) {
             <p>{clueName}</p>
           </div>
         )}
+        {puzzle.module === 'quiz' && puzzle.config.questions.some((q) => q.explain) && (
+          <div className="mr-mat" style={{ textAlign: 'left', maxHeight: 260, overflowY: 'auto' }}>
+            <div className="mr-mat-title"><span>정답 풀이</span></div>
+            {puzzle.config.questions.map((q, i) => q.explain && <p key={q.id} style={{ marginBottom: 6 }}><strong>{i + 1}.</strong> {q.explain}</p>)}
+          </div>
+        )}
         {learned.length > 0 && <p className="dim" style={{ margin: 0, fontSize: 12 }}>개념 노트에 추가: {learned.join(', ')}</p>}
         <button className="primary" onClick={mr.actions.confirmSolve}>계속 →</button>
         {!mr.solo && <span className="dim" style={{ fontSize: 11 }}>누구든 누르면 모두 다음 장면으로 넘어갑니다.</span>}
@@ -465,7 +532,8 @@ export function PuzzleArea({ sceneId, puzzle }) {
   const tainted = mr.state.pendingSolve?.scene === sceneId && mr.state.pendingSolve.tainted
   const solved = mr.state.pendingSolve?.scene === sceneId && !mr.state.pendingSolve.tainted
   // 원리 검사 2단계에서는 수정 원리를 골라야 제출할 수 있다.
-  const ideaReady = puzzle.module !== 'idea' || mr.playerUids.every((u) => mr.board.votes?.[u] && mr.board.ideas?.[u])
+  const quizReady = puzzle.module !== 'quiz' || puzzle.config.questions.every((q) => mr.board.answers?.[q.id])
+  const ideaReady = !quizReady ? false : puzzle.module !== 'idea' || mr.playerUids.every((u) => mr.board.votes?.[u] && mr.board.ideas?.[u])
   const empty = rev === 0 || !ideaReady || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
 
   return (

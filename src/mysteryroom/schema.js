@@ -174,6 +174,15 @@ function validatePuzzleConfig(p, where, err, checkOwner, materials) {
       ;(c.cards ?? []).forEach((x) => x.slot && !slots.has(x.slot) && err(`${where}: 카드 ${x.id}의 slot '${x.slot}'이 없습니다`))
       break
     }
+    case 'quiz':
+      if (!isArr(c.questions) || !c.questions.length) err(`${where}: 퀴즈 questions가 필요합니다`)
+      ;(c.questions ?? []).forEach((q, i) => {
+        if (!isStr(q.id) || !isStr(q.q)) err(`${where}: 퀴즈 ${i + 1}번에 id와 q가 필요합니다`)
+        if (q.options && !q.options.some((o) => o.id === q.answerId)) err(`${where}: 퀴즈 ${i + 1}번 answerId가 보기에 없습니다`)
+        if (!q.options && !isArr(q.answer)) err(`${where}: 퀴즈 ${i + 1}번에 options+answerId 또는 answer 배열이 필요합니다`)
+        if (q.clue) checkOwner(q.clue.owner, `${where} 퀴즈 ${i + 1}번 단서`)
+      })
+      break
     case 'idea':
       if (!isStr(c.prompt)) err(`${where}: 아이디어 미션 prompt가 필요합니다`)
       break

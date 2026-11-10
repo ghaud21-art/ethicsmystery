@@ -132,7 +132,23 @@ export function evaluateIdea(config, board) {
   return { correct: true, hits: 1, total: 1, why: null, winner }
 }
 
+// 협력 퀴즈: 여러 문제를 모두 맞혀야 통과. 문제마다 객관식(answerId) 또는 단답(answer 배열).
+// 틀리면 맞은 개수와, 첫 번째로 틀린 문제의 힌트(hint)를 알려 준다.
+export function evaluateQuiz(config, board) {
+  const answers = board?.answers ?? {}
+  let hits = 0
+  let why = null
+  config.questions.forEach((q, i) => {
+    const a = answers[q.id]
+    const ok = q.options ? a === q.answerId : (q.answer ?? []).some((x) => norm(x) === norm(a))
+    if (ok) hits++
+    else if (!why) why = `${i + 1}번 문제를 다시 보세요.${q.hint ? ' ' + q.hint : ''}`
+  })
+  return { correct: hits === config.questions.length, hits, total: config.questions.length, why }
+}
+
 const EVALUATORS = {
+  quiz: evaluateQuiz,
   idea: evaluateIdea,
   classify: evaluateClassify,
   scale: evaluateScale,
