@@ -455,10 +455,16 @@ function DebateTab({ draft, setDraft }) {
   const setD = (patch) => setDraft({ ...draft, debate: { ...d, ...patch } })
   return (
     <div className="col">
+      {!d ? (
+        <div className="card col">
+          <strong>최종 토론</strong>
+          <p className="dim" style={{ margin: 0 }}>이 룸에는 최종 토론이 없습니다. 작은 토론(몰래 고르기)은 ‘장면 흐름’ 탭에서 그 장면의 선택지로 편집하세요.</p>
+        </div>
+      ) : (
       <div className="card col">
         <strong>최종 토론</strong>
         <Field label="토론 질문" value={d.question} onChange={(v) => setD({ question: v })} />
-        {d.stances.map((s, i) => (
+        {(d.stances ?? []).map((s, i) => (
           <div key={s.id} className="row" style={{ gap: 10 }}>
             <Field label={`입장 ${s.id}`} value={s.label} width={200} onChange={(v) => setD({ stances: d.stances.map((x, j) => (j === i ? { ...x, label: v } : x)) })} />
             <Field label="핵심 주장" value={s.claim} onChange={(v) => setD({ stances: d.stances.map((x, j) => (j === i ? { ...x, claim: v } : x)) })} />
@@ -480,9 +486,10 @@ function DebateTab({ draft, setDraft }) {
         <JsonField label="합의 조건 (글자 수)" value={d.conditions} rows={4} onChange={(v) => setD({ conditions: v })} />
         <JsonField label="가치 충돌 문장 (선택: cards, validPairs, minChars, template)" value={d.valueConflict} rows={8} onChange={(v) => setD({ valueConflict: v })} />
       </div>
+      )}
       <div className="card col">
         <strong>성찰 질문 4개</strong>
-        {draft.reflection.map((q, i) => (
+        {(draft.reflection ?? []).map((q, i) => (
           <div key={i} className="row" style={{ gap: 10, alignItems: 'flex-start' }}>
             <Field label="구분" value={q.link} width={140} onChange={(v) => setDraft({ ...draft, reflection: draft.reflection.map((x, j) => (j === i ? { ...x, link: v } : x)) })} />
             <Field label={`질문 ${i + 1}`} multiline rows={2} value={q.text} onChange={(v) => setDraft({ ...draft, reflection: draft.reflection.map((x, j) => (j === i ? { ...x, text: v } : x)) })} />
