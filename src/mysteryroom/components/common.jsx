@@ -160,6 +160,15 @@ function WatchLog({ block }) {
 
 export function NoteCard({ block, keyPrefix }) {
   if (block.watchLog) return <WatchLog block={block} />
+  if (block.recommend != null) {
+    return (
+      <div className="mr-reco">
+        <div className="mr-reco-cap">{block.by ?? 'AI'} 추천 답 <span className="mr-reco-star">★★★★★ {block.rating ?? '4.9'}</span> · 확신도 {block.confidence ?? 98}%</div>
+        <div className="mr-reco-val">{block.recommend}</div>
+        {block.reason && <div className="mr-reco-foot">{block.reason}</div>}
+      </div>
+    )
+  }
   return (
     <div className="mr-note">
       <div className="mr-note-cap"><Icon name="note" size={12} />{block.note}</div>

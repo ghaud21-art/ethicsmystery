@@ -107,7 +107,9 @@ function ScenePreview({ room, id, go }) {
             <div key={i} className="mr-mat" style={{ borderColor: 'var(--gold)' }}><div className="mr-mat-title">내 관점 카드 (학생마다 자기 역할 카드가 보임)</div></div>
           ) : b.material ? (
             <div key={i} className="mr-mat"><div className="mr-mat-title">{room.materials[b.material]?.title}</div></div>
-          ) :  b.watchLog ? (
+          ) : b.recommend != null ? (
+            <div key={i} className="mr-reco"><div className="mr-reco-cap">{b.by ?? 'AI'} 추천 답 (가짜 추천)</div><div className="mr-reco-val">{b.recommend}</div></div>
+          ) : b.watchLog ? (
             <div key={i} className="mr-watch"><div className="mr-watch-cap"><span className="mr-rec" />든든이의 관찰 기록 (플레이 중 모둠의 실제 기록이 표시됨)</div></div>
           ) : (
             <div key={i} className="mr-note">
@@ -184,7 +186,7 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
       {body.map((b, i) => (
         <div key={i} className="mr-mat">
           <div className="row" style={{ justifyContent: 'space-between', marginBottom: 6 }}>
-            <span className="mr-tag">{typeof b === 'string' ? '문단' : b.voice ? '말풍선' : b.watchLog ? '관찰 기록' : b.roleCard ? '관점 카드' : b.material ? '자료' : '메모 카드'}</span>
+            <span className="mr-tag">{typeof b === 'string' ? '문단' : b.voice ? '말풍선' : b.watchLog ? '관찰 기록' : b.recommend != null ? 'AI 추천 답' : b.roleCard ? '관점 카드' : b.material ? '자료' : '메모 카드'}</span>
             <span className="row" style={{ gap: 4 }}>
               <button className="mr-small" onClick={() => move(i, -1)}>위로</button>
               <button className="mr-small" onClick={() => move(i, 1)}>아래로</button>
@@ -198,6 +200,8 @@ function SceneForm({ room, id, setScene, renameScene, deleteScene }) {
               <Field label="말하는 이" value={b.voice} width={120} onChange={(v) => setBody(body.map((x, j) => (j === i ? { ...x, voice: v } : x)))} />
               <Field label="대사" multiline rows={2} value={b.text} onChange={(v) => setBody(body.map((x, j) => (j === i ? { ...x, text: v } : x)))} />
             </div>
+          ) : b.recommend != null ? (
+            <Field label="AI 추천 답 (일부러 틀린 답)" value={b.recommend} width={240} onChange={(v) => setBody(body.map((x, j) => (j === i ? { ...x, recommend: v } : x)))} />
           ) : b.watchLog ? (
             <span className="dim" style={{ fontSize: 12 }}>이 자리에 모둠의 실제 플레이 기록(공유 횟수, 틀린 문, 시간)이 나옵니다.</span>
           ) : b.roleCard ? (

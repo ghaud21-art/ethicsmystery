@@ -132,3 +132,9 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-rec { width: 9px; height: 9px; border-radius: 50%; background: #e0483a; animation: mrRec 1.2s infinite; }
 @keyframes mrRec { 50% { opacity: 0.2; } }
 .mr-watch-foot { color: var(--ink-dim) !important; font-size: 11px !important; margin-top: 6px !important; }
+
+.mr-reco { border: 1px solid rgba(94,145,224,0.5); background: linear-gradient(135deg, rgba(94,145,224,0.16), rgba(94,145,224,0.04)); border-radius: var(--radius-sm); padding: 10px 14px; margin: 0 0 12px; }
+.mr-reco-cap { font-size: 11px; color: #9db8e8; font-weight: 700; }
+.mr-reco-star { color: #f0c94a; letter-spacing: 0.02em; }
+.mr-reco-val { font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.18em; color: #dfe8f8; margin-top: 4px; }
+.mr-reco-foot { font-size: 11px; color: var(--ink-dim); margin-top: 4px; }

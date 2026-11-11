@@ -5,7 +5,7 @@ import { isLocalMode, isTestMode } from './store'
 import { validateRoom } from './schema'
 import { decodeNested } from './firestoreCodec'
 
-export const LOCAL_SAMPLE_ROOMS = ['room_identify_newtech_01', 'room_compose_gilbut_01', 'room_ai_career_01', 'room_ai_health_01']
+export const LOCAL_SAMPLE_ROOMS = ['room_identify_newtech_01', 'room_compose_giljabi_01', 'room_ai_career_01', 'room_ai_health_01']
 
 const cache = new Map()
 
