@@ -129,7 +129,7 @@ export function evaluateIdea(config, board) {
   voters.forEach((u) => (count[votes[u]] = (count[votes[u]] ?? 0) + 1))
   const max = Math.max(...Object.values(count))
   const winner = Object.keys(count).filter((u) => count[u] === max).map((u) => ideas[u].text)
-  return { correct: true, hits: 1, total: 1, why: null, winner }
+  return { correct: true, hits: 1, total: 1, why: null, winner, all: Object.fromEntries(authors.map((u) => [u, ideas[u].text])) }
 }
 
 // 협력 퀴즈: 여러 문제를 모두 맞혀야 통과. 문제마다 객관식(answerId) 또는 단답(answer 배열).

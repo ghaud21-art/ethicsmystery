@@ -31,6 +31,7 @@ function useLocal(key, initial) {
 
 export default function ResultsPanel({ scene, grade }) {
   const { room, mr } = useMr()
+  const myIdeas = Object.values(mr.state?.ideaAll ?? {}).map((m) => m[mr.uid]).filter(Boolean)
   const { tier, studentIdentity, verifySchoolCode } = useAuth()
   const cardRef = useRef(null)
   const base = `ethicsmystery.mysteryroom.${mr.code}.${mr.uid}`
@@ -74,6 +75,7 @@ export default function ResultsPanel({ scene, grade }) {
     debate: dr ?? null,
     formResult: mr.state.formResult ?? null,
     ideas: Object.values(mr.state.ideaWinners ?? {}).flat(),
+    myIdeas: myIdeas,
     concepts: concepts.map((c) => c.name),
     reflection: room.reflection.map((q, i) => ({ question: q.text, link: q.link, answer: answers[i] ?? '' })),
   })
@@ -167,6 +169,7 @@ export default function ResultsPanel({ scene, grade }) {
             {dr?.acknowledge && <tr><th>인정한 근거</th><td>{dr.acknowledge}</td></tr>}
             {dr?.concession && <tr><th>조건부 양보</th><td>{dr.concession}</td></tr>}
             {mr.state.formResult?.fields?.map((f) => <tr key={f.label}><th>{f.label}</th><td>{f.value}</td></tr>)}
+            {myIdeas.length > 0 && <tr><th>내 진로 질문</th><td><strong>{myIdeas.join(' / ')}</strong><div className="dim" style={{ fontSize: 11, marginTop: 4 }}>다음 시간(2차시) 진로 연계 윤리문제 찾기에서 이어서 씁니다.</div></td></tr>}
             {Object.keys(mr.state.ideaWinners ?? {}).length > 0 && <tr><th>모둠 아이디어</th><td>{Object.values(mr.state.ideaWinners).flat().join(' / ')}</td></tr>}
             <tr><th>모은 개념</th><td>{concepts.map((c) => c.name).join(', ') || '-'}</td></tr>
           </tbody>

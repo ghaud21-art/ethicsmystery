@@ -175,6 +175,7 @@ export function useMysteryRoom(room, code) {
           if (puzzle.learn) next.concepts = { ...(cur.concepts ?? {}), ...Object.fromEntries(puzzle.learn.map((k) => [k, true])) }
           next.pendingSolve = { scene: sceneId, tainted: !!result.tainted, why: result.why ?? null, ...(result.winner ? { winner: result.winner } : {}) }
           if (result.winner) next.ideaWinners = { ...(cur.ideaWinners ?? {}), [sceneId]: result.winner }
+          if (result.all) next.ideaAll = { ...(cur.ideaAll ?? {}), [sceneId]: result.all }
         } else {
           const counted = (puzzle.attempts ?? 3) < 99
           next.attempts = { ...(cur.attempts ?? {}), [sceneId]: (cur.attempts?.[sceneId] ?? 0) + 1 }

@@ -133,7 +133,33 @@ function MirrorLines({ block }) {
   )
 }
 
+// 든든이의 관찰 기록: 이 모둠이 실제로 한 행동(공유 횟수, 틀린 횟수, 시간)을 그대로 보여 준다.
+function WatchLog({ block }) {
+  const { room, mr } = useMr()
+  const st = mr.state ?? {}
+  const by = {}
+  Object.values(mr.shared ?? {}).forEach((v) => { if (v?.by) by[v.by] = (by[v.by] ?? 0) + 1 })
+  const att = Object.entries(st.attempts ?? {}).sort((a, b) => b[1] - a[1])[0]
+  const mm = Math.floor((mr.elapsed ?? 0) / 60)
+  const ss = (mr.elapsed ?? 0) % 60
+  const roleOf = (u) => (mr.roleInfo.includes[mr.players[u]?.role] ?? []).map((rid) => roleById(room, rid)?.job).filter(Boolean).join('·')
+  const quiet = mr.playerUids.filter((u) => !by[u])
+  return (
+    <div className="mr-watch">
+      <div className="mr-watch-cap"><span className="mr-rec" />{block.title ?? '든든이의 관찰 기록 · 회의실'}</div>
+      <p>회의 시작 후 {mm}분 {ss}초 · 지나온 장면 {(st.history ?? []).length}개</p>
+      {mr.playerUids.map((u) => (
+        <p key={u}>{mr.players[u]?.name} ({roleOf(u)}) · 단서 공유 {by[u] ?? 0}번{u === mr.uid ? '  ← 지금 이 화면을 보는 사람' : ''}</p>
+      ))}
+      <p>{att && att[1] > 0 ? `가장 오래 막힌 문: ${room.scenes[att[0]]?.title ?? att[0]} (${att[1]}번 틀림)` : '틀린 문: 아직 없음'}</p>
+      {quiet.length > 0 && quiet.length < mr.playerUids.length && <p>한 번도 공유하지 않은 사람: {quiet.map((u) => mr.players[u]?.name).join(', ')}</p>}
+      <p className="mr-watch-foot">기록은 보호자 앱으로 자동 전송 대기 중…</p>
+    </div>
+  )
+}
+
 export function NoteCard({ block, keyPrefix }) {
+  if (block.watchLog) return <WatchLog block={block} />
   return (
     <div className="mr-note">
       <div className="mr-note-cap"><Icon name="note" size={12} />{block.note}</div>

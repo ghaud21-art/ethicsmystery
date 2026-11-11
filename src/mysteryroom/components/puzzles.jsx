@@ -391,7 +391,7 @@ function IdeaPuzzle({ config }) {
       {!mr.solo && !allIn && <span className="dim" style={{ fontSize: 12 }}>모두 아이디어를 내면 한꺼번에 공개됩니다.</span>}
       {allIn && (
         <div className="col" style={{ gap: 6 }}>
-          <strong style={{ fontSize: 13 }}>{mr.solo ? '내 아이디어' : '가장 기발한 아이디어에 한 표! (내 것에는 투표할 수 없어요)'}</strong>
+          <strong style={{ fontSize: 13 }}>{mr.solo ? '내 아이디어' : `${config.voteLabel ?? '가장 기발한 아이디어에 한 표!'} (내 것에는 투표할 수 없어요)`}</strong>
           {mr.playerUids.map((u) => {
             const on = votes[mr.uid] === u
             const self = u === mr.uid && !mr.solo
