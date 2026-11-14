@@ -3,6 +3,7 @@
   "contentType": "tanmun",
   "published": false,
   "guestAllowed": true,
+  "hidden": true,
   "meta": {
     "title": "길잡이 청문회 · AI 기록관",
     "subtitle": "《다섯 개의 변명: 길잡이 청문회》 1막에서 쓰는 AI 기록관 설정입니다."
@@ -58,6 +59,5 @@
       "criteria": "추천이 줄수록 선택이 줄고 다시 추천이 준다는 점을 언급"
     }
   ],
-  "clues": [],
-  "hidden": true
+  "clues": []
 }

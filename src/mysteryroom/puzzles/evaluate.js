@@ -153,7 +153,7 @@ export function evaluateQuiz(config, board) {
 export function evaluateTanmun(config, board) {
   const found = Object.keys(board?.found ?? {}).length
   const need = config.need ?? 3
-  return { correct: found >= need, hits: found, total: need, why: found >= need ? null : `숨은 사실을 ${need}개 찾아야 합니다. (지금 ${found}개)` }
+  return { correct: found >= need, hits: found, total: need, why: found >= need ? null : `숨은 사실을 ${need}개 찾아야 합니다. (지금 ${found}개)`, stateMerge: found >= need ? { factsFound: found } : null }
 }
 
 // 단서 보드: 행동 포인트로 단서를 열고, need에 적힌 잠긴 단서를 모두 풀면 통과.

@@ -40,7 +40,7 @@ export function tallyVotes(votes, playerUids, round, hostUid) {
 export function computeGrade(endKind, state, room) {
   if (endKind === 'true') {
     const needInsight = room?.meta?.ssInsight ?? 0
-    const perfect = (state?.failedTotal ?? 0) <= 1 && !Object.keys(state?.hintsUsed ?? {}).length && !state?.badVisited && (state?.insight ?? 0) >= needInsight
+    const perfect = (state?.failedTotal ?? 0) <= 1 && !Object.keys(state?.hintsUsed ?? {}).length && !state?.badVisited && (state?.insight ?? 0) >= needInsight && (state?.factsFound ?? 99) >= (room?.meta?.ssFacts ?? 0)
     return perfect ? 'SS' : 'S'
   }
   if (endKind === 'good') return 'A'

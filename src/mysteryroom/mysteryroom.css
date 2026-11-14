@@ -165,3 +165,6 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-clue { padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel2); display: flex; flex-direction: column; }
 .mr-clue.closed { background: repeating-linear-gradient(135deg, var(--panel2) 0 8px, rgba(255,255,255,0.02) 8px 16px); }
 .mr-clue.locked { border-color: var(--gold); }
+.mr-quota { font-size: 13px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--line); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
+.mr-quota strong { color: var(--gold-light); font-family: var(--font-mono); font-size: 16px; }
+.mr-quota.out { border-color: var(--blood-light); }

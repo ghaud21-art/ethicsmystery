@@ -32,17 +32,27 @@ export function TanmunPuzzle({ config }) {
   const cardsMode = mr.board.mode === 'cards' || isLocalMode() || !config.scenarioId
   const asked = mr.board.asked ?? {}
   const myName = mr.players[mr.uid]?.name ?? '나'
+  // 질문 제한: 모든 사실을 다 캐기 어렵게. 다 쓰고도 부족하면 실패 1회를 감수하고 추가 질문을 받는다.
+  const limit = config.maxQuestions ? config.maxQuestions + (mr.board.extra ?? 0) : Infinity
+  const used = mr.board.used ?? 0
+  const out = used >= limit
+  const maxOf = (b) => (config.maxQuestions ? config.maxQuestions + (b.extra ?? 0) : Infinity)
 
   const record = (entry, fact) =>
     mr.actions.updateBoard((b) => ({
       ...b,
+      used: entry.v === '반려' ? b.used ?? 0 : (b.used ?? 0) + 1,
       log: [...(b.log ?? []), entry].slice(-40),
       found: fact ? { ...(b.found ?? {}), [fact.id]: true } : b.found ?? {},
     }))
+  const buyExtra = async () => {
+    await mr.actions.recordFail()
+    await mr.actions.updateBoard((b) => ({ ...b, extra: (b.extra ?? 0) + 1, log: [...(b.log ?? []), { sys: '추가 질문 1개를 받았습니다. (실패 1회로 기록)' }] }))
+  }
 
   const ask = async () => {
     const text = q.trim()
-    if (!text || busy) return
+    if (!text || busy || out) return
     setBusy(true)
     try {
       const { verdict } = await judgeTanmunQuestion(config.scenarioId, text)
@@ -57,10 +67,11 @@ export function TanmunPuzzle({ config }) {
   }
 
   const askCard = (c) => {
-    if (asked[c.id]) return
+    if (asked[c.id] || out) return
     const fact = c.fact ? config.facts.find((f) => f.id === c.fact) : null
-    mr.actions.updateBoard((b) => ({
+    mr.actions.updateBoard((b) => (b.asked?.[c.id] || (b.used ?? 0) >= maxOf(b) ? b : {
       ...b,
+      used: (b.used ?? 0) + 1,
       asked: { ...(b.asked ?? {}), [c.id]: true },
       log: [...(b.log ?? []), { by: myName, q: c.q, v: c.verdict, fact: fact && !b.found?.[fact.id] ? fact.id : null }].slice(-40),
       found: fact ? { ...(b.found ?? {}), [fact.id]: true } : b.found ?? {},
@@ -68,6 +79,15 @@ export function TanmunPuzzle({ config }) {
   }
 
   const n = Object.keys(found).length
+  const quota = config.maxQuestions ? (
+    <div className={`mr-quota ${out ? 'out' : ''}`}>
+      남은 질문 <strong>{Math.max(0, limit - used)}</strong> / {limit}
+      {out && n < (config.need ?? 3) && (
+        <button className="mr-small" style={{ marginLeft: 8 }} onClick={buyExtra}>추가 질문 1개 받기 (실패 1회로 기록)</button>
+      )}
+      {out && n >= (config.need ?? 3) && <span className="dim" style={{ marginLeft: 8 }}>질문을 다 썼어요. 찾은 사실로 제출하세요.</span>}
+    </div>
+  ) : null
   return (
     <div className="mr-puzzle">
       <div className="mr-mat">
@@ -81,12 +101,13 @@ export function TanmunPuzzle({ config }) {
         </div>
       </div>
 
+      {quota}
       {!cardsMode ? (
         <div className="col" style={{ gap: 6 }}>
           <span className="dim" style={{ fontSize: 12 }}>AI 기록관은 <strong>예/아니오</strong>로만 답합니다. 모둠원이 돌아가며 질문을 불러 주세요.</span>
           <div className="row">
             <input style={{ flex: 1 }} value={q} maxLength={120} placeholder="예: 길잡이는 올해 데이터로 배웠나요?" onChange={(e) => setQ(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && ask()} />
-            <button className="primary" disabled={busy || !q.trim()} onClick={ask}>{busy ? '판정 중…' : '질문하기'}</button>
+            <button className="primary" disabled={busy || !q.trim() || out} onClick={ask}>{busy ? '판정 중…' : '질문하기'}</button>
           </div>
           <button className="mr-small mr-ghost" style={{ alignSelf: 'flex-start' }} onClick={() => mr.actions.updateBoard((b) => ({ ...b, mode: 'cards' }))}>AI가 느리면: 질문 카드로 바꾸기</button>
         </div>
@@ -95,7 +116,7 @@ export function TanmunPuzzle({ config }) {
           <span className="dim" style={{ fontSize: 12 }}>질문 카드를 골라 기록관에게 물어보세요. 모든 질문이 사실로 이어지지는 않습니다.</span>
           <div className="mr-qgrid">
             {config.fallback.map((c) => (
-              <button key={c.id} className={`mr-qcard ${asked[c.id] ? 'done' : ''}`} disabled={!!asked[c.id]} onClick={() => askCard(c)}>
+              <button key={c.id} className={`mr-qcard ${asked[c.id] ? 'done' : ''}`} disabled={!!asked[c.id] || out} onClick={() => askCard(c)}>
                 {c.q}
                 {asked[c.id] && <div className="mr-qv">기록관: {VERDICT_LABEL[c.verdict] ?? c.verdict}</div>}
               </button>
@@ -156,6 +177,7 @@ function ClueCard({ card, opened, solved, canOpen, onOpen }) {
   const { mr } = useMr()
   const [v, setV] = useState('')
   const [msg, setMsg] = useState(null)
+  const [wrong, setWrong] = useState(0)
   const lock = card.lock
   const check = async () => {
     const ok = (lock.answer ?? []).some((a) => norm(a) === norm(v))
@@ -164,7 +186,8 @@ function ClueCard({ card, opened, solved, canOpen, onOpen }) {
       setMsg(null)
     } else {
       mr.actions.recordFail()
-      setMsg(lock.wrongHint ?? '다시 생각해 보세요.')
+      setWrong((w) => w + 1)
+      setMsg(lock.wrongHint ?? '잘못 입력하셨습니다.')
     }
   }
   if (!opened) {
@@ -192,6 +215,7 @@ function ClueCard({ card, opened, solved, canOpen, onOpen }) {
             <button className="mr-small" disabled={!v.trim()} onClick={check}>자물쇠에 입력</button>
           </div>
           {msg && <div className="mr-feedback" style={{ padding: 8, fontSize: 12 }}>{msg}</div>}
+          {wrong >= 2 && lock.hint && <div className="mr-hint" style={{ fontSize: 12 }}><strong>힌트</strong> {lock.hint}</div>}
         </div>
       ))}
     </div>
