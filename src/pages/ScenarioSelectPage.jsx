@@ -82,7 +82,7 @@ export default function ScenarioSelectPage() {
     ;(isLocalMode() ? loadLocalRegistry() : loadRegistry()).then(setScenarios).catch(setError)
   }, [])
 
-  const visible = scenarios?.filter((s) => (tab === 'murder' ? !['tanmun', 'mysteryroom'].includes(s.contentType) : s.contentType === tab))
+  const visible = scenarios?.filter((s) => !s.hidden && (tab === 'murder' ? !['tanmun', 'mysteryroom'].includes(s.contentType) : s.contentType === tab))
 
   return (
     <div className="page-wide">

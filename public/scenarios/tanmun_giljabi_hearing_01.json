@@ -58,5 +58,6 @@
       "criteria": "추천이 줄수록 선택이 줄고 다시 추천이 준다는 점을 언급"
     }
   ],
-  "clues": []
+  "clues": [],
+  "hidden": true
 }
