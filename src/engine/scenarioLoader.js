@@ -30,5 +30,6 @@ export async function loadRegistry() {
     difficulty: s.difficulty,
     published: !!s.published,
     thumbnailDataUrl: s.thumbnailDataUrl ?? null,
+    hidden: !!s.hidden,
   }))
 }
