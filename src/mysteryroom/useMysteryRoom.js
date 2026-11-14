@@ -249,6 +249,7 @@ export function useMysteryRoom(room, code) {
           cur ? { ...cur, failedTotal: (cur.failedTotal ?? 0) + 1, attempts: { ...(cur.attempts ?? {}), [cur.scene]: (cur.attempts?.[cur.scene] ?? 0) + 1 } } : undefined,
         ),
       releaseReflection: () => store.set(`${code}/release`, true),
+      releaseMine: () => store.set(`${code}/releaseBy/${uid}`, true),
       learnConcept: (k) => k && store.set(`${code}/state/concepts/${k}`, true),
     }),
     [store, code, uid, players, room, state, board, scene, goTo],

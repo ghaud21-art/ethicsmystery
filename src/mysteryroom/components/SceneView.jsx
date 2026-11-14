@@ -1,4 +1,3 @@
-import { isLocalMode, isTestMode } from '../store'
 import { useState, useEffect } from 'react'
 import { Icon, MaterialCard, NoteCard, PlayerDots, fmtTime, useMr } from './common'
 import { roleById } from '../roles'
@@ -104,7 +103,8 @@ function Ending({ scene }) {
   const canRetry = scene.end.kind === 'bad' && scene.end.retry && !mr.state.finished
   // 엔딩에 도착하면 바로 성찰로 가지 않고 선생님 안내를 기다린다. 선생님이 진행 보드에서 열어 주면 결과·성찰이 보인다.
   const hold = room.meta.endingHold !== false
-  const released = !!mr.data?.release
+  // 선생님이 모둠 전체를 열었거나, 학생이 '안내를 들었습니다'를 눌러 자기 화면만 열었을 때
+  const released = !!mr.data?.release || !!mr.data?.releaseBy?.[mr.uid]
   return (
     <div className="col" style={{ gap: 12, alignItems: 'flex-start' }}>
       <div className="row" style={{ gap: 16, alignItems: 'center' }}>
@@ -129,9 +129,8 @@ function Ending({ scene }) {
         <div className="mr-hold">
           <div className="mr-hold-title">여러분들은 결말을 맞이했습니다.</div>
           <p>선생님의 다음 안내를 기다려 주세요.</p>
-          {(isLocalMode() || isTestMode()) && (
-            <button className="mr-small" onClick={mr.actions.releaseReflection}>(테스트) 선생님이 성찰 열기</button>
-          )}
+          <button onClick={mr.actions.releaseMine}>안내를 들었습니다</button>
+          <p className="dim" style={{ fontSize: 11, margin: '8px 0 0' }}>선생님 안내를 들은 뒤 누르면 결과 카드와 성찰 질문이 열립니다. (내 화면만 열려요)</p>
         </div>
       )}
       {finished && (!hold || released) && <ResultsPanel scene={scene} grade={grade} />}

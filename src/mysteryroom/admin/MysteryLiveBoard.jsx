@@ -94,7 +94,7 @@ export default function MysteryLiveBoard() {
                   <span>{st?.failedTotal ?? 0}</span>
                   <span>{Object.keys(st?.hintsUsed ?? {}).length}</span>
                   <span>
-                    {scene?.end ? (r.release ? '종료 · 성찰 열림' : '종료') : left !== null ? fmtTime(left) : '-'}
+                    {scene?.end ? (r.release ? '종료 · 성찰 열림' : `종료${Object.keys(r.releaseBy ?? {}).length ? ` · 학생 ${Object.keys(r.releaseBy).length}명 직접 열람` : ''}`) : left !== null ? fmtTime(left) : '-'}
                     {scene?.end && scene.end.kind !== 'bad' && !r.release && (
                       <button className="mr-small" style={{ display: 'block', marginTop: 4 }} onClick={() => release(code)}>성찰 열기</button>
                     )}
