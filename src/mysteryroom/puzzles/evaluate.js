@@ -113,7 +113,9 @@ export function evaluateOrder(config, board) {
 export function evaluateLock(config, board) {
   const answers = Array.isArray(config.answer) ? config.answer : [config.answer]
   const ok = answers.some((a) => norm(a) === norm(board?.value))
-  return { correct: ok, hits: ok ? 1 : 0, total: 1, why: ok ? null : config.wrongHint ?? null }
+  // 아깝게 틀린 답에는 따로 안내한다 (예: 겉으로 한 말을 그대로 적은 경우)
+  const near = ok ? null : (config.nearMiss ?? []).find((n) => (n.answer ?? []).some((a) => norm(a) === norm(board?.value)))
+  return { correct: ok, hits: ok ? 1 : 0, total: 1, why: ok ? null : near?.hint ?? config.wrongHint ?? null }
 }
 
 // 아이디어 방: 각자 한 줄 아이디어를 내고, 모두 공개된 뒤 가장 기발한 것에 투표한다.
