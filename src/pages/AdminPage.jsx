@@ -381,7 +381,7 @@ function ScenarioUploadSection({ onSaved }) {
       const existing = await getScenario(parsed.scenarioId)
       if (existing) {
         if (!confirm(`같은 ID(${parsed.scenarioId})의 시나리오가 이미 있습니다. 새 내용으로 덮어쓸까요?\n(공개 상태, 썸네일, AI 설정은 그대로 유지됩니다)`)) return
-        for (const k of ['published', 'thumbnailDataUrl', 'aiEnabled', 'guestAllowed']) {
+        for (const k of ['published', 'thumbnailDataUrl', 'aiEnabled', 'guestAllowed', 'hidden']) {
           if (existing[k] !== undefined) parsed[k] = existing[k]
         }
       }
@@ -503,6 +503,19 @@ function ScenarioListSection({ scenarios, onChanged }) {
     }
   }
 
+  const handleToggleHidden = async (s) => {
+    setBusy(true)
+    setError(null)
+    try {
+      await updateScenarioFields(s.scenarioId, { hidden: !s.hidden })
+      onChanged()
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
   const handleToggleAi = async (s) => {
     setBusy(true)
     setError(null)
@@ -541,6 +554,7 @@ function ScenarioListSection({ scenarios, onChanged }) {
             <span className={`pill ${s.published ? 'pill-solid' : 'pill-muted'}`}>
               {s.published ? '플레이 가능' : '준비 중'}
             </span>
+            {s.hidden && <span className="pill pill-muted">메인 목록에서 숨김</span>}
           </div>
           <div className="row" style={{ alignItems: 'center' }}>
             {s.thumbnailDataUrl && (
@@ -570,6 +584,9 @@ function ScenarioListSection({ scenarios, onChanged }) {
                 AI 피드백 {s.aiEnabled === false ? '꺼짐 → 켜기' : '켜짐 → 끄기'}
               </button>
             )}
+            <button onClick={() => handleToggleHidden(s)} disabled={busy} title="메인 화면 목록에서만 숨깁니다. 다른 콘텐츠가 이 시나리오를 불러 쓰는 데는 영향이 없습니다.">
+              {s.hidden ? '목록에서 숨김 → 보이기' : '메인 목록에서 숨기기'}
+            </button>
             <button onClick={() => startEdit(s)} disabled={busy}>JSON 편집</button>
             <button onClick={() => handleDelete(s)} disabled={busy}>삭제</button>
           </div>
