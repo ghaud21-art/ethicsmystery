@@ -170,6 +170,17 @@ export function useMysteryRoom(room, code) {
         if (!cur || cur.scene !== sceneId || cur.evalRev?.[sceneId] === rev) return undefined
         const next = { ...cur, evalRev: { ...(cur.evalRev ?? {}), [sceneId]: rev } }
         if (result.stagePass) return next // 다음 단계 공개는 아래에서 보드에 표시
+        if (result.stateMerge) Object.assign(next, result.stateMerge)
+        if (result.correct && result.route) {
+          // 함정 선택: 해결 창 없이 바로 지정된 장면(BAD)으로 보낸다.
+          next.scene = result.route
+          next.sceneAt = Date.now()
+          next.history = [...(cur.history ?? []), result.route]
+          next.voteRound = 1
+          next.feedback = null
+          if (room.scenes[result.route]?.end?.kind === 'bad') next.badVisited = true
+          return next
+        }
         if (result.correct) {
           if (puzzle.clue) next.clues = { ...(cur.clues ?? {}), [puzzle.clue]: result.tainted ? 'tainted' : 'clean' }
           if (puzzle.learn) next.concepts = { ...(cur.concepts ?? {}), ...Object.fromEntries(puzzle.learn.map((k) => [k, true])) }
@@ -232,6 +243,12 @@ export function useMysteryRoom(room, code) {
       retry: (to) => goTo(state.scene, to),
       // BAD 엔딩에서 다시 도전하지 않고 끝내기 (등급 B로 결과 화면)
       finishHere: () => store.set(`${code}/state/finished`, true),
+      // 퍼즐 안의 작은 자물쇠(단서 보드 등)에서 틀렸을 때 실패 횟수만 올린다.
+      recordFail: () =>
+        store.transaction(`${code}/state`, (cur) =>
+          cur ? { ...cur, failedTotal: (cur.failedTotal ?? 0) + 1, attempts: { ...(cur.attempts ?? {}), [cur.scene]: (cur.attempts?.[cur.scene] ?? 0) + 1 } } : undefined,
+        ),
+      releaseReflection: () => store.set(`${code}/release`, true),
       learnConcept: (k) => k && store.set(`${code}/state/concepts/${k}`, true),
     }),
     [store, code, uid, players, room, state, board, scene, goTo],

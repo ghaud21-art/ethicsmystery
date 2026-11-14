@@ -1,3 +1,4 @@
+import { isLocalMode, isTestMode } from '../store'
 import { useState, useEffect } from 'react'
 import { Icon, MaterialCard, NoteCard, PlayerDots, fmtTime, useMr } from './common'
 import { roleById } from '../roles'
@@ -59,6 +60,27 @@ function ReadyButton({ disabled, label = '다음' }) {
   )
 }
 
+// 말하기 화면: 큰 타이머와 말할 거리만 보여 준다. 고개를 들고 이야기하는 시간.
+function TalkScreen({ scene }) {
+  const { mr } = useMr()
+  const t = scene.talk ?? {}
+  const left = Math.max(0, (t.seconds ?? 60) - Math.floor((mr.now - (mr.state.sceneAt ?? mr.now)) / 1000))
+  return (
+    <div className="col" style={{ gap: 12 }}>
+      <div className="mr-talk">
+        <div className="row" style={{ justifyContent: 'space-between', width: '100%' }}>
+          <span className="mr-talk-kicker">말하기 시간 · 화면 대신 친구 얼굴을 보세요</span>
+          <span className={`mr-talk-timer big ${left <= 10 ? 'warn' : ''}`}>{fmtTime(left)}</span>
+        </div>
+        <div className="mr-talk-line">{t.prompt}</div>
+        {(t.cards ?? []).map((c, i) => <div key={i} className="mr-suggest"><span className="mr-tag blue">말할 거리</span> {c}</div>)}
+        {left === 0 && <p className="dim" style={{ margin: 0 }}>시간이 다 됐어요. 이야기를 마무리하고 모두 ‘다음’을 눌러 주세요.</p>}
+      </div>
+      <ReadyButton label={t.readyLabel ?? '이야기를 마쳤어요'} />
+    </div>
+  )
+}
+
 function RequireShared({ scene }) {
   const { room, mr } = useMr()
   const all = mr.solo || scene.requireShared.every((m) => mr.shared[`m:${m}`])
@@ -76,10 +98,13 @@ function RequireShared({ scene }) {
 }
 
 function Ending({ scene }) {
-  const { mr } = useMr()
-  const grade = computeGrade(scene.end.kind, mr.state)
+  const { room, mr } = useMr()
+  const grade = computeGrade(scene.end.kind, mr.state, room)
   const finished = scene.end.kind !== 'bad' || mr.state.finished
   const canRetry = scene.end.kind === 'bad' && scene.end.retry && !mr.state.finished
+  // 엔딩에 도착하면 바로 성찰로 가지 않고 선생님 안내를 기다린다. 선생님이 진행 보드에서 열어 주면 결과·성찰이 보인다.
+  const hold = room.meta.endingHold !== false
+  const released = !!mr.data?.release
   return (
     <div className="col" style={{ gap: 12, alignItems: 'flex-start' }}>
       <div className="row" style={{ gap: 16, alignItems: 'center' }}>
@@ -96,11 +121,36 @@ function Ending({ scene }) {
           <p className="dim" style={{ margin: 0, fontSize: 12 }}>그 방 입구에서 한 번 더 도전할 수 있습니다. 다시 탈출하면 S까지 받을 수 있어요.</p>
           <div className="row">
             <button className="primary" onClick={() => mr.actions.retry(scene.end.retry)}>그 방 입구에서 다시 도전</button>
-            <button className="mr-ghost" onClick={mr.actions.finishHere}>여기서 마치고 결과 보기</button>
+            {!hold && <button className="mr-ghost" onClick={mr.actions.finishHere}>여기서 마치고 결과 보기</button>}
           </div>
         </>
       )}
-      {finished && <ResultsPanel scene={scene} grade={grade} />}
+      {finished && hold && !released && (
+        <div className="mr-hold">
+          <div className="mr-hold-title">여러분들은 결말을 맞이했습니다.</div>
+          <p>선생님의 다음 안내를 기다려 주세요.</p>
+          {(isLocalMode() || isTestMode()) && (
+            <button className="mr-small" onClick={mr.actions.releaseReflection}>(테스트) 선생님이 성찰 열기</button>
+          )}
+        </div>
+      )}
+      {finished && (!hold || released) && <ResultsPanel scene={scene} grade={grade} />}
+    </div>
+  )
+}
+
+// 인물의 변론 대사와 비밀 (자기 화면에만)
+export function RoleSecret({ r }) {
+  if (!r.briefing && !r.secret) return null
+  return (
+    <div className="col" style={{ gap: 6, marginTop: 8 }}>
+      {r.briefing && <div className="mr-voice" style={{ margin: 0 }}><div className="mr-voice-who">청문회에서 할 변론</div>“{r.briefing}”</div>}
+      {r.secret && (
+        <div className="mr-secret">
+          <div className="mr-secret-cap"><Icon name="lock" size={11} />비밀 · 나만 보여요</div>
+          {(Array.isArray(r.secret) ? r.secret : [r.secret]).map((l, i) => <p key={i}>{l}</p>)}
+        </div>
+      )}
     </div>
   )
 }
@@ -116,10 +166,11 @@ function RoleCardBlock() {
         const r = roleById(room, rid)
         return (
           <div key={rid} className="mr-mat" style={{ borderColor: 'var(--gold)', background: 'rgba(201,162,39,0.07)' }}>
-            <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="user" />내 관점 카드 · {r.name} ({r.job})</span></div>
+            <div className="mr-mat-title"><span className="row" style={{ gap: 6 }}><Icon name="user" />{room.meta.roleCardTitle ?? '내 관점 카드'} · {r.name} ({r.job})</span></div>
             <p className="dim" style={{ marginBottom: 6 }}>{r.profile}</p>
             <p><strong style={{ color: 'var(--gold-light)' }}>나의 관점</strong> {r.perspective}</p>
             {stance(r.stance) && <p><strong style={{ color: 'var(--gold-light)' }}>토론에서 맡을 입장</strong> {stance(r.stance)}</p>}
+            <RoleSecret r={r} />
           </div>
         )
       })}
@@ -196,6 +247,7 @@ export default function SceneView() {
   else if (scene.puzzle) interaction = <PuzzleArea key={sceneId} sceneId={sceneId} puzzle={scene.puzzle} />
   else if (scene.type === 'debate') interaction = <DebateView />
   else if (scene.type === 'form') interaction = <FinalForm scene={scene} />
+  else if (scene.type === 'talk') interaction = <TalkScreen scene={scene} />
   else if (scene.requireShared) interaction = <RequireShared scene={scene} />
   else if (scene.choices?.length > 1) interaction = <ChoiceVote key={sceneId} scene={scene} />
   else if (singleChoice) interaction = <ReadyButton label={scene.choices[0].t} />

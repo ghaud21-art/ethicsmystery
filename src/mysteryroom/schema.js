@@ -116,6 +116,7 @@ export function validateRoom(room) {
       const p = s.puzzle
       if (!PUZZLE_MODULES.includes(p.module)) err(`${where}: 알 수 없는 퍼즐 '${p.module}'`)
       ref(p.onSolve, `${where} onSolve`)
+      if (p.config?.onTrap) ref(p.config.onTrap, `${where} onTrap`)
       if (p.clue) puzzleClues[p.clue] = (puzzleClues[p.clue] ?? 0) + 1
       ;(p.learn ?? []).forEach((k) => !conceptKeys.has(k) && err(`${where}: 없는 개념 '${k}'`))
       validatePuzzleConfig(p, where, err, checkOwner, materials)
@@ -185,6 +186,25 @@ function validatePuzzleConfig(p, where, err, checkOwner, materials) {
       break
     case 'idea':
       if (!isStr(c.prompt)) err(`${where}: 아이디어 미션 prompt가 필요합니다`)
+      break
+    case 'tanmun':
+      if (!isArr(c.facts) || !c.facts.length) err(`${where}: 탐문 facts가 필요합니다`)
+      if (!isArr(c.fallback) || !c.fallback.length) err(`${where}: 탐문 예비 질문 카드(fallback)가 필요합니다`)
+      break
+    case 'clueboard':
+      if (!isArr(c.cards) || !c.cards.length) err(`${where}: 단서 보드 cards가 필요합니다`)
+      ;(c.need ?? []).forEach((id) => !(c.cards ?? []).some((x) => x.id === id) && err(`${where}: need에 없는 단서 '${id}'`))
+      break
+    case 'hearing':
+      if (!isArr(c.turns) || !c.turns.length) err(`${where}: 대질 turns가 필요합니다`)
+      ;(c.turns ?? []).forEach((t, i) => checkOwner(t.role, `${where} 차례 ${i + 1}`))
+      if (c.interject && !(c.interject.options ?? []).some((o) => o.id === c.interject.answerId)) err(`${where}: 증언 반박 answerId가 보기에 없습니다`)
+      break
+    case 'blame':
+      if (!isArr(c.targets) || !c.targets.length) err(`${where}: 책임 지도 targets가 필요합니다`)
+      break
+    case 'select':
+      if (!isArr(c.options) || c.options.length < (c.pick ?? 2)) err(`${where}: 고를 보기가 부족합니다`)
       break
     case 'lock':
       if (c.answer == null) err(`${where}: 자물쇠 answer가 필요합니다`)

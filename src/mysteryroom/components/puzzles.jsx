@@ -1,3 +1,4 @@
+import { TanmunPuzzle, ClueBoardPuzzle, HearingPuzzle, BlamePuzzle, SelectPuzzle, HEARING_READY } from './hearing'
 import { useState } from 'react'
 import { Icon, MaterialCard, ownerLabel, PlayerDots, useMr } from './common'
 import { HINT_AFTER_FAILS } from '../useMysteryRoom'
@@ -480,7 +481,8 @@ function QuizPuzzle({ config, sceneId }) {
 }
 
 const MODULES = {
-  quiz: QuizPuzzle, classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle, idea: IdeaPuzzle }
+  quiz: QuizPuzzle, classify: ClassifyPuzzle, test: TestPuzzle, order: OrderPuzzle, scale: ScalePuzzle, verify: VerifyPuzzle, lock: LockPuzzle, idea: IdeaPuzzle,
+  tanmun: TanmunPuzzle, clueboard: ClueBoardPuzzle, hearing: HearingPuzzle, blame: BlamePuzzle, select: SelectPuzzle }
 
 // '문제를 해결했습니다!' 창: 얻은 단서와(아이디어 방이면) 뽑힌 아이디어를 보여 준다.
 function SolvedModal({ puzzle }) {
@@ -534,7 +536,8 @@ export function PuzzleArea({ sceneId, puzzle }) {
   // 원리 검사 2단계에서는 수정 원리를 골라야 제출할 수 있다.
   const quizReady = puzzle.module !== 'quiz' || puzzle.config.questions.every((q) => mr.board.answers?.[q.id])
   const ideaReady = !quizReady ? false : puzzle.module !== 'idea' || mr.playerUids.every((u) => mr.board.votes?.[u] && mr.board.ideas?.[u])
-  const empty = rev === 0 || !ideaReady || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
+  const moduleReady = HEARING_READY[puzzle.module] ? HEARING_READY[puzzle.module](puzzle.config, mr.board) : true
+  const empty = rev === 0 || !ideaReady || !moduleReady || (puzzle.module === 'test' && mr.board.stage2 && !mr.board.principle)
 
   return (
     <div className="col" style={{ gap: 12 }}>

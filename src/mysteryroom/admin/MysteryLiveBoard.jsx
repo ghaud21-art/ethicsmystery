@@ -36,11 +36,20 @@ export default function MysteryLiveBoard() {
   }, [list, defs])
 
   const unlockHint = (code, scene) => getStore().set(`${code}/state/hintsUnlocked/${scene}`, true)
+  const release = (code) => getStore().set(`${code}/release`, true)
+  const endedCodes = list.filter(([, r]) => {
+    const sc = defs[r.meta.scenarioId]?.scenes?.[r.state?.scene]
+    return sc?.end && sc.end.kind !== 'bad' && !r.release
+  }).map(([c]) => c)
 
   return (
     <div className="col">
       <h2 className="page-title" style={{ fontSize: 19 }}>미스터리 룸 진행 현황</h2>
       <p className="dim" style={{ fontSize: 12, margin: 0 }}>최근 6시간 안에 만든 방이 실시간으로 보입니다. 전면 화면에 띄워 모둠별 진행을 함께 볼 수 있어요.</p>
+      <p className="dim" style={{ fontSize: 12, margin: 0 }}>엔딩에 도착한 모둠은 ‘선생님의 다음 안내를 기다려 주세요’ 화면에서 멈춥니다. 정리할 때 ‘성찰 열기’를 누르면 결과 카드와 성찰 질문이 열립니다.</p>
+      {endedCodes.length > 0 && (
+        <button className="primary" style={{ alignSelf: 'flex-start' }} onClick={() => endedCodes.forEach(release)}>엔딩에 도착한 {endedCodes.length}개 모둠 성찰 열기</button>
+      )}
       {error ? (
         <p className="dim" style={{ fontSize: 12 }}>진행 현황을 불러오지 못했습니다. Realtime Database 규칙(mysteryRooms)을 배포했는지 확인해 주세요. ({error})</p>
       ) : !rooms ? (
@@ -85,7 +94,10 @@ export default function MysteryLiveBoard() {
                   <span>{st?.failedTotal ?? 0}</span>
                   <span>{Object.keys(st?.hintsUsed ?? {}).length}</span>
                   <span>
-                    {scene?.end ? '종료' : left !== null ? fmtTime(left) : '-'}
+                    {scene?.end ? (r.release ? '종료 · 성찰 열림' : '종료') : left !== null ? fmtTime(left) : '-'}
+                    {scene?.end && scene.end.kind !== 'bad' && !r.release && (
+                      <button className="mr-small" style={{ display: 'block', marginTop: 4 }} onClick={() => release(code)}>성찰 열기</button>
+                    )}
                     {scene?.puzzle && !st.hintsUnlocked?.[st.scene] && (
                       <button className="mr-small" style={{ display: 'block', marginTop: 4 }} onClick={() => unlockHint(code, st.scene)}>힌트 열어 주기</button>
                     )}

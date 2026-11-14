@@ -1,3 +1,4 @@
+import { RoleSecret } from './SceneView'
 import { useState } from 'react'
 import { MaterialCard, NoteCard, useMr } from './common'
 import { RecallBoard } from './puzzles'
@@ -37,6 +38,7 @@ export default function SidePanel() {
                 <p className="dim" style={{ marginBottom: 6 }}>{r.profile}</p>
                 <p><strong style={{ color: 'var(--gold-light)' }}>관점</strong> {r.perspective}</p>
                 {r.stance && stance(r.stance) && <p><strong style={{ color: 'var(--gold-light)' }}>토론 입장</strong> {stance(r.stance).label}</p>}
+                <RoleSecret r={r} />
               </div>
             )
           })}

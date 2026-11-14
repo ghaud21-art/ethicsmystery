@@ -147,7 +147,67 @@ export function evaluateQuiz(config, board) {
   return { correct: hits === config.questions.length, hits, total: config.questions.length, why }
 }
 
+
+// ---- 청문회형 모듈 ----
+// 탐문: AI 기록관(또는 예비 질문 카드)으로 숨은 사실을 need개 이상 찾으면 통과.
+export function evaluateTanmun(config, board) {
+  const found = Object.keys(board?.found ?? {}).length
+  const need = config.need ?? 3
+  return { correct: found >= need, hits: found, total: need, why: found >= need ? null : `숨은 사실을 ${need}개 찾아야 합니다. (지금 ${found}개)` }
+}
+
+// 단서 보드: 행동 포인트로 단서를 열고, need에 적힌 잠긴 단서를 모두 풀면 통과.
+export function evaluateClueBoard(config, board) {
+  const need = config.need ?? []
+  const done = need.filter((id) => board?.solved?.[id] || (!config.cards.find((c) => c.id === id)?.lock && board?.opened?.[id]))
+  return { correct: done.length === need.length, hits: done.length, total: need.length, why: done.length === need.length ? null : '잠긴 단서를 모두 풀어야 청문회를 시작할 수 있습니다.' }
+}
+
+// 대질 신문: 모든 인물의 차례가 끝나고 길잡이의 증언을 깨뜨리면 통과. 간파한 원리 수를 기록한다.
+export function evaluateHearing(config, board) {
+  const turnsDone = (board?.turn ?? 0) >= config.turns.length
+  const interjectDone = !config.interject || board?.interject === 'done'
+  const insight = Object.keys(board?.cracked ?? {}).length
+  const ok = turnsDone && interjectDone
+  return {
+    correct: ok,
+    hits: ok ? 1 : 0,
+    total: 1,
+    why: ok ? null : !turnsDone ? '모든 인물의 변론이 끝나야 합니다.' : '길잡이의 증언을 아직 깨뜨리지 못했습니다.',
+    stateMerge: ok ? { insight } : null,
+  }
+}
+
+// 책임 지도: 모두 별점을 매기고, 가장 큰 책임자와 근거를 정하면 통과.
+export function evaluateBlame(config, board) {
+  const ratedBy = Object.values(board?.ratings ?? {}).filter((r) => config.targets.every((t) => r?.[t.id] != null)).length
+  const reasonOk = String(board?.reason ?? '').trim().length >= (config.minReason ?? 10)
+  const ok = ratedBy >= 1 && !!board?.pick && reasonOk
+  return { correct: ok, hits: ok ? 1 : 0, total: 1, why: ok ? null : '책임 지도를 채우고, 가장 큰 책임자와 근거를 적어 주세요.', stateMerge: ok ? { blame: { pick: board.pick, reason: board.reason } } : null }
+}
+
+// 해결안 고르기: pick개를 고른다. 함정이 섞이면 onTrap 장면으로 보낸다.
+export function evaluateSelect(config, board) {
+  const picks = board?.picks ?? []
+  if (picks.length !== (config.pick ?? 2)) return { correct: false, hits: 0, total: 1, why: `해결안을 ${config.pick ?? 2}개 골라 주세요.` }
+  const chosen = picks.map((id) => config.options.find((o) => o.id === id)).filter(Boolean)
+  const trap = chosen.find((o) => o.kind === 'trap')
+  return {
+    correct: true,
+    hits: 1,
+    total: 1,
+    why: null,
+    route: trap && config.onTrap ? config.onTrap : null,
+    stateMerge: { selectPicks: chosen.map((o) => o.text) },
+  }
+}
+
 const EVALUATORS = {
+  tanmun: evaluateTanmun,
+  clueboard: evaluateClueBoard,
+  hearing: evaluateHearing,
+  blame: evaluateBlame,
+  select: evaluateSelect,
   quiz: evaluateQuiz,
   idea: evaluateIdea,
   classify: evaluateClassify,

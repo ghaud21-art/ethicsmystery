@@ -37,9 +37,10 @@ export function tallyVotes(votes, playerUids, round, hostUid) {
 }
 
 // 등급: TRUE → SS/S, GOOD → A, BAD → B, 시간 초과 → C
-export function computeGrade(endKind, state) {
+export function computeGrade(endKind, state, room) {
   if (endKind === 'true') {
-    const perfect = (state?.failedTotal ?? 0) <= 1 && !Object.keys(state?.hintsUsed ?? {}).length && !state?.badVisited
+    const needInsight = room?.meta?.ssInsight ?? 0
+    const perfect = (state?.failedTotal ?? 0) <= 1 && !Object.keys(state?.hintsUsed ?? {}).length && !state?.badVisited && (state?.insight ?? 0) >= needInsight
     return perfect ? 'SS' : 'S'
   }
   if (endKind === 'good') return 'A'

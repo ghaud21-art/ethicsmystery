@@ -6,7 +6,7 @@ import { getStore } from '../store'
 // 방 데이터: forms/{scene} = { rev, values: { 칸id: 글 } }, formAgree/{scene}/{uid} = rev
 const len = (s) => String(s ?? '').trim().length
 
-function FormField({ field, value, onSave }) {
+function FormField({ field, value, onSave, saveLabel }) {
   const [text, setText] = useState(value ?? '')
   useEffect(() => setText(value ?? ''), [value])
   const dirty = text !== (value ?? '')
@@ -19,7 +19,7 @@ function FormField({ field, value, onSave }) {
       {field.help && <span className="dim" style={{ fontSize: 11 }}>{field.help}</span>}
       <textarea rows={field.rows ?? 2} value={text} placeholder={field.placeholder} onChange={(e) => setText(e.target.value)} />
       <div className="row">
-        <button className="mr-small" disabled={!dirty} onClick={() => onSave(text.trim())}>선정서에 저장</button>
+        <button className="mr-small" disabled={!dirty} onClick={() => onSave(text.trim())}>{saveLabel ?? '선정서에 저장'}</button>
         {value && !dirty && <span className="dim" style={{ fontSize: 11 }}>저장됨</span>}
       </div>
     </div>
@@ -44,7 +44,7 @@ export default function FinalForm({ scene }) {
     store.transaction(`${mr.code}/state`, (cur) => {
       if (!cur || cur.scene !== sid) return undefined
       const to = scene.next
-      return { ...cur, debateDone: true, formResult: { title: form.title, fields: form.fields.map((f) => ({ label: f.label, value: values[f.id] ?? '' })) }, scene: to, sceneAt: Date.now(), history: [...(cur.history ?? []), to], voteRound: 1 }
+      return { ...cur, debateDone: true, formResult: { title: form.title, fields: [...(form.showPicks && cur.selectPicks?.length ? [{ label: '해결안', value: cur.selectPicks.join(' / ') }] : []), ...form.fields.map((f) => ({ label: f.label, value: values[f.id] ?? '' }))] }, scene: to, sceneAt: Date.now(), history: [...(cur.history ?? []), to], voteRound: 1 }
     })
   }, [allAgreed, store, mr.code, sid, scene.next, form, values])
 
@@ -56,12 +56,14 @@ export default function FinalForm({ scene }) {
       <div className="mr-note">
         <div className="mr-note-cap">{form.title}</div>
         {form.note && <p>{form.note}</p>}
+        {(form.lines ?? []).map((l, i) => <p key={i}>{l}</p>)}
+        {form.showPicks && (mr.state.selectPicks ?? []).length > 0 && <p><strong>해결안:</strong> {mr.state.selectPicks.join(' / ')}</p>}
       </div>
-      {form.fields.map((f) => <FormField key={f.id} field={f} value={values[f.id]} onSave={(v) => save(f.id, v)} />)}
+      {form.fields.map((f) => <FormField key={f.id} field={f} value={values[f.id]} saveLabel={form.saveLabel} onSave={(v) => save(f.id, v)} />)}
       <div className="mr-submit">
-        {!mr.solo && <PlayerDots map={agreedNow} label="선정서 동의" />}
+        {!mr.solo && <PlayerDots map={agreedNow} label={form.agreeDots ?? '선정서 동의'} />}
         <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!filled || agreedNow[mr.uid]} onClick={() => store.set(`${mr.code}/formAgree/${sid}/${mr.uid}`, rev)}>
-          {mr.solo ? '마지막 문에 제출' : '이 선정서에 동의'}
+          {mr.solo ? '마지막 문에 제출' : form.agreeLabel ?? '이 선정서에 동의'}
         </button>
         <span className="dim" style={{ fontSize: 11 }}>모든 칸을 채우고 모두 동의하면 제출됩니다. 누가 칸을 고치면 동의가 풀립니다.</span>
       </div>

@@ -138,3 +138,30 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-reco-star { color: #f0c94a; letter-spacing: 0.02em; }
 .mr-reco-val { font-family: var(--font-mono); font-size: 22px; letter-spacing: 0.18em; color: #dfe8f8; margin-top: 4px; }
 .mr-reco-foot { font-size: 11px; color: var(--ink-dim); margin-top: 4px; }
+
+/* 청문회형 */
+.mr-hold { width: 100%; padding: 22px 18px; border-radius: var(--radius); border: 1px solid var(--gold); background: rgba(201,162,39,0.08); text-align: center; }
+.mr-hold-title { font-family: var(--font-head); font-size: 20px; font-weight: 800; color: var(--gold-light); margin-bottom: 6px; }
+.mr-hold p { font-size: 15px; margin: 0 0 10px; }
+.mr-talk { display: flex; flex-direction: column; align-items: flex-start; gap: 10px; padding: 16px; border-radius: var(--radius); border: 2px solid var(--gold); background: rgba(201,162,39,0.06); }
+.mr-talk-kicker { font-size: 12px; font-weight: 800; letter-spacing: 0.06em; color: var(--gold-light); }
+.mr-talk-timer { font-family: var(--font-mono); font-size: 30px; color: var(--gold-light); }
+.mr-talk-timer.big { font-size: 40px; }
+.mr-talk-timer.warn { color: var(--blood-light); }
+.mr-talk-speaker { font-family: var(--font-head); font-size: 22px; font-weight: 800; }
+.mr-talk-line { font-size: 18px; line-height: 1.6; font-weight: 600; }
+.mr-suggest { padding: 8px 10px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--line); font-size: 14px; line-height: 1.6; width: 100%; }
+.mr-secret { padding: 8px 10px; border-radius: var(--radius-sm); border: 1px dashed var(--blood-light); background: rgba(176,71,58,0.08); }
+.mr-secret-cap { font-size: 11px; font-weight: 700; color: var(--blood-light); display: flex; gap: 4px; align-items: center; margin-bottom: 4px; }
+.mr-secret p { font-size: 13px; line-height: 1.6; margin: 0 0 4px; }
+.mr-fact { padding: 8px 10px; border-radius: var(--radius-sm); border: 1px dashed var(--line); font-size: 12px; color: var(--ink-dim); }
+.mr-fact.on { border: 1px solid var(--gold); color: var(--ink); background: rgba(201,162,39,0.07); font-size: 13px; }
+.mr-qgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 8px; }
+.mr-qcard { text-align: left; padding: 10px 12px; font-size: 13px; line-height: 1.55; font-weight: 400; }
+.mr-qcard.done { opacity: 0.75; }
+.mr-qcard.picked { border-color: var(--gold); background: rgba(201,162,39,0.14); }
+.mr-qv { margin-top: 6px; font-weight: 700; color: var(--gold-light); font-size: 12px; }
+.mr-clueboard { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 10px; }
+.mr-clue { padding: 10px; border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--panel2); display: flex; flex-direction: column; }
+.mr-clue.closed { background: repeating-linear-gradient(135deg, var(--panel2) 0 8px, rgba(255,255,255,0.02) 8px 16px); }
+.mr-clue.locked { border-color: var(--gold); }
