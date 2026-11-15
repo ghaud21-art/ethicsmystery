@@ -11,7 +11,7 @@ import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newMissedSceneRun, newSceneRecord, saveMissedSceneRun, getMissedSceneRun, clearMissedSceneRun,
   getInspectLimit, getReasonMaxLength, isChoiceUnlocked, findChoice, findVariableFact, buildInspectSpots, spotCenter,
-  getInspectMode, hitSpot, voiceVideoFile,
+  getInspectMode, hitSpot, voiceVideoFiles,
 } from '../utils/missedSceneRun.js'
 
 const KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
@@ -714,8 +714,10 @@ function MissedSceneInner({ scenario }) {
                 </strong>
                 <span className="pill pill-muted">{voice.tone}</span>
               </div>
-              {/* 설득 영상 — 올려져 있으면 음성보다 먼저. 파일 이름은 음성 이름에서 계산(voiceVideoFile) */}
-              <Media kind="video" src={scenario.mediaUrls?.[voiceVideoFile(scene, voice)] ?? mediaUrl(voice.video)} />
+              {/* 설득 영상 — 동료당 최대 2개, 올린 것만 순서대로. 파일 이름은 음성 이름에서 계산(voiceVideoFiles) */}
+              {voiceVideoFiles(scene, voice).map((file) => (
+                <Media key={file} kind="video" src={scenario.mediaUrls?.[file]} />
+              ))}
               <Media kind="audio" src={mediaUrl(voice.audio)} />
               <p style={{ margin: 0, fontSize: 14, lineHeight: 1.9 }}>"{voice.text}"</p>
             </div>

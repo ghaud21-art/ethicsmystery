@@ -135,6 +135,14 @@ export function voiceVideoFile(scene, voice) {
   return null
 }
 
+// 동료 한 명당 설득 영상은 최대 2개 — 기본 이름과, 그 이름에 _2를 붙인 이름.
+// (s1_voice_a.mp4, s1_voice_a_2.mp4) 올린 것만, 이 순서대로 플레이 화면에 나온다.
+export function voiceVideoFiles(scene, voice) {
+  const first = voiceVideoFile(scene, voice)
+  if (!first) return []
+  return [first, first.replace(/\.[^.]+$/, (ext) => `_2${ext}`)]
+}
+
 // 돋보기 마커의 중심 위치(화면 비율 0~1). x·y만 있고 w·h가 없으면 그 점을 중심으로 본다.
 export function spotCenter(spot) {
   if (spot.x == null || spot.y == null) return null

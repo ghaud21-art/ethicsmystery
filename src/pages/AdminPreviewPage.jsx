@@ -8,7 +8,7 @@ import { evaluateEndings } from '../engine/endingEvaluator.js'
 import { computeSoloMetrics, evaluateSoloEnding } from '../engine/soloEndingEvaluator.js'
 import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
 import { resizeImageToDataUrl } from '../utils/fileHelpers.js'
-import { voiceVideoFile } from '../utils/missedSceneRun.js'
+import { voiceVideoFiles } from '../utils/missedSceneRun.js'
 
 function Field({ label, value, onChange, editMode, multiline, small, grow }) {
   const wrapStyle = { marginBottom: 10, display: 'block', flex: grow ? 1 : undefined, minWidth: grow ? 160 : undefined }
@@ -1031,9 +1031,12 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
                 <EditableLine value={v.tone} editMode={editMode} style={{ fontSize: 11 }} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].tone = val })} />
               </span>
             </div>
-            <MediaSlot {...slotProps} kind="video" label={`동료 ${v.id} 설득 영상`} fileName={voiceVideoFile(sc, v)} />
-            <MediaSlot {...slotProps} kind="audio" label={`동료 ${v.id} 설득 음성`} fileName={v.audio} />
-            <p className="dim" style={{ margin: 0, fontSize: 11 }}>영상·음성 중 올린 것만 플레이 화면에 나옵니다. 둘 다 올리면 영상이 먼저 나와요.</p>
+            {voiceVideoFiles(sc, v).map((file, fi2) => (
+              <MediaSlot key={file} {...slotProps} kind="video" label={`동료 ${v.id} 설득 영상 ${fi2 + 1}${fi2 > 0 ? ' (선택)' : ''}`} fileName={file} />
+            ))}
+            {/* 음성 슬롯은 이미 올린 파일이 있을 때만 — 설득은 영상으로 가기로 해서 새 업로드 자리는 숨긴다 */}
+            {mediaUrls[v.audio] && <MediaSlot {...slotProps} kind="audio" label={`동료 ${v.id} 설득 음성`} fileName={v.audio} />}
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>설득 영상은 최대 2개 — 올린 것만, 1→2 순서대로 플레이 화면에 나옵니다.</p>
             <EditableText value={v.text} editMode={editMode} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].text = val })} />
           </div>
         ))}
