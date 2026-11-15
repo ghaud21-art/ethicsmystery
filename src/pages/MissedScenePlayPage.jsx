@@ -10,7 +10,7 @@ import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newMissedSceneRun, newSceneRecord, saveMissedSceneRun, getMissedSceneRun, clearMissedSceneRun,
-  getInspectLimit, getReasonMaxLength, isChoiceUnlocked, findChoice, findVariableFact, buildInspectSpots,
+  getInspectLimit, getReasonMaxLength, isChoiceUnlocked, findChoice, findVariableFact, buildInspectSpots, spotCenter,
 } from '../utils/missedSceneRun.js'
 
 const KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
@@ -54,6 +54,35 @@ function Media({ kind, src, poster }) {
     return <audio controls preload="metadata" src={src} onError={() => setFailed(true)} style={{ width: '100%' }} />
   }
   return <img src={src} alt="" onError={() => setFailed(true)} style={frame} />
+}
+
+// 영상·이미지 위에 띄우는 돋보기 마커 — 편집 화면에서 좌표를 찍은 조사 지점만 이걸로 나온다.
+function SpotMarker({ spot, inspected, isFact, disabled, onClick }) {
+  const c = spotCenter(spot)
+  if (!c) return null
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled && !inspected}
+      title={inspected ? spot.label : '조사하기'}
+      style={{
+        position: 'absolute', left: `${c.cx * 100}%`, top: `${c.cy * 100}%`,
+        transform: 'translate(-50%, -50%)', width: 34, height: 34, borderRadius: '50%', padding: 0,
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        background: inspected ? (isFact ? 'rgba(201,162,39,.92)' : 'rgba(30,26,18,.88)') : 'rgba(20,16,8,.6)',
+        border: `2px solid ${inspected ? (isFact ? 'var(--gold-light)' : 'var(--line)') : 'var(--gold)'}`,
+        color: inspected ? (isFact ? '#1a1510' : 'var(--ink-dim)') : 'var(--gold-light)',
+        fontSize: 16, lineHeight: 1, cursor: 'pointer', boxShadow: '0 2px 8px rgba(0,0,0,.5)',
+      }}
+    >
+      {inspected ? (isFact ? '✓' : '×') : (
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+          <circle cx="11" cy="11" r="7" />
+          <path d="M21 21l-4.3-4.3" />
+        </svg>
+      )}
+    </button>
+  )
 }
 
 function FactCard({ fact, mediaUrl, compact }) {
@@ -513,37 +542,75 @@ function MissedSceneInner({ scenario }) {
       {/* ---- 영상 조사 ---- */}
       {run.phase === 'inspect' && (
         <>
-          <div className="card col">
-            <Media kind="video" src={mediaUrl(scene.intro.video)} poster={mediaUrl(scene.intro.poster)} />
-            <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{ui.inspectGuide}</p>
-          </div>
+          {(() => {
+            // 편집 화면에서 좌표를 찍은 지점은 영상/이미지 위의 돋보기로, 나머지는 글 버튼으로.
+            // 돋보기 모드는 실제로 업로드된 영상·포스터가 있을 때만 켠다.
+            const visualFile = [scene.intro?.video, scene.intro?.poster].find((f) => f && scenario.mediaUrls?.[f])
+            const markerSpots = visualFile ? spots.filter((s) => spotCenter(s)) : []
+            const markerIds = new Set(markerSpots.map((s) => s.id))
+            const buttonSpots = spots.filter((s) => !markerIds.has(s.id))
+            return (
+              <>
+                <div className="card col">
+                  {markerSpots.length > 0 ? (
+                    <div style={{ position: 'relative' }}>
+                      <Media
+                        kind={visualFile === scene.intro?.video ? 'video' : 'image'}
+                        src={mediaUrl(visualFile)}
+                        poster={mediaUrl(scene.intro?.poster)}
+                      />
+                      {markerSpots.map((spot) => (
+                        <SpotMarker
+                          key={spot.id}
+                          spot={spot}
+                          inspected={rec.inspectedSpotIds.includes(spot.id)}
+                          isFact={spot.kind === 'fact'}
+                          disabled={rec.inspectUsed >= inspectLimit}
+                          onClick={() => handleInspect(spot)}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <Media kind="video" src={mediaUrl(scene.intro.video)} poster={mediaUrl(scene.intro.poster)} />
+                  )}
+                  <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>
+                    {ui.inspectGuide}
+                    {markerSpots.length > 0 && ' 화면 위의 돋보기를 눌러 조사하세요.'}
+                  </p>
+                </div>
 
-          <div className="card col">
-            <strong style={{ fontFamily: 'var(--font-head)', fontSize: 14 }}>수상한 곳 지목하기</strong>
-            <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
-              {spots.map((spot) => {
-                const inspected = rec.inspectedSpotIds.includes(spot.id)
-                const isFact = spot.kind === 'fact'
-                return (
-                  <button
-                    key={spot.id}
-                    onClick={() => handleInspect(spot)}
-                    disabled={!inspected && rec.inspectUsed >= inspectLimit}
-                    style={{
-                      fontSize: 12,
-                      borderColor: inspected ? (isFact ? 'var(--gold)' : 'var(--line)') : undefined,
-                      color: inspected && !isFact ? 'var(--ink-dim)' : undefined,
-                    }}
-                  >
-                    {inspected ? (isFact ? '✓ ' : '× ') : ''}{spot.label}
-                  </button>
-                )
-              })}
-            </div>
-            {rec.inspectUsed >= inspectLimit && !allFound && (
-              <p style={{ color: 'var(--blood-light)', fontSize: 12, margin: 0 }}>지목 기회를 모두 썼습니다. 지금 아는 것만으로 판단해야 합니다.</p>
-            )}
-          </div>
+                {buttonSpots.length > 0 && (
+                  <div className="card col">
+                    <strong style={{ fontFamily: 'var(--font-head)', fontSize: 14 }}>수상한 곳 지목하기</strong>
+                    <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+                      {buttonSpots.map((spot) => {
+                        const inspected = rec.inspectedSpotIds.includes(spot.id)
+                        const isFact = spot.kind === 'fact'
+                        return (
+                          <button
+                            key={spot.id}
+                            onClick={() => handleInspect(spot)}
+                            disabled={!inspected && rec.inspectUsed >= inspectLimit}
+                            style={{
+                              fontSize: 12,
+                              borderColor: inspected ? (isFact ? 'var(--gold)' : 'var(--line)') : undefined,
+                              color: inspected && !isFact ? 'var(--ink-dim)' : undefined,
+                            }}
+                          >
+                            {inspected ? (isFact ? '✓ ' : '× ') : ''}{spot.label}
+                          </button>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {rec.inspectUsed >= inspectLimit && !allFound && (
+                  <p style={{ color: 'var(--blood-light)', fontSize: 12, margin: '0 0 10px' }}>지목 기회를 모두 썼습니다. 지금 아는 것만으로 판단해야 합니다.</p>
+                )}
+              </>
+            )
+          })()}
 
           {rec.inspectedSpotIds.length > 0 && (
             <div className="col" style={{ marginBottom: 12 }}>

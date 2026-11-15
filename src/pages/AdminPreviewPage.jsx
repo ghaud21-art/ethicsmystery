@@ -651,6 +651,126 @@ function EditableLine({ value, onChange, editMode, style, placeholder }) {
   )
 }
 
+// 돋보기 위치 지정 — 업로드된 포스터/영상 위를 클릭해 각 조사 지점(사실·혼란)의
+// 좌표(hotspot x·y, 화면 비율 0~1)를 찍는다. 좌표가 찍힌 지점은 플레이 화면에서
+// 그림 위의 돋보기 버튼으로, 찍지 않은 지점은 글 버튼으로 나온다.
+function HotspotPlacer({ sc, sci, updateScene, mediaUrls }) {
+  const [activeId, setActiveId] = useState(null)
+  const visualFile = [sc.intro?.poster, sc.intro?.video].find((f) => f && mediaUrls?.[f])
+  const url = visualFile ? mediaUrls[visualFile] : null
+  const isVideo = visualFile === sc.intro?.video && visualFile !== sc.intro?.poster
+
+  const spots = [
+    ...(sc.facts ?? []).map((f, fi) => ({
+      id: f.id, label: f.hotspot?.label ?? f.title, kind: 'fact',
+      x: f.hotspot?.x, y: f.hotspot?.y, w: f.hotspot?.w, h: f.hotspot?.h, fi,
+    })),
+    ...(sc.decoyHotspots ?? []).map((d, di) => ({
+      id: d.id ?? `decoy_${di}`, label: d.label, kind: 'decoy',
+      x: d.x, y: d.y, w: d.w, h: d.h, di,
+    })),
+  ]
+
+  const applyCoords = (spot, patch) =>
+    updateScene(sci, (s) => {
+      if (spot.fi != null) Object.assign(s.facts[spot.fi].hotspot, patch)
+      else Object.assign(s.decoyHotspots[spot.di], patch)
+    })
+
+  const handleClick = (e) => {
+    if (!activeId) return
+    const spot = spots.find((s) => s.id === activeId)
+    if (!spot) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const cx = (e.clientX - rect.left) / rect.width
+    const cy = (e.clientY - rect.top) / rect.height
+    const w = spot.w ?? 0.12
+    const h = spot.h ?? 0.12
+    applyCoords(spot, {
+      x: Math.min(Math.max(cx - w / 2, 0), 1 - w),
+      y: Math.min(Math.max(cy - h / 2, 0), 1 - h),
+      w, h,
+    })
+    setActiveId(null)
+  }
+
+  if (!url) {
+    return (
+      <div className="card">
+        <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>
+          포스터나 도입 영상을 올리면 이 자리에서 그림 위를 클릭해 <strong>돋보기(조사 지점) 위치</strong>를
+          찍을 수 있습니다. 위치를 찍지 않은 지점은 플레이 화면에서 지금처럼 글 버튼으로 나옵니다.
+        </p>
+      </div>
+    )
+  }
+
+  const frame = { width: '100%', borderRadius: 'var(--radius)', border: '1px solid var(--line)', display: 'block', pointerEvents: 'none' }
+  return (
+    <div className="card col">
+      <div className="kicker" style={{ marginBottom: 2 }}>돋보기 위치 지정</div>
+      <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>
+        아래 목록에서 <strong>위치 찍기</strong>를 누른 뒤, 그림에서 그 물건이 있는 곳을 클릭하세요.
+        찍힌 지점은 플레이 화면에서 그림 위의 돋보기 버튼이 됩니다.
+      </p>
+      <div
+        onClick={handleClick}
+        style={{ position: 'relative', cursor: activeId ? 'crosshair' : 'default', outline: activeId ? '2px dashed var(--gold)' : 'none', borderRadius: 'var(--radius)' }}
+      >
+        {isVideo ? (
+          <video muted playsInline preload="auto" src={url} style={{ ...frame, background: '#000' }} />
+        ) : (
+          <img src={url} alt="" style={frame} />
+        )}
+        {spots
+          .filter((s) => s.x != null && s.y != null)
+          .map((s) => (
+            <div
+              key={s.id}
+              title={s.label}
+              style={{
+                position: 'absolute',
+                left: `${(s.x + (s.w ?? 0) / 2) * 100}%`,
+                top: `${(s.y + (s.h ?? 0) / 2) * 100}%`,
+                transform: 'translate(-50%, -50%)', width: 30, height: 30, borderRadius: '50%',
+                display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+                background: s.kind === 'fact' ? 'rgba(201,162,39,.85)' : 'rgba(30,26,18,.85)',
+                border: `2px solid ${s.kind === 'fact' ? 'var(--gold-light)' : 'var(--line)'}`,
+                color: s.kind === 'fact' ? '#1a1510' : 'var(--ink-dim)', fontSize: 12, fontWeight: 800,
+              }}
+            >
+              {s.kind === 'fact' ? '사' : '혼'}
+            </div>
+          ))}
+      </div>
+      <div className="col" style={{ gap: 5 }}>
+        {spots.map((s) => (
+          <div key={s.id} className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+            <span className={`pill ${s.kind === 'fact' ? 'pill-solid' : 'pill-muted'}`}>{s.kind === 'fact' ? '사실' : '혼란'}</span>
+            <span style={{ fontSize: 12, flex: 1, minWidth: 140 }}>{s.label}</span>
+            {s.x != null ? (
+              <>
+                <span className="dim" style={{ fontSize: 11 }}>찍힘 ({Math.round((s.x + (s.w ?? 0) / 2) * 100)}%, {Math.round((s.y + (s.h ?? 0) / 2) * 100)}%)</span>
+                <button onClick={() => setActiveId(s.id)} style={{ fontSize: 11, padding: '3px 8px', borderColor: activeId === s.id ? 'var(--gold)' : undefined }}>
+                  {activeId === s.id ? '그림을 클릭하세요...' : '다시 찍기'}
+                </button>
+                <button onClick={() => applyCoords(s, { x: null, y: null })} style={{ fontSize: 11, padding: '3px 8px', color: 'var(--blood-light)' }}>
+                  제거
+                </button>
+              </>
+            ) : (
+              <button onClick={() => setActiveId(s.id)} style={{ fontSize: 11, padding: '3px 8px', borderColor: activeId === s.id ? 'var(--gold)' : undefined }}>
+                {activeId === s.id ? '그림을 클릭하세요...' : '위치 찍기'}
+              </button>
+            )}
+          </div>
+        ))}
+      </div>
+      <p className="dim" style={{ margin: 0, fontSize: 11 }}>좌표를 바꾼 뒤에는 상단의 <strong>변경사항 저장</strong>을 눌러야 반영됩니다.</p>
+    </div>
+  )
+}
+
 // 놓친 장면(1인 영상 추리) 전용 플레이형 편집기 — 학생이 보는 플레이 화면을
 // 그대로 띄워 두고(장면 탭 + 단계 탭으로 이동), 그 자리에서 글을 고치고
 // 각 미디어 자리(영상·음성·이미지)에 파일을 바로 업로드한다.
@@ -816,8 +936,11 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
             </div>
             <p className="dim" style={{ margin: 0, fontSize: 11 }}>
               학생에게는 사실·혼란 지점이 구분 없이 섞여 보입니다 (금색 테두리 = 진짜 사실).
+              돋보기 위치를 찍은 지점은 글 버튼 대신 그림 위의 돋보기로 나옵니다.
             </p>
           </div>
+
+          <HotspotPlacer sc={sc} sci={sci} updateScene={updateScene} mediaUrls={mediaUrls} />
 
           {(sc.facts ?? []).map((f, fi) => (
             <div key={f.id} className="card col" style={{ borderColor: f.isVariable ? 'var(--blood-light)' : 'var(--gold)', gap: 6 }}>

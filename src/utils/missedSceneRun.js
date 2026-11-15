@@ -89,13 +89,29 @@ export function buildInspectSpots(scene) {
       id: f.id,
       kind: 'fact',
       label: f.hotspot?.label ?? f.title,
+      x: f.hotspot?.x ?? null,
+      y: f.hotspot?.y ?? null,
+      w: f.hotspot?.w ?? null,
+      h: f.hotspot?.h ?? null,
     })),
     ...(scene.decoyHotspots ?? []).map((d, i) => ({
       id: d.id ?? `${scene.id}_decoy_${i}`,
       kind: 'decoy',
       label: d.label,
       text: d.text ?? '자세히 살펴봤지만, 판단에 도움이 될 만한 것은 없었다.',
+      x: d.x ?? null,
+      y: d.y ?? null,
+      w: d.w ?? null,
+      h: d.h ?? null,
     })),
   ]
   return spots.sort((a, b) => hashString(scene.id + a.id) - hashString(scene.id + b.id))
+}
+
+// 돋보기 마커의 중심 위치(화면 비율 0~1). x·y만 있고 w·h가 없으면 그 점을 중심으로 본다.
+export function spotCenter(spot) {
+  if (spot.x == null || spot.y == null) return null
+  const w = spot.w ?? 0
+  const h = spot.h ?? 0
+  return { cx: spot.x + w / 2, cy: spot.y + h / 2 }
 }
