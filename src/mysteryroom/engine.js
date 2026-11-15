@@ -55,3 +55,19 @@ export const GRADE_TEXT = {
   B: '함정에 빠짐',
   C: '시간 초과',
 }
+
+// 일시정지(체크포인트·전체 주목). 이유가 하나라도 있으면 타이머가 멈추고, 모두 풀리면 멈춘 시간을 쌓아 둔다.
+export function setPause(st, reason, on, t = Date.now()) {
+  const reasons = { ...(st?.pause?.reasons ?? {}) }
+  const was = Object.keys(reasons).length > 0
+  if (on) reasons[reason] = true
+  else delete reasons[reason]
+  const now = Object.keys(reasons).length > 0
+  const out = { ...st }
+  if (!was && now) out.pause = { reasons, since: t }
+  else if (was && !now) {
+    out.pausedMs = (st.pausedMs ?? 0) + Math.max(0, t - (st.pause?.since ?? t))
+    out.pause = null
+  } else out.pause = { ...(st?.pause ?? {}), reasons }
+  return out
+}

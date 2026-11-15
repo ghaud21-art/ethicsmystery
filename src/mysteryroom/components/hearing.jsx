@@ -242,8 +242,8 @@ export function HearingPuzzle({ config }) {
 
   // 시간이 다 되면 다음 차례로 (누가 먼저 쓰든 한 번만 넘어간다)
   useEffect(() => {
-    if (started && !allDone && !interjectNow && b.turnAt && remain === 0) advance(turn)
-  }, [started, allDone, interjectNow, remain, turn, b.turnAt]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (started && !allDone && !interjectNow && !mr.paused && b.turnAt && remain === 0) advance(turn)
+  }, [started, allDone, interjectNow, remain, turn, b.turnAt, mr.paused]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!started) {
     return (

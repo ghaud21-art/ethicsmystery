@@ -168,3 +168,7 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-quota { font-size: 13px; padding: 6px 10px; border-radius: var(--radius-sm); background: var(--panel2); border: 1px solid var(--line); display: flex; align-items: center; flex-wrap: wrap; gap: 4px; }
 .mr-quota strong { color: var(--gold-light); font-family: var(--font-mono); font-size: 16px; }
 .mr-quota.out { border-color: var(--blood-light); }
+.mr-attention { position: fixed; inset: 0; z-index: 9999; background: rgba(10,8,5,0.92); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mr-attention-box { text-align: center; border: 2px solid var(--gold); border-radius: var(--radius); padding: 36px 28px; background: var(--panel); max-width: 560px; width: 100%; }
+.mr-attention-title { font-family: var(--font-head); font-size: 34px; font-weight: 800; color: var(--gold-light); margin-bottom: 10px; }
+.mr-attention-box p { font-size: 16px; margin: 0; }

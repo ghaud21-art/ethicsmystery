@@ -3,6 +3,7 @@ import { getStore } from '../store'
 import { loadMysteryRoom } from '../loader'
 import { STAGE_LABEL } from '../useDebate'
 import { fmtTime } from '../components/common'
+import { setPause } from '../engine'
 import '../mysteryroom.css'
 
 // 교사용 진행 현황(융합 보드). 최근 6시간 안에 만든 방을 실시간으로 보여 준다.
@@ -37,6 +38,26 @@ export default function MysteryLiveBoard() {
 
   const unlockHint = (code, scene) => getStore().set(`${code}/state/hintsUnlocked/${scene}`, true)
   const release = (code) => getStore().set(`${code}/release`, true)
+  // 전체 주목: 진행 중인 방 모두의 화면을 '선생님을 봐 주세요'로 덮고 타이머를 멈춘다.
+  const activeCodes = list.filter(([, r]) => r.state && !defs[r.meta.scenarioId]?.scenes?.[r.state.scene]?.end).map(([c]) => c)
+  const attentionOn = list.some(([, r]) => r.state?.pause?.reasons?.att)
+  const setAttention = (codes, on) =>
+    codes.forEach((c) => getStore().transaction(`${c}/state`, (cur) => (cur ? setPause(cur, 'att', on) : undefined)))
+  // 체크포인트: 룸별로 체크포인트 장면을 모아, 도착한 모둠 수와 '모두 열기' 버튼을 보여 준다.
+  const checkpoints = []
+  for (const [sid, def] of Object.entries(defs)) {
+    if (!def) continue
+    const roomsOf = list.filter(([, r]) => r.meta.scenarioId === sid && r.state)
+    if (!roomsOf.length) continue
+    for (const [sceneId, sc] of Object.entries(def.scenes)) {
+      if (sc.type !== 'checkpoint') continue
+      const id = sc.checkpoint?.id ?? sceneId
+      const arrived = roomsOf.filter(([, r]) => r.state.scene === sceneId).length
+      const opened = roomsOf.filter(([, r]) => r.cp?.[id]).length
+      checkpoints.push({ sid, title: def.meta.title, id, label: sc.checkpoint?.title ?? sc.title, arrived, total: roomsOf.length, opened, codes: roomsOf.map(([c]) => c) })
+    }
+  }
+  const openCp = (cp) => cp.codes.forEach((c) => getStore().set(`${c}/cp/${cp.id}`, true))
   const endedCodes = list.filter(([, r]) => {
     const sc = defs[r.meta.scenarioId]?.scenes?.[r.state?.scene]
     return sc?.end && sc.end.kind !== 'bad' && !r.release
@@ -47,6 +68,26 @@ export default function MysteryLiveBoard() {
       <h2 className="page-title" style={{ fontSize: 19 }}>미스터리 룸 진행 현황</h2>
       <p className="dim" style={{ fontSize: 12, margin: 0 }}>최근 6시간 안에 만든 방이 실시간으로 보입니다. 전면 화면에 띄워 모둠별 진행을 함께 볼 수 있어요.</p>
       <p className="dim" style={{ fontSize: 12, margin: 0 }}>엔딩에 도착한 모둠은 ‘선생님의 다음 안내를 기다려 주세요’ 화면에서 멈춥니다. 정리할 때 ‘성찰 열기’를 누르면 결과 카드와 성찰 질문이 열립니다.</p>
+      {activeCodes.length > 0 && (
+        <div className="row" style={{ gap: 8 }}>
+          <button className={attentionOn ? '' : 'primary'} onClick={() => setAttention(attentionOn ? list.map(([c]) => c) : activeCodes, !attentionOn)}>
+            {attentionOn ? '전체 주목 해제 (다시 진행)' : `전체 주목 (진행 중 ${activeCodes.length}개 모둠 화면 멈춤)`}
+          </button>
+          <span className="dim" style={{ fontSize: 11 }}>학생 화면에 ‘선생님을 봐 주세요’가 뜨고 게임 타이머가 멈춥니다.</span>
+        </div>
+      )}
+      {checkpoints.length > 0 && (
+        <div className="card col" style={{ gap: 6 }}>
+          <strong style={{ fontSize: 13 }}>선생님 체크포인트</strong>
+          {checkpoints.map((cp) => (
+            <div key={cp.sid + cp.id} className="row" style={{ gap: 10, justifyContent: 'space-between' }}>
+              <span>{cp.title} · <strong>{cp.label}</strong> <span className="dim">도착 {cp.arrived}/{cp.total}모둠{cp.opened === cp.total ? ' · 열림' : ''}</span></span>
+              {cp.opened < cp.total && <button className={cp.arrived === cp.total ? 'primary' : ''} onClick={() => openCp(cp)}>모든 모둠 다음 단계 열기</button>}
+            </div>
+          ))}
+          <span className="dim" style={{ fontSize: 11 }}>체크포인트에 도착한 모둠은 대기 화면에서 멈추고 타이머도 멈춥니다. 반 전체 토론을 마친 뒤 열어 주세요. 아직 도착하지 않은 모둠은 도착하자마자 바로 통과합니다.</span>
+        </div>
+      )}
       {endedCodes.length > 0 && (
         <button className="primary" style={{ alignSelf: 'flex-start' }} onClick={() => endedCodes.forEach(release)}>엔딩에 도착한 {endedCodes.length}개 모둠 성찰 열기</button>
       )}

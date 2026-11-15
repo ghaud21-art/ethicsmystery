@@ -14,7 +14,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { getStore, getLocalUid, isLocalMode } from './store'
 import { myRoleSet, resolveRoles } from './roles'
-import { resolveGate, tallyVotes } from './engine'
+import { resolveGate, tallyVotes, setPause } from './engine'
 import { evaluatePuzzle } from './puzzles/evaluate'
 
 export const HINT_AFTER_FAILS = 2
@@ -100,7 +100,11 @@ export function useMysteryRoom(room, code) {
         next.split = null
         if (target?.end?.kind === 'bad') next.badVisited = true
         if (target?.learn) next.concepts = { ...(next.concepts ?? {}), ...Object.fromEntries(target.learn.map((k) => [k, true])) }
-        return next
+        // 체크포인트에 들어가면 타이머를 멈추고, 나오면 다시 흐르게 한다.
+        let out = next
+        if (room.scenes[from]?.type === 'checkpoint') out = setPause(out, 'cp', false)
+        if (target?.type === 'checkpoint') out = setPause(out, 'cp', true)
+        return out
       })
       // 떠난 장면의 준비·투표·동의 표시를 지워, 다시 돌아왔을 때 저절로 넘어가지 않게 한다.
       if (res.committed) {
@@ -119,12 +123,20 @@ export function useMysteryRoom(room, code) {
   }, [scene, state, goTo])
 
   // 시간 초과
-  const elapsed = state?.startedAt ? Math.floor((now - state.startedAt) / 1000) : 0
+  const pausedSince = state?.pause?.since ?? null
+  const elapsed = state?.startedAt ? Math.max(0, Math.floor((now - state.startedAt - (state.pausedMs ?? 0) - (pausedSince ? now - pausedSince : 0)) / 1000)) : 0
+  const paused = !!pausedSince
+  const attention = !!state?.pause?.reasons?.att
+  // 선생님이 체크포인트를 열면 다음 장면으로
+  const cpOpen = data?.cp ?? {}
+  useEffect(() => {
+    if (state && scene?.type === 'checkpoint' && cpOpen[scene.checkpoint?.id] && scene.next) goTo(state.scene, scene.next)
+  }, [state, scene, cpOpen, goTo])
   const limit = (room.meta.estimatedMinutes ?? 30) * 60
   const remaining = Math.max(0, limit - elapsed)
   useEffect(() => {
-    if (state && remaining === 0 && !scene?.end && room.timeoutScene) goTo(state.scene, room.timeoutScene)
-  }, [state, remaining, scene, room, goTo])
+    if (state && remaining === 0 && !paused && !scene?.end && room.timeoutScene) goTo(state.scene, room.timeoutScene)
+  }, [state, remaining, paused, scene, room, goTo])
 
   // 선택지 투표 집계
   const votes = state ? data?.votes?.[state.scene]?.[state.voteRound ?? 1] : null
@@ -249,6 +261,7 @@ export function useMysteryRoom(room, code) {
           cur ? { ...cur, failedTotal: (cur.failedTotal ?? 0) + 1, attempts: { ...(cur.attempts ?? {}), [cur.scene]: (cur.attempts?.[cur.scene] ?? 0) + 1 } } : undefined,
         ),
       releaseReflection: () => store.set(`${code}/release`, true),
+      openCheckpoint: (id) => store.set(`${code}/cp/${id}`, true),
       releaseMine: () => store.set(`${code}/releaseBy/${uid}`, true),
       learnConcept: (k) => k && store.set(`${code}/state/concepts/${k}`, true),
     }),
@@ -278,6 +291,8 @@ export function useMysteryRoom(room, code) {
     agreeMap,
     remaining,
     elapsed,
+    paused,
+    attention,
     now,
     solo: playerUids.length === 1,
     actions,

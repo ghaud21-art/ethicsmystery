@@ -115,13 +115,21 @@ function Play({ room, mr }) {
   const curRoomIdx = room.rooms.findIndex((r) => r.id === scene?.room)
   return (
     <div className="page-wide">
+      {mr.attention && (
+        <div className="mr-attention">
+          <div className="mr-attention-box">
+            <div className="mr-attention-title">선생님을 봐 주세요</div>
+            <p>잠시 화면을 멈춥니다. 게임 타이머도 멈춰 있어요.</p>
+          </div>
+        </div>
+      )}
       <div className="mr-topbar">
         <span className="mr-title">{room.meta.title}</span>
         <span className="dim" style={{ fontSize: 12 }}>
           {mr.me?.name} · {(mr.roleInfo.includes[mr.me?.role] ?? []).map((rid) => roleById(room, rid)?.name).join(', ')}
         </span>
         <ClueBox />
-        <span className={`mr-timer ${mr.remaining < 300 ? 'warn' : ''}`}><Icon name="clock" size={16} />{fmtTime(mr.remaining)}</span>
+        <span className={`mr-timer ${mr.remaining < 300 ? 'warn' : ''}`}><Icon name="clock" size={16} />{fmtTime(mr.remaining)}{mr.paused && <span style={{ fontSize: 11, marginLeft: 4 }}>멈춤</span>}</span>
       </div>
       {isLocalMode() && <TestTools room={room} mr={mr} />}
       <div className="mr-rooms">

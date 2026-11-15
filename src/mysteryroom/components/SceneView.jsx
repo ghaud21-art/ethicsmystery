@@ -1,3 +1,4 @@
+import { isLocalMode, isTestMode } from '../store'
 import { useState, useEffect } from 'react'
 import { Icon, MaterialCard, NoteCard, PlayerDots, fmtTime, useMr } from './common'
 import { roleById } from '../roles'
@@ -76,6 +77,47 @@ function TalkScreen({ scene }) {
         {left === 0 && <p className="dim" style={{ margin: 0 }}>시간이 다 됐어요. 이야기를 마무리하고 모두 ‘다음’을 눌러 주세요.</p>}
       </div>
       <ReadyButton label={t.readyLabel ?? '이야기를 마쳤어요'} />
+    </div>
+  )
+}
+
+// 선생님 체크포인트: 모든 모둠이 모이면 선생님이 진행 보드에서 연다. 그동안 타이머는 멈춘다.
+function CheckpointView({ scene }) {
+  const { room, mr } = useMr()
+  const cp = scene.checkpoint ?? {}
+  let show = null
+  if (cp.show === 'facts' && cp.from) {
+    const facts = room.scenes[cp.from]?.puzzle?.config?.facts ?? []
+    const found = mr.data?.boards?.[cp.from]?.found ?? {}
+    const list = facts.filter((f) => found[f.id])
+    show = (
+      <div className="mr-mat" style={{ width: '100%', marginBottom: 0 }}>
+        <div className="mr-mat-title"><span>우리 모둠이 찾은 사실 {list.length}개</span></div>
+        {list.map((f) => <p key={f.id}><strong>{f.title}</strong> · {f.text}</p>)}
+      </div>
+    )
+  }
+  if (cp.show === 'blame' && cp.from) {
+    const targets = room.scenes[cp.from]?.puzzle?.config?.targets ?? []
+    const b = mr.state.blame
+    show = b ? (
+      <div className="mr-mat" style={{ width: '100%', marginBottom: 0 }}>
+        <div className="mr-mat-title"><span>우리 모둠이 정한 가장 큰 책임자</span></div>
+        <p style={{ fontSize: 16 }}><strong>{targets.find((t) => t.id === b.pick)?.name ?? b.pick}</strong></p>
+        <p className="dim">근거: {b.reason}</p>
+      </div>
+    ) : null
+  }
+  return (
+    <div className="mr-talk" style={{ alignItems: 'stretch' }}>
+      <div className="mr-talk-kicker">선생님 체크포인트{cp.title ? ` · ${cp.title}` : ''}</div>
+      <div className="mr-talk-line">선생님이 다음 단계를 열 때까지 기다려 주세요.</div>
+      <p className="dim" style={{ margin: 0 }}>게임 타이머는 멈춰 있어요. 다른 모둠이 도착하면 반 전체가 함께 이야기합니다.</p>
+      {show}
+      {cp.task && <div className="mr-suggest"><span className="mr-tag blue">기다리는 동안</span> {cp.task}</div>}
+      {(isLocalMode() || isTestMode()) && (
+        <button className="mr-small" style={{ alignSelf: 'flex-start' }} onClick={() => mr.actions.openCheckpoint(cp.id)}>(테스트) 선생님이 다음 단계 열기</button>
+      )}
     </div>
   )
 }
@@ -247,6 +289,7 @@ export default function SceneView() {
   else if (scene.type === 'debate') interaction = <DebateView />
   else if (scene.type === 'form') interaction = <FinalForm scene={scene} />
   else if (scene.type === 'talk') interaction = <TalkScreen scene={scene} />
+  else if (scene.type === 'checkpoint') interaction = <CheckpointView scene={scene} />
   else if (scene.requireShared) interaction = <RequireShared scene={scene} />
   else if (scene.choices?.length > 1) interaction = <ChoiceVote key={sceneId} scene={scene} />
   else if (singleChoice) interaction = <ReadyButton label={scene.choices[0].t} />
