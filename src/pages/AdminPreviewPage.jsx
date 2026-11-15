@@ -527,13 +527,12 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
   )
 }
 
-// 놓친 장면 미디어 슬롯 — 시나리오 JSON의 파일명 하나당 업로드 칸 하나.
-// 업로드 즉시 Storage에 올리고 Firestore mediaUrls에 반영하므로, '변경사항 저장'을
-// 누르지 않아도 올린 파일은 사라지지 않는다.
+// 놓친 장면 미디어 슬롯 — 플레이 화면과 같은 자리에서 실제 플레이어로 보여 주고,
+// 그 아래 가는 줄에서 업로드/교체/삭제한다. 업로드 즉시 Storage에 올리고 Firestore
+// mediaUrls에 반영하므로, '변경사항 저장'을 누르지 않아도 올린 파일은 사라지지 않는다.
 function MediaSlot({ scenarioId, fileName, kind, label, mediaUrls, onUrlChange }) {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState(null)
-  const [preview, setPreview] = useState(false)
   if (!fileName) return null
   const url = mediaUrls?.[fileName]
   const accept = kind === 'video' ? 'video/*' : kind === 'audio' ? 'audio/*' : 'image/*'
@@ -560,7 +559,6 @@ function MediaSlot({ scenarioId, fileName, kind, label, mediaUrls, onUrlChange }
     try {
       await deleteScenarioMedia(scenarioId, fileName)
       await onUrlChange(fileName, null)
-      setPreview(false)
     } catch (err) {
       setError(err.message)
     } finally {
@@ -568,46 +566,103 @@ function MediaSlot({ scenarioId, fileName, kind, label, mediaUrls, onUrlChange }
     }
   }
 
+  const frame = { width: '100%', borderRadius: 'var(--radius)', border: '1px solid var(--line)', display: 'block' }
   return (
-    <div style={{ marginBottom: 8 }}>
-      <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
-        <span className={`pill ${url ? 'pill-solid' : 'pill-muted'}`}>{label}</span>
-        <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{fileName}</code>
-        {url ? (
-          <>
-            <button onClick={() => setPreview((v) => !v)} style={{ fontSize: 11, padding: '3px 8px' }}>
-              {preview ? '미리보기 닫기' : '미리보기'}
-            </button>
-            <label className="row" style={{ fontSize: 11, gap: 4 }}>
-              <span className="dim">교체:</span>
-              <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
-            </label>
-            <button onClick={handleDelete} disabled={busy} style={{ fontSize: 11, padding: '3px 8px', color: 'var(--blood-light)' }}>
-              삭제
-            </button>
-          </>
-        ) : (
-          <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
-        )}
-        {busy && <span style={{ fontSize: 11, color: 'var(--gold-light)' }}>업로드 중...</span>}
-      </div>
-      {error && <p style={{ color: 'var(--blood-light)', fontSize: 11, margin: '4px 0 0' }}>{error}</p>}
-      {url && preview && (
-        kind === 'video' ? (
-          <video controls src={url} style={{ width: '100%', maxWidth: 480, marginTop: 6, borderRadius: 6, background: '#000' }} />
+    <div>
+      {url &&
+        (kind === 'video' ? (
+          <video controls src={url} style={{ ...frame, background: '#000' }} />
         ) : kind === 'audio' ? (
-          <audio controls src={url} style={{ width: '100%', maxWidth: 480, marginTop: 6, display: 'block' }} />
+          <audio controls src={url} style={{ width: '100%', display: 'block' }} />
         ) : (
-          <img src={url} alt="" style={{ width: '100%', maxWidth: 320, marginTop: 6, borderRadius: 6, display: 'block' }} />
-        )
+          <img src={url} alt="" style={frame} />
+        ))}
+      {url ? (
+        <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap', marginTop: 4 }}>
+          <span className="pill pill-solid">{label}</span>
+          <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{fileName}</code>
+          <label className="row" style={{ fontSize: 11, gap: 4 }}>
+            <span className="dim">교체:</span>
+            <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
+          </label>
+          <button onClick={handleDelete} disabled={busy} style={{ fontSize: 11, padding: '3px 8px', color: 'var(--blood-light)' }}>
+            삭제
+          </button>
+          {busy && <span style={{ fontSize: 11, color: 'var(--gold-light)' }}>업로드 중...</span>}
+        </div>
+      ) : (
+        <label
+          className="row"
+          style={{
+            gap: 8, alignItems: 'center', flexWrap: 'wrap', cursor: 'pointer',
+            border: '1px dashed rgba(201,162,39,.45)', borderRadius: 'var(--radius)', padding: '9px 12px',
+          }}
+        >
+          <span className="pill pill-muted">{label}</span>
+          <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{fileName}</code>
+          <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
+          {busy && <span style={{ fontSize: 11, color: 'var(--gold-light)' }}>업로드 중...</span>}
+        </label>
       )}
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 11, margin: '4px 0 0' }}>{error}</p>}
     </div>
   )
 }
 
-// 놓친 장면(1인 영상 추리) 전용 플레이형 편집기 — 학생이 보는 흐름(도입 → 조사 →
-// 두 목소리 → 선택 → 결과 → 1년 뒤 → 원리 공개) 순서대로 모든 글을 고치고,
-// 각 미디어 슬롯에 영상·음성·이미지를 바로 업로드한다.
+// 플레이 화면과 같은 문단처럼 보이다가, 편집 모드에서만 점선 입력칸이 되는 글.
+function EditableText({ value, onChange, editMode, fontSize = 14, dim, placeholder }) {
+  if (!editMode) {
+    return (
+      <p className={dim ? 'dim' : undefined} style={{ margin: 0, fontSize, lineHeight: 1.85, whiteSpace: 'pre-wrap' }}>
+        {value || placeholder}
+      </p>
+    )
+  }
+  const rows = Math.max(2, Math.ceil(String(value ?? '').length / 55))
+  return (
+    <textarea
+      value={value ?? ''}
+      rows={rows}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        width: '100%', boxSizing: 'border-box', background: 'rgba(255,255,255,.03)',
+        border: '1px dashed rgba(201,162,39,.45)', borderRadius: 6, color: 'inherit',
+        fontFamily: 'inherit', fontSize, lineHeight: 1.8, padding: '6px 9px', resize: 'vertical',
+        opacity: dim ? 0.8 : 1,
+      }}
+    />
+  )
+}
+
+// 이름·라벨처럼 한 줄짜리 글의 제자리 편집.
+function EditableLine({ value, onChange, editMode, style, placeholder }) {
+  if (!editMode) return <span style={style}>{value || placeholder}</span>
+  return (
+    <input
+      value={value ?? ''}
+      placeholder={placeholder}
+      onChange={(e) => onChange(e.target.value)}
+      style={{
+        background: 'rgba(255,255,255,.03)', border: '1px dashed rgba(201,162,39,.45)', borderRadius: 4,
+        color: 'inherit', fontFamily: 'inherit', padding: '2px 7px', ...style,
+      }}
+    />
+  )
+}
+
+// 놓친 장면(1인 영상 추리) 전용 플레이형 편집기 — 학생이 보는 플레이 화면을
+// 그대로 띄워 두고(장면 탭 + 단계 탭으로 이동), 그 자리에서 글을 고치고
+// 각 미디어 자리(영상·음성·이미지)에 파일을 바로 업로드한다.
+const MISSED_PHASES = [
+  ['intro', '① 도입'],
+  ['inspect', '② 영상 조사'],
+  ['voices', '③ 두 목소리'],
+  ['decide', '④ 결정'],
+  ['result', '⑤ 결과·1년 뒤'],
+  ['reveal', '⑥ 원리 공개'],
+]
+
 function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChange, onSave, busy, saved, error }) {
   const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
   const updateMeta = (patch) => onChange({ ...draft, meta: { ...draft.meta, ...patch } })
@@ -615,6 +670,9 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
     const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
     onChange({ ...draft, reflectionPrompts })
   }
+  const [sceneIdx, setSceneIdx] = useState(0)
+  const [phase, setPhase] = useState('intro')
+  const [choiceId, setChoiceId] = useState('A')
 
   const mediaUrls = draft.mediaUrls ?? {}
   const uploadedCount = Object.keys(mediaUrls).length
@@ -644,167 +702,347 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
 
   const slotProps = { scenarioId: draft.scenarioId, mediaUrls, onUrlChange: handleMediaUrlChange }
   const scenes = [...(draft.scenes ?? [])].sort((a, b) => a.order - b.order)
+  const sc = scenes[Math.min(sceneIdx, scenes.length - 1)]
+  const sci = draft.scenes.indexOf(sc) // updateScene은 원본 배열 기준 인덱스를 쓴다
+  const ui = draft.ui ?? {}
+  const choice = sc?.choices?.find((c) => c.id === choiceId) ?? sc?.choices?.[0]
+  const chi = sc?.choices?.indexOf(choice)
+  const variableFact = sc?.facts?.find((f) => f.isVariable)
+  const vfi = sc?.facts?.indexOf(variableFact)
+
+  const gotoScene = (i) => {
+    setSceneIdx(i)
+    setPhase('intro')
+    setChoiceId('A')
+  }
+  const phaseIdx = MISSED_PHASES.findIndex(([k]) => k === phase)
+  const nextPhase = () => {
+    if (phaseIdx < MISSED_PHASES.length - 1) setPhase(MISSED_PHASES[phaseIdx + 1][0])
+    else if (sceneIdx < scenes.length - 1) gotoScene(sceneIdx + 1)
+  }
+  const nextLabel =
+    phase === 'intro' ? '영상을 조사한다 →'
+    : phase === 'inspect' ? '조사를 마치고 동료들의 이야기를 듣는다 →'
+    : phase === 'voices' ? '이제 결정한다 →'
+    : phase === 'decide' ? '결과를 본다 →'
+    : phase === 'result' ? '원리 맞히기 →'
+    : sceneIdx < scenes.length - 1 ? '다음 장면으로 →' : null
+
+  if (!sc) return <div className="page"><Masthead showBack /><div className="card">장면 데이터가 없습니다.</div></div>
 
   return (
-    <div className="page-wide">
+    <div className="page">
       <Masthead showBack />
-      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
-        <h1 className="page-title" style={{ margin: 0 }}>{draft.meta?.title ?? draft.scenarioId} — 놓친 장면 편집</h1>
+
+      {/* 상단 관리 막대 */}
+      <div className="card row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 13 }}>
+          <span className="dim">놓친 장면 편집</span> · <strong>{draft.meta?.title ?? draft.scenarioId}</strong>
+        </div>
         <div className="row" style={{ gap: 10 }}>
-          <label className="row" style={{ fontSize: 13, gap: 4 }}>
+          <label className="row" style={{ fontSize: 12, gap: 4 }}>
             <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
             편집 모드
           </label>
-          <button className="primary" onClick={onSave} disabled={!isDirty || busy}>
+          <button className="primary" onClick={onSave} disabled={!isDirty || busy} style={{ fontSize: 12, padding: '5px 12px' }}>
             {busy ? '저장 중...' : saved ? '저장됨' : '변경사항 저장'}
           </button>
         </div>
       </div>
-      <p className="dim" style={{ marginBottom: 6, fontSize: 12 }}>
-        글을 고친 뒤에는 <strong>변경사항 저장</strong>을 눌러야 반영됩니다. 미디어 업로드는 누르는 즉시 저장돼요
-        (현재 업로드된 파일 <strong style={{ color: 'var(--gold-light)' }}>{uploadedCount}개</strong>).
-        파일이 없는 슬롯은 플레이 화면에서 글만 보이는 텍스트 모드로 동작합니다.
-      </p>
-      <p style={{ marginBottom: 16, fontSize: 12 }}>
+      <p className="dim" style={{ margin: '0 0 10px', fontSize: 11, lineHeight: 1.6 }}>
+        학생이 보는 화면 그대로입니다. 점선 칸의 글을 바로 고치고(고친 뒤 <strong>변경사항 저장</strong>),
+        미디어 자리에는 파일을 올리면 즉시 저장됩니다 (업로드됨 {uploadedCount}개).{' '}
         <a href={`${window.location.origin}${window.location.pathname}#/missedscene/${draft.scenarioId}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-light)' }}>
-          실제 플레이 화면 새 탭에서 열기 →
+          실제 플레이 화면 열기 →
         </a>
       </p>
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>시나리오 정보</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-          <Field grow label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
-          <Field grow label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
-        </div>
-        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-          <Field grow label="단원명" value={draft.meta?.unit} editMode={editMode} onChange={(v) => updateMeta({ unit: v })} />
-          <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
-          <Field grow label="예상 소요시간(분)" value={draft.meta?.estimatedMinutes} editMode={editMode} onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })} />
-        </div>
-        <Field label="게임 소개" value={draft.description} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, description: v })} />
-        <Field
-          label="테마 태그 (쉼표로 구분)"
-          value={draft.meta?.themes?.join(', ')}
-          editMode={editMode}
-          onChange={(v) => updateMeta({ themes: v.split(',').map((t) => t.trim()).filter(Boolean) })}
-        />
+      {/* 장면·단계 이동 */}
+      <div className="tabs" style={{ marginBottom: 8 }}>
+        {scenes.map((s, i) => (
+          <button key={s.id} className={`tab-button ${i === sceneIdx ? 'active' : ''}`} onClick={() => gotoScene(i)}>
+            장면 {s.order}
+          </button>
+        ))}
+      </div>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
+        {MISSED_PHASES.map(([k, label]) => (
+          <button
+            key={k}
+            onClick={() => setPhase(k)}
+            style={{
+              fontSize: 12, padding: '4px 10px',
+              borderColor: phase === k ? 'var(--gold)' : undefined,
+              background: phase === k ? 'rgba(201,162,39,.12)' : undefined,
+            }}
+          >
+            {label}
+          </button>
+        ))}
       </div>
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>장면 {scenes.length}개 — 학생이 보는 순서대로</h2>
-      {scenes.map((sc, i) => (
-        <details key={sc.id} className="card" style={{ marginBottom: 14 }} open={i === 0}>
-          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 15 }}>
-            장면 {sc.order} · {sc.job} — {sc.title}
-          </summary>
-          <div className="col" style={{ marginTop: 14 }}>
-            <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-              <Field grow label="직업" value={sc.job} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.job = v })} />
-              <Field grow label="장면 제목" value={sc.title} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.title = v })} />
+      {/* 장면 머리글 — 플레이 화면과 동일 */}
+      <div className="kicker" style={{ marginBottom: 2 }}>
+        장면 {sc.order} ·{' '}
+        <EditableLine value={sc.job} editMode={editMode} style={{ fontSize: 11 }} onChange={(v) => updateScene(sci, (s) => { s.job = v })} />
+      </div>
+      <h1 className="page-title" style={{ fontSize: 22 }}>
+        <EditableLine value={sc.title} editMode={editMode} style={{ fontSize: 22, fontWeight: 800 }} onChange={(v) => updateScene(sci, (s) => { s.title = v })} />
+      </h1>
+      <div className="page-title-rule" />
+
+      {/* ---- ① 도입 ---- */}
+      {phase === 'intro' && (
+        <div className="card col">
+          <MediaSlot {...slotProps} kind="video" label="도입 영상" fileName={sc.intro?.video} />
+          <MediaSlot {...slotProps} kind="image" label="포스터(영상 썸네일)" fileName={sc.intro?.poster} />
+          <MediaSlot {...slotProps} kind="audio" label="도입 내레이션 음성" fileName={sc.intro?.narrationAudio} />
+          <EditableText value={sc.intro?.text} editMode={editMode} onChange={(v) => updateScene(sci, (s) => { s.intro.text = v })} />
+        </div>
+      )}
+
+      {/* ---- ② 영상 조사 ---- */}
+      {phase === 'inspect' && (
+        <>
+          <div className="card col">
+            <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>{ui.inspectGuide}</p>
+            <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+              {buildMissedSpots(sc).map((spot) => (
+                <button key={spot.id} style={{ fontSize: 12, borderColor: spot.kind === 'fact' ? 'var(--gold)' : undefined, color: spot.kind === 'decoy' ? 'var(--ink-dim)' : undefined }}>
+                  {spot.label}
+                </button>
+              ))}
             </div>
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>
+              학생에게는 사실·혼란 지점이 구분 없이 섞여 보입니다 (금색 테두리 = 진짜 사실).
+            </p>
+          </div>
 
-            <div className="kicker" style={{ marginBottom: 2 }}>① 도입</div>
-            <Field label="도입 글 (영상 아래에 함께 표시)" value={sc.intro?.text} editMode={editMode} multiline onChange={(v) => updateScene(i, (s) => { s.intro.text = v })} />
-            <MediaSlot {...slotProps} kind="video" label="도입 영상" fileName={sc.intro?.video} />
-            <MediaSlot {...slotProps} kind="image" label="포스터(영상 썸네일)" fileName={sc.intro?.poster} />
-            <MediaSlot {...slotProps} kind="audio" label="도입 내레이션 음성" fileName={sc.intro?.narrationAudio} />
-
-            <div className="kicker" style={{ margin: '10px 0 2px' }}>② 숨은 사실 {sc.facts?.length ?? 0}개</div>
-            {(sc.facts ?? []).map((f, fi) => (
-              <div key={f.id} className="card col" style={{ marginBottom: 0, borderColor: f.isVariable ? 'var(--blood-light)' : undefined }}>
-                <div className="row" style={{ gap: 6 }}>
-                  <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{f.id}</code>
+          {(sc.facts ?? []).map((f, fi) => (
+            <div key={f.id} className="card col" style={{ borderColor: f.isVariable ? 'var(--blood-light)' : 'var(--gold)', gap: 6 }}>
+              <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+                <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>
+                  <EditableLine value={f.title} editMode={editMode} style={{ fontSize: 13, fontWeight: 800 }} onChange={(v) => updateScene(sci, (s) => { s.facts[fi].title = v })} />
+                </strong>
+                <span className="row" style={{ gap: 6 }}>
                   <span className="pill pill-muted">{f.level}</span>
-                  {f.isVariable && <span className="pill pill-solid">변수 (결정 직전 한 번 더 묻는 사실)</span>}
+                  {f.isVariable && <span className="pill pill-solid">변수</span>}
+                </span>
+              </div>
+              <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                <span className="dim" style={{ fontSize: 11 }}>조사 지점:</span>
+                <EditableLine value={f.hotspot?.label} editMode={editMode} style={{ fontSize: 11 }} onChange={(v) => updateScene(sci, (s) => { s.facts[fi].hotspot.label = v })} />
+              </div>
+              <EditableText value={f.text} editMode={editMode} fontSize={12} dim onChange={(v) => updateScene(sci, (s) => { s.facts[fi].text = v })} />
+              {f.card?.src && (
+                <MediaSlot {...slotProps} kind={f.card.type === 'audio' ? 'audio' : 'image'} label="확대 카드" fileName={f.card.src} />
+              )}
+              {f.isVariable && (
+                <>
+                  <p className="dim" style={{ margin: '4px 0 0', fontSize: 11 }}>변수 내레이션 (이 사실을 찾은 학생에게 결정 직전에 나옵니다):</p>
+                  <EditableText value={f.variableNarration?.text} editMode={editMode} fontSize={12} onChange={(v) => updateScene(sci, (s) => { s.facts[fi].variableNarration.text = v })} />
+                  <MediaSlot {...slotProps} kind="audio" label="변수 내레이션 음성" fileName={f.variableNarration?.audio} />
+                </>
+              )}
+            </div>
+          ))}
+
+          <div className="card col">
+            <div className="kicker" style={{ marginBottom: 2 }}>혼란용 조사 지점 (눌러도 아무것도 없는 곳)</div>
+            {(sc.decoyHotspots ?? []).map((d, di) => (
+              <div key={d.id ?? di} className="row" style={{ gap: 8, alignItems: 'flex-start', flexWrap: 'wrap' }}>
+                <EditableLine value={d.label} editMode={editMode} style={{ fontSize: 12, minWidth: 140 }} onChange={(v) => updateScene(sci, (s) => { s.decoyHotspots[di].label = v })} />
+                <div style={{ flex: 1, minWidth: 200 }}>
+                  <EditableText value={d.text} editMode={editMode} fontSize={11} dim onChange={(v) => updateScene(sci, (s) => { s.decoyHotspots[di].text = v })} />
                 </div>
-                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-                  <Field grow label="사실 제목" value={f.title} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.facts[fi].title = v })} />
-                  <Field grow label="조사 지점 라벨 (학생이 누르는 버튼)" value={f.hotspot?.label} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.facts[fi].hotspot.label = v })} />
-                </div>
-                <Field label="사실 내용" value={f.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.facts[fi].text = v })} />
-                {f.card?.src && (
-                  <MediaSlot {...slotProps} kind={f.card.type === 'audio' ? 'audio' : 'image'} label="확대 카드 파일" fileName={f.card.src} />
-                )}
-                {f.isVariable && (
-                  <>
-                    <Field label="변수 내레이션 글" value={f.variableNarration?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.facts[fi].variableNarration.text = v })} />
-                    <MediaSlot {...slotProps} kind="audio" label="변수 내레이션 음성" fileName={f.variableNarration?.audio} />
-                  </>
-                )}
               </div>
             ))}
+          </div>
+        </>
+      )}
 
-            <div className="kicker" style={{ margin: '10px 0 2px' }}>③ 두 목소리</div>
-            {(sc.voices ?? []).map((v, vi) => (
-              <div key={v.id} className="card col" style={{ marginBottom: 0 }}>
-                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-                  <Field grow label={`동료 ${v.id} 이름`} value={v.speaker} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].speaker = val })} />
-                  <Field grow label="역할" value={v.role} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].role = val })} />
-                  <Field grow label="말투 (연기 지시)" value={v.tone} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].tone = val })} />
-                </div>
-                <Field label="대사" value={v.text} editMode={editMode} multiline onChange={(val) => updateScene(i, (s) => { s.voices[vi].text = val })} />
-                <MediaSlot {...slotProps} kind="audio" label={`동료 ${v.id} 설득 음성`} fileName={v.audio} />
-              </div>
-            ))}
+      {/* ---- ③ 두 목소리 ---- */}
+      {phase === 'voices' &&
+        (sc.voices ?? []).map((v, vi) => (
+          <div key={v.id} className="card col" style={{ borderLeft: '2px solid var(--gold)' }}>
+            <div className="row" style={{ justifyContent: 'space-between', flexWrap: 'wrap', gap: 6 }}>
+              <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>
+                <EditableLine value={v.speaker} editMode={editMode} style={{ fontSize: 13, fontWeight: 800, width: 90 }} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].speaker = val })} />
+                {' '}· <EditableLine value={v.role} editMode={editMode} style={{ fontSize: 12, fontWeight: 400 }} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].role = val })} />
+              </strong>
+              <span className="pill pill-muted">
+                <EditableLine value={v.tone} editMode={editMode} style={{ fontSize: 11 }} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].tone = val })} />
+              </span>
+            </div>
+            <MediaSlot {...slotProps} kind="audio" label={`동료 ${v.id} 설득 음성`} fileName={v.audio} />
+            <EditableText value={v.text} editMode={editMode} onChange={(val) => updateScene(sci, (s) => { s.voices[vi].text = val })} />
+          </div>
+        ))}
 
-            <div className="kicker" style={{ margin: '10px 0 2px' }}>④ 선택지와 결과 · 1년 뒤</div>
+      {/* ---- ④ 결정 ---- */}
+      {phase === 'decide' && (
+        <>
+          <div className="card col">
+            <strong style={{ fontFamily: 'var(--font-head)', fontSize: 14 }}>어떻게 하시겠습니까?</strong>
             {(sc.choices ?? []).map((c, ci) => (
-              <div key={c.id} className="card col" style={{ marginBottom: 0, borderColor: c.requires ? 'var(--gold)' : undefined }}>
-                <div className="row" style={{ gap: 6 }}>
-                  <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>선택 {c.id}</strong>
-                  {c.requires && <span className="pill pill-solid">사실 3개를 모두 찾아야 열림</span>}
+              <div key={c.id} className="row" style={{ border: '1px solid', borderColor: c.requires ? 'var(--gold)' : 'var(--line)', borderRadius: 'var(--radius)', padding: '9px 12px', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                <strong style={{ fontSize: 13 }}>{c.id}.</strong>
+                <div style={{ flex: 1, minWidth: 220 }}>
+                  <EditableText value={c.label} editMode={editMode} fontSize={13} onChange={(v) => updateScene(sci, (s) => { s.choices[ci].label = v })} />
                 </div>
-                <Field label="선택지 문구" value={c.label} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].label = v })} />
-                <Field label="결과 글" value={c.result?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.text = v })} />
-                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
-                  <Field grow label="얻은 것" value={c.result?.gained} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.gained = v })} />
-                  <Field grow label="잃은 것" value={c.result?.lost} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.lost = v })} />
-                </div>
-                <MediaSlot {...slotProps} kind="video" label="결과 영상" fileName={c.result?.video} />
-                <Field label="1년 뒤 글" value={c.epilogue?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.choices[ci].epilogue.text = v })} />
-                <MediaSlot {...slotProps} kind="video" label="1년 뒤 영상" fileName={c.epilogue?.video} />
+                {c.requires && <span className="pill pill-solid">사실 3개 해금</span>}
               </div>
             ))}
-
-            <div className="kicker" style={{ margin: '10px 0 2px' }}>⑤ 원리 공개</div>
-            <Field label="해설 (두 사람이 각각 어떤 원리로 말했는지)" value={sc.reveal?.explanation} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.reveal.explanation = v })} />
-            {sc.toneTrap?.enabled && (
-              <Field label="말투 점검 질문" value={sc.toneTrap?.question} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.toneTrap.question = v })} />
-            )}
-            <JsonField label="혼란용 조사 지점 (decoyHotspots)" value={sc.decoyHotspots} editMode={editMode} rows={5} onChange={(v) => updateScene(i, (s) => { s.decoyHotspots = v })} />
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>{ui.reasonPrompt} (이유 작성 칸이 함께 나옵니다)</p>
           </div>
-        </details>
-      ))}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>도덕 원리 — 교과서 인용문 입력</h2>
-      <div className="col" style={{ marginBottom: 20 }}>
-        {Object.entries(draft.principles ?? {}).map(([key, p]) => (
-          <div key={key} className="card col" style={{ marginBottom: 0 }}>
-            <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>
-              {p.name} ({p.thinker}) · 교과서 {p.textbookPage}쪽
-            </strong>
-            <Field label="요약" value={p.summary} editMode={editMode} multiline small onChange={(v) => updatePrinciple(key, { summary: v })} />
-            <Field label="인용문 (quote — 비워 두면 플레이 화면에 표시되지 않음)" value={p.quote} editMode={editMode} multiline small onChange={(v) => updatePrinciple(key, { quote: v })} />
+          {variableFact && (
+            <div className="card col" style={{ borderColor: 'var(--blood-light)' }}>
+              <div className="kicker" style={{ marginBottom: 2 }}>잠깐 — (변수: {variableFact.title}을 찾은 학생에게만)</div>
+              <MediaSlot {...slotProps} kind="audio" label="변수 내레이션 음성" fileName={variableFact.variableNarration?.audio} />
+              <EditableText value={variableFact.variableNarration?.text} editMode={editMode} onChange={(v) => updateScene(sci, (s) => { s.facts[vfi].variableNarration.text = v })} />
+              <div className="row">
+                <button className="primary" style={{ flex: 1, textAlign: 'left' }} disabled>결정을 유지한다</button>
+                <button style={{ flex: 1, textAlign: 'left' }} disabled>다시 생각한다</button>
+              </div>
+            </div>
+          )}
+        </>
+      )}
+
+      {/* ---- ⑤ 결과·1년 뒤 ---- */}
+      {phase === 'result' && choice && (
+        <>
+          <div className="row" style={{ gap: 6, marginBottom: 10 }}>
+            {(sc.choices ?? []).map((c) => (
+              <button
+                key={c.id}
+                onClick={() => setChoiceId(c.id)}
+                style={{ fontSize: 12, padding: '4px 12px', borderColor: choice.id === c.id ? 'var(--gold)' : undefined, background: choice.id === c.id ? 'rgba(201,162,39,.12)' : undefined }}
+              >
+                선택 {c.id}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
+          <div className="card col">
+            <div className="kicker" style={{ marginBottom: 2 }}>나의 선택 — {choice.label}</div>
+            <MediaSlot {...slotProps} kind="video" label="결과 영상" fileName={choice.result?.video} />
+            <EditableText value={choice.result?.text} editMode={editMode} onChange={(v) => updateScene(sci, (s) => { s.choices[chi].result.text = v })} />
+          </div>
+          <div className="row" style={{ alignItems: 'stretch' }}>
+            <div className="card" style={{ flex: 1, marginBottom: 0, borderColor: '#4caf7d' }}>
+              <p className="dim" style={{ margin: '0 0 4px', fontSize: 11 }}>얻은 것</p>
+              <EditableText value={choice.result?.gained} editMode={editMode} fontSize={13} onChange={(v) => updateScene(sci, (s) => { s.choices[chi].result.gained = v })} />
+            </div>
+            <div className="card" style={{ flex: 1, marginBottom: 0, borderColor: 'var(--blood-light)' }}>
+              <p className="dim" style={{ margin: '0 0 4px', fontSize: 11 }}>잃은 것</p>
+              <EditableText value={choice.result?.lost} editMode={editMode} fontSize={13} onChange={(v) => updateScene(sci, (s) => { s.choices[chi].result.lost = v })} />
+            </div>
+          </div>
+          <div className="card col" style={{ marginTop: 12 }}>
+            <div className="kicker" style={{ marginBottom: 2 }}>{ui.epilogueTitle ?? '1년 뒤'}</div>
+            <MediaSlot {...slotProps} kind="video" label="1년 뒤 영상" fileName={choice.epilogue?.video} />
+            <EditableText value={choice.epilogue?.text} editMode={editMode} onChange={(v) => updateScene(sci, (s) => { s.choices[chi].epilogue.text = v })} />
+          </div>
+        </>
+      )}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        {(draft.reflectionPrompts ?? []).map((prompt, i) => (
-          <Field key={i} label={`질문 ${i + 1}`} value={prompt} editMode={editMode} multiline small onChange={(v) => updateReflectionPrompt(i, v)} />
-        ))}
-      </div>
+      {/* ---- ⑥ 원리 공개 ---- */}
+      {phase === 'reveal' && (
+        <>
+          <div className="card col" style={{ borderLeft: '2px solid var(--gold)' }}>
+            <div className="kicker" style={{ marginBottom: 2 }}>해설 (원리 맞히기 뒤에 보입니다)</div>
+            <EditableText value={sc.reveal?.explanation} editMode={editMode} fontSize={13} onChange={(v) => updateScene(sci, (s) => { s.reveal.explanation = v })} />
+          </div>
+          {['A', 'B'].map((side) => {
+            const key = sc.reveal?.answer?.[side]
+            const p = draft.principles?.[key]
+            if (!p) return null
+            const voice = sc.voices?.find((v) => v.id === side)
+            return (
+              <div key={side} className="card col" style={{ gap: 4 }}>
+                <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>
+                  {voice?.speaker} → {p.name} ({p.thinker}) · 교과서 {p.textbookPage}쪽
+                </strong>
+                <EditableText value={p.summary} editMode={editMode} fontSize={12} dim onChange={(v) => updatePrinciple(key, { summary: v })} />
+                <p className="dim" style={{ margin: '4px 0 0', fontSize: 11 }}>교과서 인용문 (비워 두면 표시되지 않음):</p>
+                <EditableText value={p.quote} editMode={editMode} fontSize={12} placeholder="교과서 인용문을 입력하세요" onChange={(v) => updatePrinciple(key, { quote: v })} />
+              </div>
+            )
+          })}
+          {sc.toneTrap?.enabled && (
+            <div className="card col">
+              <div className="kicker" style={{ marginBottom: 2 }}>말투 점검</div>
+              <EditableText value={sc.toneTrap?.question} editMode={editMode} fontSize={13} onChange={(v) => updateScene(sci, (s) => { s.toneTrap.question = v })} />
+              <div className="row" style={{ flexWrap: 'wrap', gap: 8 }}>
+                {(sc.toneTrap?.options ?? []).map((opt) => (
+                  <button key={opt} disabled style={{ fontSize: 13 }}>{opt}</button>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>세부 설정 (JSON)</h2>
-      <div className="card col" style={{ marginBottom: 24 }}>
-        <JsonField label="진행 설정 (settings)" value={draft.settings} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, settings: v })} />
-        <JsonField label="화면 문구 (ui)" value={draft.ui} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ui: v })} />
-        <JsonField label="마무리 (ending — 결과 화면·타당성 검사·진로 연계)" value={draft.ending} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ending: v })} />
-      </div>
+      {nextLabel && (
+        <button className="primary" onClick={nextPhase} style={{ width: '100%', textAlign: 'left', marginTop: 4 }}>
+          {nextLabel}
+        </button>
+      )}
+
+      <hr className="divider" style={{ margin: '22px 0 14px' }} />
+
+      {/* 플레이 화면 밖의 정보는 아래에 접어 둔다 */}
+      <details className="card" style={{ marginBottom: 12 }}>
+        <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>시나리오 정보 (제목·소개·태그)</summary>
+        <div className="col" style={{ marginTop: 12 }}>
+          <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+            <Field grow label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
+            <Field grow label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
+          </div>
+          <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+            <Field grow label="단원명" value={draft.meta?.unit} editMode={editMode} onChange={(v) => updateMeta({ unit: v })} />
+            <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
+            <Field grow label="예상 소요시간(분)" value={draft.meta?.estimatedMinutes} editMode={editMode} onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })} />
+          </div>
+          <Field label="게임 소개" value={draft.description} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, description: v })} />
+          <Field
+            label="테마 태그 (쉼표로 구분)"
+            value={draft.meta?.themes?.join(', ')}
+            editMode={editMode}
+            onChange={(v) => updateMeta({ themes: v.split(',').map((t) => t.trim()).filter(Boolean) })}
+          />
+        </div>
+      </details>
+
+      <details className="card" style={{ marginBottom: 12 }}>
+        <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>성찰 질문 {draft.reflectionPrompts?.length ?? 0}개</summary>
+        <div className="col" style={{ marginTop: 12 }}>
+          {(draft.reflectionPrompts ?? []).map((prompt, i) => (
+            <Field key={i} label={`질문 ${i + 1}`} value={prompt} editMode={editMode} multiline small onChange={(v) => updateReflectionPrompt(i, v)} />
+          ))}
+        </div>
+      </details>
+
+      <details className="card" style={{ marginBottom: 24 }}>
+        <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 14 }}>세부 설정 (JSON)</summary>
+        <div className="col" style={{ marginTop: 12 }}>
+          <JsonField label="진행 설정 (settings)" value={draft.settings} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, settings: v })} />
+          <JsonField label="화면 문구 (ui)" value={draft.ui} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ui: v })} />
+          <JsonField label="마무리 (ending — 결과 화면·타당성 검사·진로 연계)" value={draft.ending} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ending: v })} />
+        </div>
+      </details>
     </div>
   )
+}
+
+// 편집기에서 조사 지점 배치를 플레이와 비슷하게 보여 주기 위한 목록 (섞지 않고 순서대로).
+function buildMissedSpots(scene) {
+  return [
+    ...(scene.facts ?? []).map((f) => ({ id: f.id, kind: 'fact', label: f.hotspot?.label ?? f.title })),
+    ...(scene.decoyHotspots ?? []).map((d, i) => ({ id: d.id ?? `decoy_${i}`, kind: 'decoy', label: d.label })),
+  ]
 }
 
 function EditorInner({ scenarioId }) {
