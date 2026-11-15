@@ -14,6 +14,7 @@ import TanmunPlayPage from './pages/TanmunPlayPage.jsx'
 import MysteryIntroPage from './mysteryroom/pages/MysteryIntroPage.jsx'
 import MysteryRoomPage from './mysteryroom/pages/MysteryRoomPage.jsx'
 import MysteryRoomEditor from './mysteryroom/admin/MysteryRoomEditor.jsx'
+import MissedScenePlayPage from './pages/MissedScenePlayPage.jsx'
 
 export default function App() {
   return (
@@ -33,6 +34,7 @@ export default function App() {
       <Route path="/tanmun/:scenarioId" element={<TanmunPlayPage />} />
       <Route path="/mystery/:scenarioId" element={<MysteryIntroPage />} />
       <Route path="/mystery/:scenarioId/:code" element={<MysteryRoomPage />} />
+      <Route path="/missedscene/:scenarioId" element={<MissedScenePlayPage />} />
     </Routes>
   )
 }

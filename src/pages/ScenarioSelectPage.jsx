@@ -13,10 +13,11 @@ const TANMUN_KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
 function ScenarioCard({ s, index }) {
   const isTanmun = s.contentType === 'tanmun'
   const isMystery = s.contentType === 'mysteryroom'
+  const isMissedScene = s.contentType === 'missedscene'
   const counts = s.supportedPlayerCounts ?? []
   return (
     <Link
-      to={isTanmun ? `/tanmun/${s.scenarioId}` : isMystery ? `/mystery/${s.scenarioId}${isLocalMode() ? '?local=1' : ''}` : `/scenario/${s.scenarioId}`}
+      to={isTanmun ? `/tanmun/${s.scenarioId}` : isMystery ? `/mystery/${s.scenarioId}${isLocalMode() ? '?local=1' : ''}` : isMissedScene ? `/missedscene/${s.scenarioId}` : `/scenario/${s.scenarioId}`}
       style={{ textDecoration: 'none', color: 'inherit' }}
     >
       <div className="card" style={{ padding: 0, overflow: 'hidden', cursor: 'pointer' }}>
@@ -53,7 +54,7 @@ function ScenarioCard({ s, index }) {
             </span>
             <span className="stat-chip">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /></svg>
-              {isTanmun ? '1인' : isMystery ? `${Math.min(...counts)}~${Math.max(...counts)}인` : `${s.supportedPlayerCounts?.join('~')}인`}
+              {isTanmun || isMissedScene ? '1인' : isMystery ? `${Math.min(...counts)}~${Math.max(...counts)}인` : `${s.supportedPlayerCounts?.join('~')}인`}
             </span>
           </div>
           <div className="row" style={{ marginTop: 4 }}>
@@ -73,7 +74,7 @@ function ScenarioCard({ s, index }) {
 export default function ScenarioSelectPage() {
   const [scenarios, setScenarios] = useState(null)
   const [error, setError] = useState(null)
-  const [tab, setTab] = useState('murder') // 'murder' | 'tanmun' | 'mysteryroom'
+  const [tab, setTab] = useState('murder') // 'murder' | 'tanmun' | 'mysteryroom' | 'missedscene'
   const siteConfig = useSiteConfig()
   const heroSrc = siteConfig?.mainImageDataUrl || `${import.meta.env.BASE_URL}hero-main.webp`
 
@@ -82,7 +83,7 @@ export default function ScenarioSelectPage() {
     ;(isLocalMode() ? loadLocalRegistry() : loadRegistry()).then(setScenarios).catch(setError)
   }, [])
 
-  const visible = scenarios?.filter((s) => !s.hidden && (tab === 'murder' ? !['tanmun', 'mysteryroom'].includes(s.contentType) : s.contentType === tab))
+  const visible = scenarios?.filter((s) => !s.hidden && (tab === 'murder' ? !['tanmun', 'mysteryroom', 'missedscene'].includes(s.contentType) : s.contentType === tab))
 
   return (
     <div className="page-wide">
@@ -109,12 +110,15 @@ export default function ScenarioSelectPage() {
         <button className={`tab-button ${tab === 'mysteryroom' ? 'active' : ''}`} onClick={() => setTab('mysteryroom')}>
           미스터리 룸
         </button>
+        <button className={`tab-button ${tab === 'missedscene' ? 'active' : ''}`} onClick={() => setTab('missedscene')}>
+          놓친 장면
+        </button>
       </div>
 
       <div className="row" style={{ marginBottom: 18 }}>
         <div style={{ width: 4, height: 20, background: 'var(--gold)', borderRadius: 2 }} />
         <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 20, margin: 0 }}>
-          {{ murder: '머더미스터리', tanmun: '탐문 수사', mysteryroom: '미스터리 룸' }[tab]}
+          {{ murder: '머더미스터리', tanmun: '탐문 수사', mysteryroom: '미스터리 룸', missedscene: '놓친 장면' }[tab]}
         </h2>
       </div>
 
@@ -143,11 +147,26 @@ export default function ScenarioSelectPage() {
         </p>
       )}
 
+      {tab === 'missedscene' && (
+        <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
+          영상을 멈추고 되감으며 숨은 사실을 찾고, 찾은 만큼만 알고 판단하는 1인용 영상 추리입니다.
+          두 동료의 설득을 듣고 결정하면, 선택에 따라 1년 뒤가 달라집니다.
+        </p>
+      )}
+
       {error && <div className="card">시나리오 목록을 불러오지 못했습니다.</div>}
       {!scenarios && !error && <div className="dim">불러오는 중...</div>}
       {visible && visible.length === 0 && (
         <div className="card">
-          <p style={{ margin: 0 }}>{tab === 'tanmun' ? '탐문 수사 시나리오를 준비 중이에요. 곧 만나볼 수 있습니다.' : tab === 'mysteryroom' ? '미스터리 룸을 준비 중이에요. 곧 만나볼 수 있습니다.' : '아직 등록된 시나리오가 없어요.'}</p>
+          <p style={{ margin: 0 }}>
+            {tab === 'tanmun'
+              ? '탐문 수사 시나리오를 준비 중이에요. 곧 만나볼 수 있습니다.'
+              : tab === 'mysteryroom'
+                ? '미스터리 룸을 준비 중이에요. 곧 만나볼 수 있습니다.'
+                : tab === 'missedscene'
+                  ? '놓친 장면 에피소드를 준비 중이에요. 곧 만나볼 수 있습니다.'
+                  : '아직 등록된 시나리오가 없어요.'}
+          </p>
         </div>
       )}
 

@@ -526,6 +526,89 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
   )
 }
 
+// 놓친 장면(1인 영상 추리)도 데이터 구조가 완전히 달라 전용 편집기로 분기한다.
+// 장면(scenes)은 중첩이 깊어 전용 폼 대신 JSON 편집으로 커버한다.
+function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChange, onSave, busy, saved, error }) {
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
+  const updateMeta = (patch) => onChange({ ...draft, meta: { ...draft.meta, ...patch } })
+  const updateReflectionPrompt = (index, value) => {
+    const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
+    onChange({ ...draft, reflectionPrompts })
+  }
+
+  return (
+    <div className="page-wide">
+      <Masthead showBack />
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center', marginBottom: 4 }}>
+        <h1 className="page-title" style={{ margin: 0 }}>{draft.meta?.title ?? draft.scenarioId} — 놓친 장면 편집</h1>
+        <div className="row" style={{ gap: 10 }}>
+          <label className="row" style={{ fontSize: 13, gap: 4 }}>
+            <input type="checkbox" checked={editMode} onChange={(e) => setEditMode(e.target.checked)} />
+            편집 모드
+          </label>
+          <button className="primary" onClick={onSave} disabled={!isDirty || busy}>
+            {busy ? '저장 중...' : saved ? '저장됨' : '변경사항 저장'}
+          </button>
+        </div>
+      </div>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>시나리오 정보</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <Field grow label="제목" value={draft.meta?.title} editMode={editMode} onChange={(v) => updateMeta({ title: v })} />
+          <Field grow label="부제목" value={draft.meta?.subtitle} editMode={editMode} onChange={(v) => updateMeta({ subtitle: v })} />
+        </div>
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <Field grow label="단원명" value={draft.meta?.unit} editMode={editMode} onChange={(v) => updateMeta({ unit: v })} />
+          <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
+          <Field grow label="예상 소요시간(분)" value={draft.meta?.estimatedMinutes} editMode={editMode} onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })} />
+        </div>
+        <Field label="학습 목표" value={draft.meta?.learningObjective} editMode={editMode} multiline onChange={(v) => updateMeta({ learningObjective: v })} />
+        <Field label="게임 소개" value={draft.description} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, description: v })} />
+        <Field
+          label="테마 태그 (쉼표로 구분)"
+          value={draft.meta?.themes?.join(', ')}
+          editMode={editMode}
+          onChange={(v) => updateMeta({ themes: v.split(',').map((t) => t.trim()).filter(Boolean) })}
+        />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>진행 설정 (지목 횟수 · 미디어 경로 등)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.settings} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, settings: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>화면 문구 (UI)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.ui} editMode={editMode} rows={12} onChange={(v) => onChange({ ...draft, ui: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>도덕 원리 (인용문은 quote에 입력)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.principles} editMode={editMode} rows={14} onChange={(v) => onChange({ ...draft, principles: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>장면 {draft.scenes?.length ?? 0}개 (핫스팟 시간·좌표는 영상 완성 후 입력)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.scenes} editMode={editMode} rows={24} onChange={(v) => onChange({ ...draft, scenes: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>마무리 (결과 화면 · 타당성 검사 · 진로 연계)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField value={draft.ending} editMode={editMode} rows={14} onChange={(v) => onChange({ ...draft, ending: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
+      <div className="card col" style={{ marginBottom: 24 }}>
+        {(draft.reflectionPrompts ?? []).map((prompt, i) => (
+          <Field key={i} label={`질문 ${i + 1}`} value={prompt} editMode={editMode} multiline small onChange={(v) => updateReflectionPrompt(i, v)} />
+        ))}
+      </div>
+    </div>
+  )
+}
+
 function EditorInner({ scenarioId }) {
   const navigate = useNavigate()
   const [original, setOriginal] = useState(null)
@@ -616,6 +699,22 @@ function EditorInner({ scenarioId }) {
   if (draft.contentType === 'tanmun') {
     return (
       <TanmunEditorView
+        draft={draft}
+        original={original}
+        editMode={editMode}
+        setEditMode={setEditMode}
+        onChange={(next) => { setDraft(next); setSaved(false) }}
+        onSave={handleSave}
+        busy={busy}
+        saved={saved}
+        error={error}
+      />
+    )
+  }
+
+  if (draft.contentType === 'missedscene') {
+    return (
+      <MissedSceneEditorView
         draft={draft}
         original={original}
         editMode={editMode}
