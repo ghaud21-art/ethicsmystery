@@ -149,8 +149,9 @@ export default function ScenarioSelectPage() {
 
       {tab === 'missedscene' && (
         <p className="dim" style={{ fontSize: 13, lineHeight: 1.7, marginBottom: 16 }}>
-          영상을 멈추고 되감으며 숨은 사실을 찾고, 찾은 만큼만 알고 판단하는 1인용 영상 추리입니다.
-          두 동료의 설득을 듣고 결정하면, 선택에 따라 1년 뒤가 달라집니다.
+          짧은 영상 속 상황을 직접 겪어 보는 1인용 선택 게임입니다. 장면 곳곳에 숨은 사실이 있고,
+          찾은 만큼만 알고 결정하게 됩니다. 어떤 선택에도 얻는 것과 잃는 것이 있으며, 결정의 결과를
+          끝까지 지켜본 뒤 내 판단이 어떤 도덕 원리에서 나왔는지 돌아봅니다.
         </p>
       )}
 

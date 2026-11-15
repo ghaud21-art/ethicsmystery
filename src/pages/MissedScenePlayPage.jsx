@@ -81,7 +81,8 @@ function MissedSceneInner({ scenario }) {
   const inspectLimit = getInspectLimit(scenario)
   const reasonMax = getReasonMaxLength(scenario)
   const mediaBase = (scenario.settings?.mediaBasePath ?? '').replace(/^\//, '')
-  const mediaUrl = (file) => (file ? `${import.meta.env.BASE_URL}${mediaBase}${file}` : null)
+  // 관리자가 편집 화면에서 올린 파일(mediaUrls)이 우선, 없으면 public 폴더의 정적 경로.
+  const mediaUrl = (file) => (file ? scenario.mediaUrls?.[file] ?? `${import.meta.env.BASE_URL}${mediaBase}${file}` : null)
 
   const [run, setRunState] = useState(() => getMissedSceneRun(scenarioId))
   const [nickname, setNickname] = useState('')

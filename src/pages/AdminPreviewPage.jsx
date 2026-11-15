@@ -2,7 +2,8 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
-import { getScenario, saveScenario } from '../firebase/scenariosApi.js'
+import { getScenario, saveScenario, updateScenarioFields } from '../firebase/scenariosApi.js'
+import { uploadScenarioMedia, deleteScenarioMedia } from '../firebase/mediaApi.js'
 import { evaluateEndings } from '../engine/endingEvaluator.js'
 import { computeSoloMetrics, evaluateSoloEnding } from '../engine/soloEndingEvaluator.js'
 import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
@@ -526,8 +527,87 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
   )
 }
 
-// 놓친 장면(1인 영상 추리)도 데이터 구조가 완전히 달라 전용 편집기로 분기한다.
-// 장면(scenes)은 중첩이 깊어 전용 폼 대신 JSON 편집으로 커버한다.
+// 놓친 장면 미디어 슬롯 — 시나리오 JSON의 파일명 하나당 업로드 칸 하나.
+// 업로드 즉시 Storage에 올리고 Firestore mediaUrls에 반영하므로, '변경사항 저장'을
+// 누르지 않아도 올린 파일은 사라지지 않는다.
+function MediaSlot({ scenarioId, fileName, kind, label, mediaUrls, onUrlChange }) {
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState(null)
+  const [preview, setPreview] = useState(false)
+  if (!fileName) return null
+  const url = mediaUrls?.[fileName]
+  const accept = kind === 'video' ? 'video/*' : kind === 'audio' ? 'audio/*' : 'image/*'
+
+  const handleFile = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setBusy(true)
+    setError(null)
+    try {
+      const newUrl = await uploadScenarioMedia(scenarioId, fileName, file)
+      await onUrlChange(fileName, newUrl)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+      e.target.value = ''
+    }
+  }
+
+  const handleDelete = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      await deleteScenarioMedia(scenarioId, fileName)
+      await onUrlChange(fileName, null)
+      setPreview(false)
+    } catch (err) {
+      setError(err.message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <div style={{ marginBottom: 8 }}>
+      <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+        <span className={`pill ${url ? 'pill-solid' : 'pill-muted'}`}>{label}</span>
+        <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{fileName}</code>
+        {url ? (
+          <>
+            <button onClick={() => setPreview((v) => !v)} style={{ fontSize: 11, padding: '3px 8px' }}>
+              {preview ? '미리보기 닫기' : '미리보기'}
+            </button>
+            <label className="row" style={{ fontSize: 11, gap: 4 }}>
+              <span className="dim">교체:</span>
+              <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
+            </label>
+            <button onClick={handleDelete} disabled={busy} style={{ fontSize: 11, padding: '3px 8px', color: 'var(--blood-light)' }}>
+              삭제
+            </button>
+          </>
+        ) : (
+          <input type="file" accept={accept} onChange={handleFile} disabled={busy} style={{ fontSize: 11 }} />
+        )}
+        {busy && <span style={{ fontSize: 11, color: 'var(--gold-light)' }}>업로드 중...</span>}
+      </div>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 11, margin: '4px 0 0' }}>{error}</p>}
+      {url && preview && (
+        kind === 'video' ? (
+          <video controls src={url} style={{ width: '100%', maxWidth: 480, marginTop: 6, borderRadius: 6, background: '#000' }} />
+        ) : kind === 'audio' ? (
+          <audio controls src={url} style={{ width: '100%', maxWidth: 480, marginTop: 6, display: 'block' }} />
+        ) : (
+          <img src={url} alt="" style={{ width: '100%', maxWidth: 320, marginTop: 6, borderRadius: 6, display: 'block' }} />
+        )
+      )}
+    </div>
+  )
+}
+
+// 놓친 장면(1인 영상 추리) 전용 플레이형 편집기 — 학생이 보는 흐름(도입 → 조사 →
+// 두 목소리 → 선택 → 결과 → 1년 뒤 → 원리 공개) 순서대로 모든 글을 고치고,
+// 각 미디어 슬롯에 영상·음성·이미지를 바로 업로드한다.
 function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChange, onSave, busy, saved, error }) {
   const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
   const updateMeta = (patch) => onChange({ ...draft, meta: { ...draft.meta, ...patch } })
@@ -535,6 +615,35 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
     const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
     onChange({ ...draft, reflectionPrompts })
   }
+
+  const mediaUrls = draft.mediaUrls ?? {}
+  const uploadedCount = Object.keys(mediaUrls).length
+
+  // 업로드/삭제 즉시 Firestore 문서에 반영한다 — '변경사항 저장'을 잊어도 URL이 남도록.
+  const handleMediaUrlChange = async (fileName, url) => {
+    const next = { ...mediaUrls }
+    if (url) next[fileName] = url
+    else delete next[fileName]
+    await updateScenarioFields(draft.scenarioId, { mediaUrls: next })
+    onChange({ ...draft, mediaUrls: next })
+  }
+
+  // 깊이 중첩된 장면 데이터는 복사 후 콜백으로 고친다.
+  const updateScene = (idx, mutate) => {
+    const scenes = draft.scenes.map((s, i) => {
+      if (i !== idx) return s
+      const copy = JSON.parse(JSON.stringify(s))
+      mutate(copy)
+      return copy
+    })
+    onChange({ ...draft, scenes })
+  }
+
+  const updatePrinciple = (key, patch) =>
+    onChange({ ...draft, principles: { ...draft.principles, [key]: { ...draft.principles[key], ...patch } } })
+
+  const slotProps = { scenarioId: draft.scenarioId, mediaUrls, onUrlChange: handleMediaUrlChange }
+  const scenes = [...(draft.scenes ?? [])].sort((a, b) => a.order - b.order)
 
   return (
     <div className="page-wide">
@@ -551,6 +660,16 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
           </button>
         </div>
       </div>
+      <p className="dim" style={{ marginBottom: 6, fontSize: 12 }}>
+        글을 고친 뒤에는 <strong>변경사항 저장</strong>을 눌러야 반영됩니다. 미디어 업로드는 누르는 즉시 저장돼요
+        (현재 업로드된 파일 <strong style={{ color: 'var(--gold-light)' }}>{uploadedCount}개</strong>).
+        파일이 없는 슬롯은 플레이 화면에서 글만 보이는 텍스트 모드로 동작합니다.
+      </p>
+      <p style={{ marginBottom: 16, fontSize: 12 }}>
+        <a href={`${window.location.origin}${window.location.pathname}#/missedscene/${draft.scenarioId}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-light)' }}>
+          실제 플레이 화면 새 탭에서 열기 →
+        </a>
+      </p>
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
 
       <h2 className="page-title" style={{ fontSize: 18 }}>시나리오 정보</h2>
@@ -564,7 +683,6 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
           <Field grow label="난이도" value={draft.difficulty} editMode={editMode} onChange={(v) => onChange({ ...draft, difficulty: v })} />
           <Field grow label="예상 소요시간(분)" value={draft.meta?.estimatedMinutes} editMode={editMode} onChange={(v) => updateMeta({ estimatedMinutes: Number(v) || 0 })} />
         </div>
-        <Field label="학습 목표" value={draft.meta?.learningObjective} editMode={editMode} multiline onChange={(v) => updateMeta({ learningObjective: v })} />
         <Field label="게임 소개" value={draft.description} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, description: v })} />
         <Field
           label="테마 태그 (쉼표로 구분)"
@@ -574,36 +692,116 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
         />
       </div>
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>진행 설정 (지목 횟수 · 미디어 경로 등)</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <JsonField value={draft.settings} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, settings: v })} />
-      </div>
+      <h2 className="page-title" style={{ fontSize: 18 }}>장면 {scenes.length}개 — 학생이 보는 순서대로</h2>
+      {scenes.map((sc, i) => (
+        <details key={sc.id} className="card" style={{ marginBottom: 14 }} open={i === 0}>
+          <summary style={{ cursor: 'pointer', fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 15 }}>
+            장면 {sc.order} · {sc.job} — {sc.title}
+          </summary>
+          <div className="col" style={{ marginTop: 14 }}>
+            <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+              <Field grow label="직업" value={sc.job} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.job = v })} />
+              <Field grow label="장면 제목" value={sc.title} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.title = v })} />
+            </div>
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>화면 문구 (UI)</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <JsonField value={draft.ui} editMode={editMode} rows={12} onChange={(v) => onChange({ ...draft, ui: v })} />
-      </div>
+            <div className="kicker" style={{ marginBottom: 2 }}>① 도입</div>
+            <Field label="도입 글 (영상 아래에 함께 표시)" value={sc.intro?.text} editMode={editMode} multiline onChange={(v) => updateScene(i, (s) => { s.intro.text = v })} />
+            <MediaSlot {...slotProps} kind="video" label="도입 영상" fileName={sc.intro?.video} />
+            <MediaSlot {...slotProps} kind="image" label="포스터(영상 썸네일)" fileName={sc.intro?.poster} />
+            <MediaSlot {...slotProps} kind="audio" label="도입 내레이션 음성" fileName={sc.intro?.narrationAudio} />
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>도덕 원리 (인용문은 quote에 입력)</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <JsonField value={draft.principles} editMode={editMode} rows={14} onChange={(v) => onChange({ ...draft, principles: v })} />
-      </div>
+            <div className="kicker" style={{ margin: '10px 0 2px' }}>② 숨은 사실 {sc.facts?.length ?? 0}개</div>
+            {(sc.facts ?? []).map((f, fi) => (
+              <div key={f.id} className="card col" style={{ marginBottom: 0, borderColor: f.isVariable ? 'var(--blood-light)' : undefined }}>
+                <div className="row" style={{ gap: 6 }}>
+                  <code style={{ fontSize: 11, color: 'var(--ink-dim)' }}>{f.id}</code>
+                  <span className="pill pill-muted">{f.level}</span>
+                  {f.isVariable && <span className="pill pill-solid">변수 (결정 직전 한 번 더 묻는 사실)</span>}
+                </div>
+                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+                  <Field grow label="사실 제목" value={f.title} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.facts[fi].title = v })} />
+                  <Field grow label="조사 지점 라벨 (학생이 누르는 버튼)" value={f.hotspot?.label} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.facts[fi].hotspot.label = v })} />
+                </div>
+                <Field label="사실 내용" value={f.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.facts[fi].text = v })} />
+                {f.card?.src && (
+                  <MediaSlot {...slotProps} kind={f.card.type === 'audio' ? 'audio' : 'image'} label="확대 카드 파일" fileName={f.card.src} />
+                )}
+                {f.isVariable && (
+                  <>
+                    <Field label="변수 내레이션 글" value={f.variableNarration?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.facts[fi].variableNarration.text = v })} />
+                    <MediaSlot {...slotProps} kind="audio" label="변수 내레이션 음성" fileName={f.variableNarration?.audio} />
+                  </>
+                )}
+              </div>
+            ))}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>장면 {draft.scenes?.length ?? 0}개 (핫스팟 시간·좌표는 영상 완성 후 입력)</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <JsonField value={draft.scenes} editMode={editMode} rows={24} onChange={(v) => onChange({ ...draft, scenes: v })} />
-      </div>
+            <div className="kicker" style={{ margin: '10px 0 2px' }}>③ 두 목소리</div>
+            {(sc.voices ?? []).map((v, vi) => (
+              <div key={v.id} className="card col" style={{ marginBottom: 0 }}>
+                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+                  <Field grow label={`동료 ${v.id} 이름`} value={v.speaker} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].speaker = val })} />
+                  <Field grow label="역할" value={v.role} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].role = val })} />
+                  <Field grow label="말투 (연기 지시)" value={v.tone} editMode={editMode} onChange={(val) => updateScene(i, (s) => { s.voices[vi].tone = val })} />
+                </div>
+                <Field label="대사" value={v.text} editMode={editMode} multiline onChange={(val) => updateScene(i, (s) => { s.voices[vi].text = val })} />
+                <MediaSlot {...slotProps} kind="audio" label={`동료 ${v.id} 설득 음성`} fileName={v.audio} />
+              </div>
+            ))}
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>마무리 (결과 화면 · 타당성 검사 · 진로 연계)</h2>
-      <div className="card col" style={{ marginBottom: 20 }}>
-        <JsonField value={draft.ending} editMode={editMode} rows={14} onChange={(v) => onChange({ ...draft, ending: v })} />
+            <div className="kicker" style={{ margin: '10px 0 2px' }}>④ 선택지와 결과 · 1년 뒤</div>
+            {(sc.choices ?? []).map((c, ci) => (
+              <div key={c.id} className="card col" style={{ marginBottom: 0, borderColor: c.requires ? 'var(--gold)' : undefined }}>
+                <div className="row" style={{ gap: 6 }}>
+                  <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>선택 {c.id}</strong>
+                  {c.requires && <span className="pill pill-solid">사실 3개를 모두 찾아야 열림</span>}
+                </div>
+                <Field label="선택지 문구" value={c.label} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].label = v })} />
+                <Field label="결과 글" value={c.result?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.text = v })} />
+                <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+                  <Field grow label="얻은 것" value={c.result?.gained} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.gained = v })} />
+                  <Field grow label="잃은 것" value={c.result?.lost} editMode={editMode} onChange={(v) => updateScene(i, (s) => { s.choices[ci].result.lost = v })} />
+                </div>
+                <MediaSlot {...slotProps} kind="video" label="결과 영상" fileName={c.result?.video} />
+                <Field label="1년 뒤 글" value={c.epilogue?.text} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.choices[ci].epilogue.text = v })} />
+                <MediaSlot {...slotProps} kind="video" label="1년 뒤 영상" fileName={c.epilogue?.video} />
+              </div>
+            ))}
+
+            <div className="kicker" style={{ margin: '10px 0 2px' }}>⑤ 원리 공개</div>
+            <Field label="해설 (두 사람이 각각 어떤 원리로 말했는지)" value={sc.reveal?.explanation} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.reveal.explanation = v })} />
+            {sc.toneTrap?.enabled && (
+              <Field label="말투 점검 질문" value={sc.toneTrap?.question} editMode={editMode} multiline small onChange={(v) => updateScene(i, (s) => { s.toneTrap.question = v })} />
+            )}
+            <JsonField label="혼란용 조사 지점 (decoyHotspots)" value={sc.decoyHotspots} editMode={editMode} rows={5} onChange={(v) => updateScene(i, (s) => { s.decoyHotspots = v })} />
+          </div>
+        </details>
+      ))}
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>도덕 원리 — 교과서 인용문 입력</h2>
+      <div className="col" style={{ marginBottom: 20 }}>
+        {Object.entries(draft.principles ?? {}).map(([key, p]) => (
+          <div key={key} className="card col" style={{ marginBottom: 0 }}>
+            <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>
+              {p.name} ({p.thinker}) · 교과서 {p.textbookPage}쪽
+            </strong>
+            <Field label="요약" value={p.summary} editMode={editMode} multiline small onChange={(v) => updatePrinciple(key, { summary: v })} />
+            <Field label="인용문 (quote — 비워 두면 플레이 화면에 표시되지 않음)" value={p.quote} editMode={editMode} multiline small onChange={(v) => updatePrinciple(key, { quote: v })} />
+          </div>
+        ))}
       </div>
 
       <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>
-      <div className="card col" style={{ marginBottom: 24 }}>
+      <div className="card col" style={{ marginBottom: 20 }}>
         {(draft.reflectionPrompts ?? []).map((prompt, i) => (
           <Field key={i} label={`질문 ${i + 1}`} value={prompt} editMode={editMode} multiline small onChange={(v) => updateReflectionPrompt(i, v)} />
         ))}
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>세부 설정 (JSON)</h2>
+      <div className="card col" style={{ marginBottom: 24 }}>
+        <JsonField label="진행 설정 (settings)" value={draft.settings} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, settings: v })} />
+        <JsonField label="화면 문구 (ui)" value={draft.ui} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ui: v })} />
+        <JsonField label="마무리 (ending — 결과 화면·타당성 검사·진로 연계)" value={draft.ending} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, ending: v })} />
       </div>
     </div>
   )
