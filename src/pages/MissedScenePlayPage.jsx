@@ -11,6 +11,7 @@ import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newMissedSceneRun, newSceneRecord, saveMissedSceneRun, getMissedSceneRun, clearMissedSceneRun,
   getInspectLimit, getReasonMaxLength, isChoiceUnlocked, findChoice, findVariableFact, buildInspectSpots, spotCenter,
+  getInspectMode, hitSpot,
 } from '../utils/missedSceneRun.js'
 
 const KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
@@ -57,15 +58,16 @@ function Media({ kind, src, poster }) {
 }
 
 // 영상·이미지 위에 띄우는 돋보기 마커 — 편집 화면에서 좌표를 찍은 조사 지점만 이걸로 나온다.
-function SpotMarker({ spot, inspected, isFact, disabled, onClick }) {
+function SpotMarker({ spot, inspected, isFact, disabled, onClick, passive }) {
   const c = spotCenter(spot)
   if (!c) return null
   return (
     <button
       onClick={onClick}
-      disabled={disabled && !inspected}
+      disabled={passive || (disabled && !inspected)}
       title={inspected ? spot.label : '조사하기'}
       style={{
+        pointerEvents: passive ? 'none' : undefined,
         position: 'absolute', left: `${c.cx * 100}%`, top: `${c.cy * 100}%`,
         transform: 'translate(-50%, -50%)', width: 34, height: 34, borderRadius: '50%', padding: 0,
         display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -119,6 +121,7 @@ function MissedSceneInner({ scenario }) {
 
   // 단계별 입력의 임시 상태 — 확정 시 run.records에 저장된다
   const [selectedChoice, setSelectedChoice] = useState(null)
+  const [inspectMsg, setInspectMsg] = useState(null) // 자유 클릭 모드에서 빗나갔을 때의 안내
   const [reason, setReason] = useState('')
   const [guess, setGuess] = useState({ A: null, B: null })
   const [revealSubmitted, setRevealSubmitted] = useState(false)
@@ -160,6 +163,7 @@ function MissedSceneInner({ scenario }) {
     setReason(r.reason ?? '')
     setGuess(r.revealGuess ?? { A: null, B: null })
     setRevealSubmitted(!!r.revealGuess)
+    setInspectMsg(null)
     window.scrollTo({ top: 0 })
   }, [run?.sceneIndex, run?.phase, run?.step]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -543,40 +547,95 @@ function MissedSceneInner({ scenario }) {
       {run.phase === 'inspect' && (
         <>
           {(() => {
-            // 편집 화면에서 좌표를 찍은 지점은 영상/이미지 위의 돋보기로, 나머지는 글 버튼으로.
-            // 돋보기 모드는 실제로 업로드된 영상·포스터가 있을 때만 켠다.
+            // 편집 화면에서 좌표를 찍은 지점은 영상/이미지 위에서 조사한다. 나머지는 글 버튼.
+            // 조사 모드: 'freeclick'(기본) — 힌트 없이 직접 클릭, 빗나가면 지목만 소모.
+            //           'marker' — 돋보기 버튼을 보여 주고 그중에서 고르게 한다.
             const visualFile = [scene.intro?.video, scene.intro?.poster].find((f) => f && scenario.mediaUrls?.[f])
-            const markerSpots = visualFile ? spots.filter((s) => spotCenter(s)) : []
-            const markerIds = new Set(markerSpots.map((s) => s.id))
-            const buttonSpots = spots.filter((s) => !markerIds.has(s.id))
+            const coordSpots = visualFile ? spots.filter((s) => spotCenter(s)) : []
+            const coordIds = new Set(coordSpots.map((s) => s.id))
+            const buttonSpots = spots.filter((s) => !coordIds.has(s.id))
+            const inspectMode = getInspectMode(scenario)
+            const isVideo = visualFile === scene.intro?.video
+            const limitReached = rec.inspectUsed >= inspectLimit
+
+            const handleFreeClick = (e) => {
+              const rect = e.currentTarget.parentElement.getBoundingClientRect()
+              const fx = (e.clientX - rect.left) / rect.width
+              const fy = (e.clientY - rect.top) / rect.height
+              const hit = hitSpot(coordSpots, fx, fy)
+              if (hit && rec.inspectedSpotIds.includes(hit.id)) return // 이미 조사한 곳 — 소모 없음
+              if (limitReached) return
+              if (hit) {
+                setInspectMsg(null)
+                handleInspect(hit)
+              } else {
+                setInspectMsg('특별한 것은 없었다. (지목 1회 소모)')
+                patchRecord(scene.id, {
+                  inspectUsed: rec.inspectUsed + 1,
+                  missPoints: [...(rec.missPoints ?? []), { x: fx, y: fy }],
+                })
+              }
+            }
+
             return (
               <>
                 <div className="card col">
-                  {markerSpots.length > 0 ? (
+                  {coordSpots.length > 0 ? (
                     <div style={{ position: 'relative' }}>
                       <Media
-                        kind={visualFile === scene.intro?.video ? 'video' : 'image'}
+                        kind={isVideo ? 'video' : 'image'}
                         src={mediaUrl(visualFile)}
                         poster={mediaUrl(scene.intro?.poster)}
                       />
-                      {markerSpots.map((spot) => (
-                        <SpotMarker
-                          key={spot.id}
-                          spot={spot}
-                          inspected={rec.inspectedSpotIds.includes(spot.id)}
-                          isFact={spot.kind === 'fact'}
-                          disabled={rec.inspectUsed >= inspectLimit}
-                          onClick={() => handleInspect(spot)}
+                      {inspectMode === 'freeclick' && (
+                        <div
+                          onClick={handleFreeClick}
+                          style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: isVideo ? 48 : 0,
+                            cursor: limitReached ? 'not-allowed' : 'crosshair',
+                          }}
                         />
-                      ))}
+                      )}
+                      {coordSpots
+                        .filter((s) => inspectMode === 'marker' || rec.inspectedSpotIds.includes(s.id))
+                        .map((spot) => (
+                          <SpotMarker
+                            key={spot.id}
+                            spot={spot}
+                            inspected={rec.inspectedSpotIds.includes(spot.id)}
+                            isFact={spot.kind === 'fact'}
+                            disabled={limitReached}
+                            passive={inspectMode === 'freeclick'}
+                            onClick={() => handleInspect(spot)}
+                          />
+                        ))}
+                      {inspectMode === 'freeclick' &&
+                        (rec.missPoints ?? []).map((p, i) => (
+                          <div
+                            key={i}
+                            style={{
+                              position: 'absolute', left: `${p.x * 100}%`, top: `${p.y * 100}%`,
+                              transform: 'translate(-50%, -50%)', width: 20, height: 20, borderRadius: '50%',
+                              display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
+                              background: 'rgba(30,26,18,.75)', border: '1.5px solid var(--line)',
+                              color: 'var(--ink-dim)', fontSize: 11,
+                            }}
+                          >
+                            ×
+                          </div>
+                        ))}
                     </div>
                   ) : (
                     <Media kind="video" src={mediaUrl(scene.intro.video)} poster={mediaUrl(scene.intro.poster)} />
                   )}
                   <p className="dim" style={{ margin: 0, fontSize: 12, lineHeight: 1.7 }}>
                     {ui.inspectGuide}
-                    {markerSpots.length > 0 && ' 화면 위의 돋보기를 눌러 조사하세요.'}
+                    {coordSpots.length > 0 &&
+                      (inspectMode === 'freeclick'
+                        ? ' 화면에서 수상한 곳을 직접 클릭하세요. 헛짚으면 지목 기회만 사라집니다.'
+                        : ' 화면 위의 돋보기를 눌러 조사하세요.')}
                   </p>
+                  {inspectMsg && <p style={{ color: 'var(--blood-light)', fontSize: 12, margin: 0 }}>{inspectMsg}</p>}
                 </div>
 
                 {buttonSpots.length > 0 && (

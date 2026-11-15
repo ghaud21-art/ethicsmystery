@@ -654,7 +654,7 @@ function EditableLine({ value, onChange, editMode, style, placeholder }) {
 // 돋보기 위치 지정 — 업로드된 포스터/영상 위를 클릭해 각 조사 지점(사실·혼란)의
 // 좌표(hotspot x·y, 화면 비율 0~1)를 찍는다. 좌표가 찍힌 지점은 플레이 화면에서
 // 그림 위의 돋보기 버튼으로, 찍지 않은 지점은 글 버튼으로 나온다.
-function HotspotPlacer({ sc, sci, updateScene, mediaUrls }) {
+function HotspotPlacer({ sc, sci, updateScene, mediaUrls, inspectMode, onInspectModeChange }) {
   const [activeId, setActiveId] = useState(null)
   const visualFile = [sc.intro?.poster, sc.intro?.video].find((f) => f && mediaUrls?.[f])
   const url = visualFile ? mediaUrls[visualFile] : null
@@ -708,10 +708,26 @@ function HotspotPlacer({ sc, sci, updateScene, mediaUrls }) {
   const frame = { width: '100%', borderRadius: 'var(--radius)', border: '1px solid var(--line)', display: 'block', pointerEvents: 'none' }
   return (
     <div className="card col">
-      <div className="kicker" style={{ marginBottom: 2 }}>돋보기 위치 지정</div>
+      <div className="kicker" style={{ marginBottom: 2 }}>조사 지점 위치 지정</div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+        <button
+          onClick={() => onInspectModeChange('freeclick')}
+          style={{ fontSize: 12, padding: '4px 10px', borderColor: inspectMode === 'freeclick' ? 'var(--gold)' : undefined, background: inspectMode === 'freeclick' ? 'rgba(201,162,39,.12)' : undefined }}
+        >
+          자유 클릭 (힌트 없음·추천)
+        </button>
+        <button
+          onClick={() => onInspectModeChange('marker')}
+          style={{ fontSize: 12, padding: '4px 10px', borderColor: inspectMode === 'marker' ? 'var(--gold)' : undefined, background: inspectMode === 'marker' ? 'rgba(201,162,39,.12)' : undefined }}
+        >
+          돋보기 표시
+        </button>
+      </div>
       <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>
-        아래 목록에서 <strong>위치 찍기</strong>를 누른 뒤, 그림에서 그 물건이 있는 곳을 클릭하세요.
-        찍힌 지점은 플레이 화면에서 그림 위의 돋보기 버튼이 됩니다.
+        {inspectMode === 'freeclick'
+          ? '자유 클릭: 학생은 아무 힌트 없이 그림에서 수상한 곳을 직접 클릭합니다. 찍어 둔 네모 영역 안이면 발견, 빗나가면 지목 기회만 사라집니다.'
+          : '돋보기 표시: 찍어 둔 자리마다 돋보기 버튼이 떠 있고, 학생은 그중에서 골라 조사합니다.'}
+        {' '}아래 목록에서 <strong>위치 찍기</strong>를 누른 뒤, 그림에서 그 물건이 있는 곳을 클릭하세요.
       </p>
       <div
         onClick={handleClick}
@@ -730,16 +746,25 @@ function HotspotPlacer({ sc, sci, updateScene, mediaUrls }) {
               title={s.label}
               style={{
                 position: 'absolute',
-                left: `${(s.x + (s.w ?? 0) / 2) * 100}%`,
-                top: `${(s.y + (s.h ?? 0) / 2) * 100}%`,
-                transform: 'translate(-50%, -50%)', width: 30, height: 30, borderRadius: '50%',
-                display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none',
-                background: s.kind === 'fact' ? 'rgba(201,162,39,.85)' : 'rgba(30,26,18,.85)',
-                border: `2px solid ${s.kind === 'fact' ? 'var(--gold-light)' : 'var(--line)'}`,
-                color: s.kind === 'fact' ? '#1a1510' : 'var(--ink-dim)', fontSize: 12, fontWeight: 800,
+                left: `${s.x * 100}%`,
+                top: `${s.y * 100}%`,
+                width: `${(s.w ?? 0.12) * 100}%`,
+                height: `${(s.h ?? 0.12) * 100}%`,
+                border: `2px dashed ${s.kind === 'fact' ? 'var(--gold-light)' : 'var(--line)'}`,
+                borderRadius: 6, pointerEvents: 'none',
+                background: s.kind === 'fact' ? 'rgba(201,162,39,.15)' : 'rgba(120,120,120,.12)',
+                display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-start',
               }}
             >
-              {s.kind === 'fact' ? '사' : '혼'}
+              <span
+                style={{
+                  fontSize: 10, fontWeight: 800, lineHeight: 1, padding: '2px 4px', borderRadius: 3,
+                  background: s.kind === 'fact' ? 'rgba(201,162,39,.9)' : 'rgba(30,26,18,.9)',
+                  color: s.kind === 'fact' ? '#1a1510' : 'var(--ink-dim)',
+                }}
+              >
+                {s.kind === 'fact' ? '사실' : '혼란'}
+              </span>
             </div>
           ))}
       </div>
@@ -940,7 +965,14 @@ function MissedSceneEditorView({ draft, original, editMode, setEditMode, onChang
             </p>
           </div>
 
-          <HotspotPlacer sc={sc} sci={sci} updateScene={updateScene} mediaUrls={mediaUrls} />
+          <HotspotPlacer
+            sc={sc}
+            sci={sci}
+            updateScene={updateScene}
+            mediaUrls={mediaUrls}
+            inspectMode={draft.settings?.inspectMode === 'marker' ? 'marker' : 'freeclick'}
+            onInspectModeChange={(m) => onChange({ ...draft, settings: { ...draft.settings, inspectMode: m } })}
+          />
 
           {(sc.facts ?? []).map((f, fi) => (
             <div key={f.id} className="card col" style={{ borderColor: f.isVariable ? 'var(--blood-light)' : 'var(--gold)', gap: 6 }}>

@@ -9,6 +9,7 @@ export function newSceneRecord() {
   return {
     inspectUsed: 0,
     inspectedSpotIds: [], // 지목한 순서대로의 조사 지점 id (사실 id 또는 혼란용 지점 id)
+    missPoints: [], // 자유 클릭 모드에서 빗나간 클릭 위치 (화면 비율 {x, y}) — 지목만 소모
     foundFactIds: [],
     initialChoice: null, // 변수 내레이션을 듣기 전의 결정
     finalChoice: null,
@@ -106,6 +107,22 @@ export function buildInspectSpots(scene) {
     })),
   ]
   return spots.sort((a, b) => hashString(scene.id + a.id) - hashString(scene.id + b.id))
+}
+
+// 조사 방식 — 'freeclick'(기본): 힌트 없이 그림 어디든 클릭, 빗나가면 지목만 소모.
+// 'marker': 돋보기 버튼을 보여 주고 그중에서 고르게 한다.
+export function getInspectMode(scenario) {
+  return scenario?.settings?.inspectMode === 'marker' ? 'marker' : 'freeclick'
+}
+
+// 클릭 위치(화면 비율)가 조사 지점의 영역(x·y·w·h) 안인지 — 자유 클릭 모드의 판정.
+export function hitSpot(spots, fx, fy) {
+  return spots.find((s) => {
+    if (s.x == null || s.y == null) return false
+    const w = s.w ?? 0.12
+    const h = s.h ?? 0.12
+    return fx >= s.x && fx <= s.x + w && fy >= s.y && fy <= s.y + h
+  })
 }
 
 // 돋보기 마커의 중심 위치(화면 비율 0~1). x·y만 있고 w·h가 없으면 그 점을 중심으로 본다.
