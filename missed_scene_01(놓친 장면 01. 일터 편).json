@@ -829,6 +829,7 @@
     "clueImages": 1,
     "clueAudio": 1,
     "posters": 5,
-    "namingRule": "s{장면번호}_{종류}_{선택}.확장자 (예: s1_intro.mp4, s1_result_a.mp4, s1_epilogue_c.mp4, s1_voice_a.mp3)"
+    "namingRule": "s{장면번호}_{종류}_{선택}.확장자 (예: s1_intro.mp4, s1_result_a.mp4, s1_epilogue_c.mp4, s1_voice_a.mp3)",
+    "voiceVideoNote": "동료 설득은 음성(mp3) 대신 또는 함께 영상도 가능 — 파일 이름은 음성과 같고 확장자만 mp4 (예: s1_voice_a.mp4). 편집 화면 ③ 두 목소리에서 업로드."
   }
 }

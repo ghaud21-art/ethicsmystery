@@ -125,6 +125,16 @@ export function hitSpot(spots, fx, fy) {
   })
 }
 
+// 동료 설득 영상의 파일 이름 — 시나리오에 video가 지정돼 있으면 그대로 쓰고,
+// 없으면 음성 파일 이름의 확장자만 mp4로 바꾼 이름으로 본다 (s1_voice_a.mp3 → s1_voice_a.mp4).
+// 플레이 화면과 편집 화면이 같은 이름을 계산하므로, 편집 화면에서 올리기만 하면 바로 나온다.
+export function voiceVideoFile(scene, voice) {
+  if (voice?.video) return voice.video
+  if (voice?.audio) return voice.audio.replace(/\.[^.]+$/, '.mp4')
+  if (scene?.id && voice?.id) return `${scene.id}_voice_${String(voice.id).toLowerCase()}.mp4`
+  return null
+}
+
 // 돋보기 마커의 중심 위치(화면 비율 0~1). x·y만 있고 w·h가 없으면 그 점을 중심으로 본다.
 export function spotCenter(spot) {
   if (spot.x == null || spot.y == null) return null
