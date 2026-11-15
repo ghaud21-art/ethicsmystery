@@ -5,11 +5,13 @@ export const CONTENT_TYPES = [
   ['murder', '머더미스터리'],
   ['tanmun', '탐문 수사'],
   ['mysteryroom', '미스터리 룸'],
+  ['missedscene', '놓친 장면'],
 ]
 
 export function contentTypeOf(scenario) {
   if (scenario?.contentType === 'tanmun') return 'tanmun'
   if (scenario?.contentType === 'mysteryroom') return 'mysteryroom'
+  if (scenario?.contentType === 'missedscene') return 'missedscene'
   return 'murder'
 }
 

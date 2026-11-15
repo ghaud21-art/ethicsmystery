@@ -100,6 +100,7 @@ function StudentLogsSection({ scenarios }) {
     murder: logs?.filter((l) => typeOfLog(l) === 'murder').length ?? 0,
     tanmun: logs?.filter((l) => typeOfLog(l) === 'tanmun').length ?? 0,
     mysteryroom: mrResults?.length ?? 0,
+    missedscene: logs?.filter((l) => typeOfLog(l) === 'missedscene').length ?? 0,
   }
   const paged = usePaged(filtered, 15, `${tab}|${q}`)
   const tabLabel = CONTENT_TYPES.find(([k]) => k === tab)[1]
