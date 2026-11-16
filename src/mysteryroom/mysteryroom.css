@@ -172,3 +172,6 @@ button.mr-selected { background: rgba(201, 162, 39, 0.18); border-color: var(--g
 .mr-attention-box { text-align: center; border: 2px solid var(--gold); border-radius: var(--radius); padding: 36px 28px; background: var(--panel); max-width: 560px; width: 100%; }
 .mr-attention-title { font-family: var(--font-head); font-size: 34px; font-weight: 800; color: var(--gold-light); margin-bottom: 10px; }
 .mr-attention-box p { font-size: 16px; margin: 0; }
+
+/* 줄 첫 글자를 세로로 읽어야 하는 메모: 좁은 칸에서도 줄이 꺾이지 않게 */
+.mr-nowrap { white-space: nowrap; overflow-x: auto; }

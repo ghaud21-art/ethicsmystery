@@ -172,7 +172,7 @@ export function NoteCard({ block, keyPrefix }) {
   return (
     <div className="mr-note">
       <div className="mr-note-cap"><Icon name="note" size={12} />{block.note}</div>
-      {block.mirror ? <MirrorLines block={block} /> : block.lines.map((l, i) => <p key={i}>{l}</p>)}
+      {block.mirror ? <MirrorLines block={block} /> : block.lines.map((l, i) => <p key={i} className={block.nowrap ? 'mr-nowrap' : undefined}>{l}</p>)}
       <LensBlock lens={block.lens} keyPrefix={keyPrefix} />
     </div>
   )
