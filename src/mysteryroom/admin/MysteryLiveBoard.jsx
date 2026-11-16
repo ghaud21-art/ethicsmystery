@@ -47,7 +47,8 @@ export default function MysteryLiveBoard() {
   const checkpoints = []
   for (const [sid, def] of Object.entries(defs)) {
     if (!def) continue
-    const roomsOf = list.filter(([, r]) => r.meta.scenarioId === sid && r.state)
+    // 엔딩에 도착한(끝난) 방은 체크포인트 집계에서 뺀다.
+    const roomsOf = list.filter(([, r]) => r.meta.scenarioId === sid && r.state && !def.scenes[r.state.scene]?.end)
     if (!roomsOf.length) continue
     for (const [sceneId, sc] of Object.entries(def.scenes)) {
       if (sc.type !== 'checkpoint') continue
