@@ -311,14 +311,15 @@ export function HearingPuzzle({ config }) {
           <span className={`mr-talk-timer ${remain <= 10 ? 'warn' : ''}`}>{fmtTime(remain)}</span>
         </div>
         <div className="mr-talk-speaker">{speaker?.name} <span className="dim" style={{ fontSize: 14 }}>{speaker?.job}{playerName ? ` · ${playerName} 맡음` : ''}</span></div>
-        {iSpeak ? (
+        {iSpeak && (
           <>
-            <p className="dim" style={{ margin: 0 }}>당신 차례입니다. 아래 변론을 고개를 들고 말한 뒤, 친구들의 질문에 답하세요.</p>
+            <p className="dim" style={{ margin: 0 }}>{mr.solo ? '이 인물의 변론입니다. 소리 내어 읽어 보세요.' : '당신이 증인석에 앉을 차례입니다. 아래 변론을 고개를 들고 말한 뒤, 친구들의 질문에 답하세요.'}</p>
             <div className="mr-talk-line">“{cur.line}”</div>
           </>
-        ) : (
+        )}
+        {(!iSpeak || mr.solo) && (
           <>
-            <p style={{ margin: 0 }}>{speaker?.name}의 변론을 듣고, 아래 질문으로 반박해 보세요.</p>
+            {!mr.solo && <p style={{ margin: 0 }}>증인석의 {speaker?.name}에게 아래 질문으로 반박해 보세요.</p>}
             <div className="col" style={{ gap: 6, width: '100%' }}>
               {cur.questions.map((qq, i) => <div key={i} className="mr-suggest"><span className="mr-tag blue">추천 질문</span> {qq}</div>)}
             </div>

@@ -1,3 +1,4 @@
+import EvidenceList from './Evidence'
 import { RoleSecret } from './SceneView'
 import { useState } from 'react'
 import { MaterialCard, NoteCard, useMr } from './common'
@@ -86,6 +87,7 @@ export default function SidePanel() {
               </div>
             )
           })}
+          <EvidenceList compact />
           <strong style={{ fontSize: 12, marginTop: 6 }}>개념 노트 {concepts.length}/{room.concepts.length}</strong>
           {concepts.length ? (
             concepts.map((c) => (

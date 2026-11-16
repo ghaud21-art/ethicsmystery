@@ -1,3 +1,4 @@
+import EvidenceList, { collectEvidence } from './Evidence'
 import { useState } from 'react'
 import { Icon, MaterialCard, NoteCard, useMr } from './common'
 import { visitedScenes } from './SceneView'
@@ -22,7 +23,8 @@ export default function ClueBox() {
   const mats = Object.keys(room.materials).filter((m) => mr.canSee(room.materials[m].owner, `m:${m}`))
   const clues = room.rooms.filter((r) => mr.state.clues?.[r.clue])
   const ideas = Object.entries(mr.state.ideaWinners ?? {})
-  const count = clues.length + notes.length
+  const evidenceCount = collectEvidence(room, mr.data).reduce((a, g) => a + g.items.length, 0)
+  const count = clues.length + notes.length + evidenceCount
   return (
     <>
       <button className="mr-small" onClick={() => setOpen(true)} title="지금까지 나온 단서를 다시 봅니다">
@@ -39,6 +41,7 @@ export default function ClueBox() {
             {clues.length ? clues.map((r) => (
               <div key={r.id} className="mr-mat"><div className="mr-mat-title"><span>단서 {r.clue} · {r.name}</span>{mr.state.clues[r.clue] === 'tainted' && <span className="mr-tag">오염됨</span>}</div><p>{room.clueNames?.[r.clue]}</p></div>
             )) : <p className="dim" style={{ fontSize: 12 }}>아직 얻은 단서가 없습니다.</p>}
+            <EvidenceList />
             {ideas.length > 0 && (
               <>
                 <strong style={{ fontSize: 13 }}>모둠이 뽑은 아이디어</strong>
