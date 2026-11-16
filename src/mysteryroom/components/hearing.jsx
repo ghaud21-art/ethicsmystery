@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react'
 import { Icon, NoteCard, useMr, fmtTime } from './common'
 import { roleById } from '../roles'
-import { isLocalMode } from '../store'
+import { isLocalMode, isTestMode } from '../store'
 import { judgeTanmunQuestion } from '../../firebase/functionsApi.js'
 
 const norm = (s) => String(s ?? '').replace(/\s+/g, '').toLowerCase()
@@ -29,7 +29,7 @@ export function TanmunPuzzle({ config }) {
   const [busy, setBusy] = useState(false)
   const log = mr.board.log ?? []
   const found = mr.board.found ?? {}
-  const cardsMode = mr.board.mode === 'cards' || isLocalMode() || !config.scenarioId
+  const cardsMode = mr.board.mode === 'cards' || (isLocalMode() && !isTestMode()) || !config.scenarioId
   const asked = mr.board.asked ?? {}
   const myName = mr.players[mr.uid]?.name ?? '나'
   // 질문 제한: 모든 사실을 다 캐기 어렵게. 다 쓰고도 부족하면 실패 1회를 감수하고 추가 질문을 받는다.
