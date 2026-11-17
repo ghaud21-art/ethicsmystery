@@ -128,7 +128,17 @@ export function statementLocked(scenario, run, ch) {
     const opt = d.options.find((o) => o.id === run.decisions[d.id])
     if (opt?.effect?.lockStatement === ch.id) return true
   }
-  return (run.wrong[ch.id] ?? 0) >= (scenario.settings?.wrongPresentLimit ?? 2)
+  const lim = wrongLimitOf(scenario, run)
+  return lim != null && (run.wrong[ch.id] ?? 0) >= lim
+}
+
+// 틀린 단서를 내밀 수 있는 횟수 (null = 제한 없음). 난이도에 값(0 = 제한 없음)이 없으면 입문 무제한·표준 3·심화 2.
+const WRONG_DEFAULT = { intro: null, standard: 3, advanced: 2 }
+export function wrongLimitOf(scenario, run) {
+  const v = levelOf(scenario, run).wrongPresentLimit
+  if (v === 0 || v === null) return null
+  if (v != null) return v
+  return run?.level in WRONG_DEFAULT ? WRONG_DEFAULT[run.level] : scenario.settings?.wrongPresentLimit ?? 3
 }
 
 export function findLink(scenario, a, b) {

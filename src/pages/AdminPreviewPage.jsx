@@ -958,6 +958,13 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
               <div key={k} className="col" style={{ gap: 2 }}>
                 <div className="row" style={{ gap: 6 }}>{L(['levels', k, 'label'], { width: 90, fontWeight: 700 })}{L(['levels', k, 'minutes'], { width: 90 })}</div>
                 {T(['levels', k, 'desc'], { fontSize: 12, dim: true })}
+                <label className="row dim" style={{ gap: 6, fontSize: 11, alignItems: 'center' }}>
+                  인물에게 틀린 단서를 내밀 수 있는 횟수
+                  <input type="number" min="0" max="20" style={{ width: 56, fontSize: 11 }}
+                    value={draft.levels[k].wrongPresentLimit ?? ({ intro: 0, standard: 3, advanced: 2 }[k] ?? 3)}
+                    onChange={(e) => onChange(setIn(draft, ['levels', k, 'wrongPresentLimit'], Math.max(0, Number(e.target.value) || 0)))} />
+                  (0 = 제한 없음)
+                </label>
               </div>
             ))}
           </div>

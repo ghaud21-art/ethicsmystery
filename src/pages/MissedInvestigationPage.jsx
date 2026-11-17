@@ -10,7 +10,7 @@ import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import {
   newInvestigationRun, saveRun, loadRun, clearRun, levelOf, cluesOf, allClues, clueText, locationOpen,
   inspectLimitOf, inspectModeOf, spotsOf, hitSpot, isTimed, isPlaced, activeRects, presentWorks, statementLocked, findLink, linkLimitOf,
-  layersReached, decisionAvailable, timelineCardTime, timelineScore, decideEnding,
+  layersReached, decisionAvailable, wrongLimitOf, timelineCardTime, timelineScore, decideEnding,
 } from '../utils/missedInvestigation.js'
 
 const box = { width: '100%', borderRadius: 'var(--radius)', border: '1px solid var(--line)', display: 'block' }
@@ -507,7 +507,7 @@ function PersonView({ scenario, run, setRun, ch, clueMap, mediaUrl }) {
         <p className="dim" style={{ fontSize: 13, marginTop: 10 }}>{ch.name}은(는) 더 이상 말하지 않는다.</p>
       ) : (
         <div className="col" style={{ gap: 6, marginTop: 12 }}>
-          <span style={{ fontSize: 13 }}>진술의 모순을 짚을 단서를 내밀어 보자. (한 번에 두 장까지, 틀린 단서를 두 번 내밀면 입을 닫는다)</span>
+          <span style={{ fontSize: 13 }}>진술의 모순을 짚을 단서를 내밀어 보자. (한 번에 두 장까지{wrongLimitOf(scenario, run) != null ? `, 틀린 단서를 ${wrongLimitOf(scenario, run)}번 내밀면 입을 닫는다` : ''})</span>
           <div className="mr-qgrid">
             {run.found.map((cid) => (
               <button key={cid} className={`mr-qcard ${sel.includes(cid) ? 'picked' : ''}`} onClick={() => toggle(cid)}>{clueMap[cid]?.title}</button>
@@ -516,7 +516,7 @@ function PersonView({ scenario, run, setRun, ch, clueMap, mediaUrl }) {
           <button className="primary" style={{ alignSelf: 'flex-start' }} disabled={!sel.length} onClick={present}>
             단서 {sel.length}장 내밀기
           </button>
-          {reply && <div className="mr-feedback" style={{ padding: 8, fontSize: 13 }}>{ch.name}: “{reply}” <span className="dim">(남은 기회 {Math.max(0, (scenario.settings?.wrongPresentLimit ?? 2) - (run.wrong[ch.id] ?? 0))})</span></div>}
+          {reply && <div className="mr-feedback" style={{ padding: 8, fontSize: 13 }}>{ch.name}: “{reply}” {wrongLimitOf(scenario, run) != null && <span className="dim">(남은 기회 {Math.max(0, wrongLimitOf(scenario, run) - (run.wrong[ch.id] ?? 0))})</span>}</div>}
         </div>
       )}
     </div>
