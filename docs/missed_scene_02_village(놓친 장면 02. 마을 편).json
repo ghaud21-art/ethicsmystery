@@ -545,12 +545,16 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c1_log"
-          ],
-          [
-            "c1_receipt"
-          ]
+          {
+            "clues": [
+              "c1_log"
+            ]
+          },
+          {
+            "clues": [
+              "c1_receipt"
+            ]
+          }
         ]
       },
       "wrongReply": "그게 저하고 무슨 상관입니까."
@@ -571,10 +575,12 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c3_key",
-            "c4_calls"
-          ]
+          {
+            "clues": [
+              "c3_key",
+              "c4_calls"
+            ]
+          }
         ]
       },
       "wrongReply": "글쎄요, 저는 잘 모르는 일이네요."
@@ -595,9 +601,11 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c4_wheelchairs"
-          ]
+          {
+            "clues": [
+              "c4_wheelchairs"
+            ]
+          }
         ]
       },
       "wrongReply": "죄송해요, 저는 드릴 말씀이 없어요."
@@ -618,9 +626,11 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c5_insurance"
-          ]
+          {
+            "clues": [
+              "c5_insurance"
+            ]
+          }
         ]
       },
       "wrongReply": "지금 그게 중요합니까? 우리 하우스나 보고 가쇼."
@@ -641,12 +651,16 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c6_report"
-          ],
-          [
-            "c6_calllog"
-          ]
+          {
+            "clues": [
+              "c6_report"
+            ]
+          },
+          {
+            "clues": [
+              "c6_calllog"
+            ]
+          }
         ]
       },
       "wrongReply": "그 건은 저희 소관이 아닙니다."
@@ -667,13 +681,17 @@
       },
       "flip": {
         "anyOf": [
-          [
-            "c7_skew"
-          ],
-          [
-            "c7_sensor",
-            "c1_seal"
-          ]
+          {
+            "clues": [
+              "c7_skew"
+            ]
+          },
+          {
+            "clues": [
+              "c7_sensor",
+              "c1_seal"
+            ]
+          }
         ]
       },
       "wrongReply": "그건 저희 장비랑 관계없는 겁니다."

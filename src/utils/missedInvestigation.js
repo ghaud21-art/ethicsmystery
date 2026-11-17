@@ -105,10 +105,11 @@ export function hitSpot(spots, fx, fy) {
   return spots.find((s) => s.x != null && s.y != null && fx >= s.x && fx <= s.x + (s.w ?? 0.12) && fy >= s.y && fy <= s.y + (s.h ?? 0.12))
 }
 
-// 인물에게 단서를 내밀었을 때: flip.anyOf = [[a], [b, c]] 중 한 묶음을 모두 포함하면 성공
+// 인물에게 단서를 내밀었을 때: flip.anyOf = [{clues:[a]}, {clues:[b, c]}] 중 한 묶음을 모두 포함하면 성공
 export function presentWorks(ch, clueIds) {
   const set = new Set(clueIds)
-  return (ch.flip?.anyOf ?? []).some((group) => group.every((id) => set.has(id)))
+  // Firestore는 배열 안의 배열을 못 담으므로 묶음은 { clues: [...] } 형태 (예전 배열 형태도 허용)
+  return (ch.flip?.anyOf ?? []).some((group) => (Array.isArray(group) ? group : group.clues ?? []).every((id) => set.has(id)))
 }
 
 export function statementLocked(scenario, run, ch) {
