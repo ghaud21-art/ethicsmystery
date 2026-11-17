@@ -797,6 +797,122 @@ function HotspotPlacer({ sc, sci, updateScene, mediaUrls, inspectMode, onInspect
   )
 }
 
+// 놓친 장면 조사 모드(missedscene-2.0) 편집기 — 글은 JSON으로 올리고, 여기서는
+// 미디어 파일 업로드와 장소 영상 위 단서 위치 지정만 한다.
+function investigationMediaList(d) {
+  const out = []
+  const add = (group, label, kind, file) => file && out.push({ group, label, kind, file })
+  add('브리핑', '브리핑 영상', 'video', d.briefing?.video)
+  for (const c of d.startClues ?? []) if (c.kind === 'image') add('브리핑', `시작 자료 · ${c.title}`, 'image', c.image)
+  for (const l of d.locations ?? []) {
+    const g = `${l.order}. ${l.name}`
+    add(g, '장소 영상', 'video', l.video)
+    add(g, '장소 컷 이미지 (학생이 단서를 지목하는 현장 사진)', 'image', l.poster)
+    for (const c of l.clues ?? []) if (c.kind === 'image') add(g, `단서 이미지 · ${c.title}`, 'image', c.image)
+    const ch = (d.characters ?? []).find((x) => x.id === l.character)
+    if (ch) {
+      add(g, `${ch.name} 첫 번째 진술`, 'video', ch.statement1?.video)
+      add(g, `${ch.name} 두 번째 진술`, 'video', ch.statement2?.video)
+    }
+  }
+  for (const dc of d.decisions ?? []) {
+    add('전화·결정', `${dc.label} 전화 이미지`, 'image', dc.call?.image)
+    add('전화·결정', `${dc.label} 전화 음성`, 'audio', dc.call?.audio)
+  }
+  for (const e of d.endings ?? []) add('결말', `결말 · ${e.title}`, 'video', e.video)
+  const seen = new Set()
+  return out.filter((m) => (seen.has(m.file) ? false : seen.add(m.file)))
+}
+
+function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy, saved, error }) {
+  const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
+  const mediaUrls = draft.mediaUrls ?? {}
+  const [tab, setTab] = useState('media')
+  const [locIdx, setLocIdx] = useState(0)
+  const handleMediaUrlChange = async (fileName, url) => {
+    const next = { ...mediaUrls }
+    if (url) next[fileName] = url
+    else delete next[fileName]
+    await updateScenarioFields(draft.scenarioId, { mediaUrls: next })
+    onChange({ ...draft, mediaUrls: next })
+  }
+  const slotProps = { scenarioId: draft.scenarioId, mediaUrls, onUrlChange: handleMediaUrlChange }
+  const list = investigationMediaList(draft)
+  const groups = [...new Set(list.map((m) => m.group))]
+  const done = list.filter((m) => mediaUrls[m.file]).length
+  const loc = draft.locations?.[locIdx]
+  // HotspotPlacer는 1.0 장면 모양(intro/facts/decoyHotspots)을 기대하므로 장소를 그 모양으로 감싼다.
+  const adapter = loc && {
+    intro: { video: loc.video, poster: loc.poster },
+    facts: (loc.clues ?? []).map((c) => ({ ...c, hotspot: { label: c.title, ...(c.hotspot ?? {}) } })),
+    decoyHotspots: loc.decoyHotspots ?? [],
+  }
+  const updateAdapter = (_i, mutate) => {
+    const copy = JSON.parse(JSON.stringify(adapter))
+    mutate(copy)
+    const locations = draft.locations.map((l, i) => (i !== locIdx ? l : {
+      ...l,
+      clues: l.clues.map((c, ci) => ({ ...c, hotspot: copy.facts[ci].hotspot })),
+      decoyHotspots: copy.decoyHotspots,
+    }))
+    onChange({ ...draft, locations })
+  }
+  return (
+    <div className="page">
+      <Masthead showBack />
+      <div className="card row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ fontSize: 13 }}><span className="dim">놓친 장면(조사 모드) 편집</span> · <strong>{draft.meta?.title ?? draft.scenarioId}</strong></div>
+        <button className="primary" onClick={onSave} disabled={!isDirty || busy} style={{ fontSize: 12, padding: '5px 12px' }}>
+          {busy ? '저장 중...' : saved ? '저장됨' : '변경사항 저장'}
+        </button>
+      </div>
+      <p className="dim" style={{ margin: '0 0 10px', fontSize: 11, lineHeight: 1.6 }}>
+        글 내용은 JSON 파일로 고쳐 다시 올립니다(미디어와 공개 상태는 유지됩니다). 미디어 자리에 파일을 올리면 즉시 저장됩니다
+        (업로드됨 {done}/{list.length}).{' '}
+        <a href={`${window.location.origin}${window.location.pathname}#/missedscene/${draft.scenarioId}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-light)' }}>실제 플레이 화면 열기 →</a>
+      </p>
+      {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
+      <div className="tabs" style={{ marginBottom: 12 }}>
+        <button className={`tab-button ${tab === 'media' ? 'active' : ''}`} onClick={() => setTab('media')}>미디어 업로드</button>
+        <button className={`tab-button ${tab === 'spots' ? 'active' : ''}`} onClick={() => setTab('spots')}>단서 위치 지정</button>
+      </div>
+      {tab === 'media' && groups.map((g) => {
+        const items = list.filter((m) => m.group === g)
+        return (
+          <div key={g} className="card col">
+            <div className="kicker">{g} <span className="dim">({items.filter((m) => mediaUrls[m.file]).length}/{items.length})</span></div>
+            {items.map((m) => <MediaSlot key={m.file} {...slotProps} kind={m.kind} label={`${m.label} — ${m.file}`} fileName={m.file} />)}
+          </div>
+        )
+      })}
+      {tab === 'spots' && loc && (
+        <>
+          <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
+            {draft.locations.map((l, i) => (
+              <button key={l.id} onClick={() => setLocIdx(i)} style={{ fontSize: 12, padding: '4px 10px', borderColor: i === locIdx ? 'var(--gold)' : undefined, background: i === locIdx ? 'rgba(201,162,39,.12)' : undefined }}>
+                {l.order}. {l.name} ({(l.clues ?? []).filter((c) => c.hotspot?.x != null).length}/{l.clues?.length ?? 0})
+              </button>
+            ))}
+          </div>
+          <p className="dim" style={{ margin: '0 0 8px', fontSize: 11, lineHeight: 1.6 }}>
+            ‘사실’ = 이 장소의 단서(가짜 단서 포함), ‘혼란’ = 아무것도 없는 지점. 위치를 찍지 않은 단서는 학생 화면에서 글 버튼으로 나옵니다.
+            입문 난이도에서는 찍어 둔 자리에 돋보기가 표시됩니다.
+          </p>
+          <HotspotPlacer
+            key={loc.id}
+            sc={adapter}
+            sci={0}
+            updateScene={updateAdapter}
+            mediaUrls={mediaUrls}
+            inspectMode={draft.settings?.inspectMode === 'marker' ? 'marker' : 'freeclick'}
+            onInspectModeChange={(m) => onChange({ ...draft, settings: { ...draft.settings, inspectMode: m } })}
+          />
+        </>
+      )}
+    </div>
+  )
+}
+
 // 놓친 장면(1인 영상 추리) 전용 플레이형 편집기 — 학생이 보는 플레이 화면을
 // 그대로 띄워 두고(장면 탭 + 단계 탭으로 이동), 그 자리에서 글을 고치고
 // 각 미디어 자리(영상·음성·이미지)에 파일을 바로 업로드한다.
@@ -1310,8 +1426,9 @@ function EditorInner({ scenarioId }) {
   }
 
   if (draft.contentType === 'missedscene') {
+    const View = draft.mode === 'investigation' ? MissedInvestigationEditorView : MissedSceneEditorView
     return (
-      <MissedSceneEditorView
+      <View
         draft={draft}
         original={original}
         editMode={editMode}

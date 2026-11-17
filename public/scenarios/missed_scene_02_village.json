@@ -1,0 +1,1189 @@
+{
+  "scenarioId": "missed_scene_02_village",
+  "contentType": "missedscene",
+  "schemaVersion": "missedscene-2.0",
+  "mode": "investigation",
+  "published": false,
+  "meta": {
+    "title": "열린 수문",
+    "series": "놓친 장면 02. 마을 편",
+    "subtitle": "폭우가 쏟아진 밤, 저수지 수문이 열려 아랫들 비닐하우스 단지가 잠겼습니다. 도청 조사관이 되어 사흘 동안 일곱 장소 중 다섯 곳을 조사하고, 누가, 언제, 왜 열었는지 밝힌 뒤 보고서에 무엇을 쓸지 결정하세요.",
+    "themes": [
+      "동기와 결과",
+      "개인의 책임과 구조의 책임",
+      "공익 제보",
+      "정의와 배려"
+    ],
+    "estimatedMinutes": 60,
+    "supportedPlayerCounts": [
+      1
+    ]
+  },
+  "notice": "등장하는 지역, 기관, 인물은 모두 가상이며, 다친 사람은 없는 사건입니다. 게임 속 저수지 운영 방식은 실제 절차와 다를 수 있습니다.",
+  "briefing": {
+    "kicker": "사건 브리핑",
+    "title": "솔미저수지 수문 개방 사건",
+    "lines": [
+      "어젯밤 9시, 서림군에 호우 경보가 내려졌습니다.",
+      "새벽 3시 10분, 아랫들 작목반장이 비닐하우스 단지가 물에 잠겼다고 신고했습니다. 솔미저수지의 수문이 열려 있었습니다.",
+      "군청은 관리인의 조작 실수로 보고 있습니다. 당신은 도청에서 나온 조사관입니다. 사흘 안에 누가, 언제, 왜 수문을 열었는지 밝혀 보고서를 써야 합니다."
+    ]
+  },
+  "rules": [
+    "사흘 동안 일곱 장소 중 다섯 곳만 갈 수 있습니다. (1일 차 2곳, 2일 차 2곳, 3일 차 1곳)",
+    "장소마다 숨은 단서가 4개 있고, 그중 하나는 사건과 무관한 가짜입니다. 지목은 장소당 7번입니다.",
+    "인물에게 알맞은 단서를 내밀면 두 번째 진술이 열립니다. 틀린 단서를 두 번 내밀면 더 말하지 않습니다.",
+    "다녀온 장소는 방문 횟수를 쓰지 않고 다시 찾아갈 수 있습니다. 수첩에서 단서 두 장을 이어 추론을 열 수 있습니다.",
+    "하루가 끝날 때마다 그때까지 아는 것만으로 결정을 내립니다."
+  ],
+  "startClues": [
+    {
+      "id": "s_announce",
+      "title": "군청 발표",
+      "kind": "card",
+      "text": "서림군청 발표 / 솔미저수지 수문 개방은 관리인 노정구 씨의 조작 실수로 추정 / 아랫들 비닐하우스 단지 침수, 인명 피해 없음"
+    },
+    {
+      "id": "s_record",
+      "title": "수문 기록 장치",
+      "kind": "card",
+      "text": "수문 기록 장치 / 개방 02:14 / 조작자 표시: 없음",
+      "textNoSkew": "수문 기록 장치 / 개방 02:07 / 조작자 표시: 없음"
+    }
+  ],
+  "levels": {
+    "intro": {
+      "label": "입문",
+      "minutes": "40분",
+      "desc": "중학교 도덕·창체. 돋보기 힌트, 시계 오차와 가짜 단서 없음, 다섯 장소 고정(관리동·제방·회관·요양원·하우스 단지).",
+      "hints": true,
+      "clockSkew": false,
+      "fakeClues": false,
+      "fixedLocations": [
+        "L1",
+        "L2",
+        "L3",
+        "L4",
+        "L5"
+      ]
+    },
+    "standard": {
+      "label": "표준",
+      "minutes": "60분",
+      "desc": "고등학교·교사 연수. 힌트 없음, 장소 선택 자유, 시계 오차 포함.",
+      "clockSkew": true,
+      "fakeClues": true
+    },
+    "advanced": {
+      "label": "심화",
+      "minutes": "60~90분",
+      "desc": "일반인·추리 동호회. 힌트 없음, 단서 잇기 15번 제한. 다시 하기를 권합니다.",
+      "clockSkew": true,
+      "fakeClues": true,
+      "linkLimit": 15
+    }
+  },
+  "settings": {
+    "defaultLevel": "standard",
+    "visitLimit": 5,
+    "days": [
+      2,
+      2,
+      1
+    ],
+    "inspectLimitPerLocation": 7,
+    "inspectMode": "freeclick",
+    "wrongPresentLimit": 2
+  },
+  "locations": [
+    {
+      "id": "L1",
+      "order": 1,
+      "name": "수문 관리동",
+      "unlock": {
+        "start": true
+      },
+      "blurb": "저수지 옆 작은 콘크리트 관리동. 수문을 여닫는 제어반과 수동 레버가 있다.",
+      "video": "loc_1_gatehouse.mp4",
+      "poster": "loc_1_gatehouse.png",
+      "character": "noh",
+      "clues": [
+        {
+          "id": "c1_log",
+          "title": "근무일지",
+          "difficulty": "easy",
+          "kind": "card",
+          "text": "솔미저수지 근무일지 / 21:00 수위 확인, 호우 경보 / 21:30 군청 통화 / 22:00 설비 업체 방문 / 22:30 업체 철수 / 23:30 수위 확인 / (이후 빈칸) / 03:30 수문 개방 상태 발견",
+          "hotspot": {
+            "label": "책상 위 펼쳐진 근무일지"
+          }
+        },
+        {
+          "id": "c1_seal",
+          "title": "찢어진 봉인 스티커",
+          "difficulty": "normal",
+          "kind": "image",
+          "text": "수동 레버 손잡이와 몸체를 가로질러 붙어 있던 봉인 스티커가 가운데에서 찢어져 있다.",
+          "hotspot": {
+            "label": "수동 레버 손잡이"
+          },
+          "image": "clue_1_seal.png"
+        },
+        {
+          "id": "c1_receipt",
+          "title": "병원 주차 영수증",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "서림의료원 주차장 영수증 / 입차 23:58 / 출차 03:12",
+          "hotspot": {
+            "label": "서랍 틈의 작은 종이"
+          }
+        },
+        {
+          "id": "c1_bottle",
+          "title": "빈 술병",
+          "difficulty": "fake",
+          "kind": "image",
+          "text": "먼지가 두껍다. 오래전에 놓인 병이다.",
+          "hotspot": {
+            "label": "구석 선반 아래 유리병"
+          },
+          "image": "clue_1_bottle.png"
+        }
+      ],
+      "decoyHotspots": [
+        {
+          "id": "L1_d1",
+          "label": "창밖의 열린 수문",
+          "text": "수문이 활짝 열려 있다. 이미 알고 있는 사실이다."
+        }
+      ]
+    },
+    {
+      "id": "L2",
+      "order": 2,
+      "name": "저수지 제방",
+      "unlock": {
+        "start": true
+      },
+      "blurb": "저수지 동쪽의 흙 제방. 바로 아래에 솔미마을과 요양원이 있다.",
+      "video": "loc_2_embankment.mp4",
+      "poster": "loc_2_embankment.png",
+      "character": null,
+      "clues": [
+        {
+          "id": "c2_sandbags",
+          "title": "모래주머니",
+          "difficulty": "easy",
+          "kind": "image",
+          "text": "제방 아래에 급히 쌓은 모래주머니 열댓 개. 몇 개는 터져 있고, 진흙 묻은 삽이 꽂혀 있다.",
+          "hotspot": {
+            "label": "제방 아래 모래주머니 더미"
+          },
+          "image": "clue_2_sandbags.png"
+        },
+        {
+          "id": "c2_pin",
+          "title": "계측 핀과 표식",
+          "difficulty": "normal",
+          "kind": "image",
+          "text": "균열에 꽂힌 녹슨 핀과 색 바랜 리본. 리본에 희미하게 적혀 있다. '관찰 대상', 2년 전 날짜.",
+          "hotspot": {
+            "label": "균열에 꽂힌 녹슨 핀"
+          },
+          "image": "clue_2_pin.png"
+        },
+        {
+          "id": "c2_boots",
+          "title": "장화 발자국",
+          "difficulty": "hard",
+          "kind": "image",
+          "text": "발이 작다. 관리동 쪽으로 갔다가 돌아온 자국이다.",
+          "hotspot": {
+            "label": "진흙 위 작은 발자국"
+          },
+          "image": "clue_2_boots.png"
+        },
+        {
+          "id": "c2_tire",
+          "title": "트럭 바퀴 자국",
+          "difficulty": "fake",
+          "kind": "image",
+          "text": "폭이 넓은 작업 트럭의 자국이다. 밤 10시에 업체 기사가 다녀간 흔적이다.",
+          "hotspot": {
+            "label": "제방 위 흙길의 바퀴 자국"
+          },
+          "image": "clue_2_tire.png"
+        }
+      ],
+      "decoyHotspots": [
+        {
+          "id": "L2_d1",
+          "label": "멀리 보이는 요양원 지붕",
+          "text": "제방 바로 아래, 생각보다 가까운 곳에 요양원이 있다."
+        }
+      ]
+    },
+    {
+      "id": "L3",
+      "order": 3,
+      "name": "솔미마을 회관",
+      "unlock": {
+        "anyClueFrom": "L2"
+      },
+      "lockedHint": "제방에서 단서를 하나 이상 찾으면 열린다.",
+      "blurb": "솔미마을 사람들이 모이는 회관. 이장이 머무는 곳이다.",
+      "video": "loc_3_hall.mp4",
+      "poster": "loc_3_hall.png",
+      "character": "choi",
+      "clues": [
+        {
+          "id": "c3_boots",
+          "title": "장화와 손전등",
+          "difficulty": "easy",
+          "kind": "image",
+          "text": "진흙이 아직 마르지 않은 작은 고무장화와 손전등. 바닥에 물 얼룩이 번져 있다.",
+          "hotspot": {
+            "label": "현관 바닥의 장화"
+          },
+          "image": "clue_3_boots.png"
+        },
+        {
+          "id": "c3_key",
+          "title": "젖은 비상 열쇠",
+          "difficulty": "normal",
+          "kind": "image",
+          "text": "꼬리표에 '수리계 비상'. 제자리가 아닌 고리에 걸려 있고, 아직 젖어 있다.",
+          "hotspot": {
+            "label": "벽의 열쇠함"
+          },
+          "image": "clue_3_key.png"
+        },
+        {
+          "id": "c3_petition",
+          "title": "주민 건의서",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "솔미저수지 동쪽 제방 보수 요청 / 비가 오면 균열에서 물이 샙니다. 바로 아래에 요양원이 있습니다. 빠른 보수를 요청합니다. / 솔미마을 주민 41명 서명 / 접수: 서림군청, 2년 전",
+          "hotspot": {
+            "label": "게시판의 누렇게 바랜 종이"
+          }
+        },
+        {
+          "id": "c3_ledger",
+          "title": "회관 장부",
+          "difficulty": "fake",
+          "kind": "card",
+          "text": "마을 기금 지출 / 지난달 280만 원 / 내역: 경로당 보일러 교체 / 영수증 첨부, 총회 승인",
+          "hotspot": {
+            "label": "탁자 위 펼쳐진 장부"
+          }
+        }
+      ],
+      "decoyHotspots": []
+    },
+    {
+      "id": "L4",
+      "order": 4,
+      "name": "요양원",
+      "unlock": {
+        "anyClue": [
+          "c2_sandbags"
+        ],
+        "visited": [
+          "L3"
+        ]
+      },
+      "lockedHint": "제방에서 모래주머니를 찾거나 회관을 다녀오면 열린다.",
+      "blurb": "제방 바로 아래의 작은 요양원. 어르신 28명이 지낸다.",
+      "video": "loc_4_carehome.mp4",
+      "poster": "loc_4_carehome.png",
+      "character": "song",
+      "clues": [
+        {
+          "id": "c4_wheelchairs",
+          "title": "휠체어와 담요",
+          "difficulty": "easy",
+          "kind": "image",
+          "text": "현관문 옆에 줄지어 선 빈 휠체어 다섯 대. 좌석마다 접힌 담요와 비옷. 바닥에 젖은 바퀴 자국.",
+          "hotspot": {
+            "label": "현관 옆 휠체어"
+          },
+          "image": "clue_4_wheelchairs.png"
+        },
+        {
+          "id": "c4_calls",
+          "title": "요양원 전화 수신 기록",
+          "difficulty": "normal",
+          "kind": "card",
+          "text": "수신 기록 / 01:35 솔미마을 이장 (통화 2분) / 02:12 솔미마을 이장 (통화 1분)",
+          "hotspot": {
+            "label": "접수대 위 전화기"
+          }
+        },
+        {
+          "id": "c4_roster",
+          "title": "야간 근무표",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "야간 근무 / 입소 어르신 28명 / 거동이 어려운 분 19명 / 근무자 2명 / 대피 차량: 승합차 1대 (휠체어 2대 탑승)",
+          "hotspot": {
+            "label": "벽의 근무표"
+          }
+        },
+        {
+          "id": "c4_generator",
+          "title": "발전기 고장 딱지",
+          "difficulty": "fake",
+          "kind": "image",
+          "text": "비상 발전기. '고장, 수리 요청 중'. 지난달 날짜다.",
+          "hotspot": {
+            "label": "복도 끝 금속 함"
+          },
+          "image": "clue_4_generator.png"
+        }
+      ],
+      "decoyHotspots": [
+        {
+          "id": "L4_d1",
+          "label": "창밖의 제방",
+          "text": "창밖으로 제방이 높게 올려다보인다. 무너지면 이곳이 가장 먼저 잠긴다."
+        }
+      ]
+    },
+    {
+      "id": "L5",
+      "order": 5,
+      "name": "아랫들 하우스 단지",
+      "unlock": {
+        "start": true
+      },
+      "blurb": "수로 하류의 비닐하우스 단지. 물에 잠긴 곳이다.",
+      "video": "loc_5_greenhouse.mp4",
+      "poster": "loc_5_greenhouse.png",
+      "character": "kang",
+      "clues": [
+        {
+          "id": "c5_waterline",
+          "title": "물 자국",
+          "difficulty": "easy",
+          "kind": "image",
+          "text": "비닐하우스 벽에 어른 허리 높이로 수평으로 남은 흙탕물 선.",
+          "hotspot": {
+            "label": "하우스 벽의 물 자국"
+          },
+          "image": "clue_5_waterline.png"
+        },
+        {
+          "id": "c5_sign",
+          "title": "수로 공사 안내판",
+          "difficulty": "normal",
+          "kind": "card",
+          "text": "아랫들 수로 준설 공사 / 공사 기간 중 수로 폭의 절반을 임시로 막습니다 / 발주: 서림군청 / 기간: 지난달부터 다음 달까지",
+          "hotspot": {
+            "label": "수로 옆 공사 안내판"
+          }
+        },
+        {
+          "id": "c5_fan",
+          "title": "환풍 장치 정지 기록",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "자동 환풍 장치 / 침수 감지로 정지 / 02:41",
+          "hotspot": {
+            "label": "하우스 입구의 회색 제어 상자"
+          }
+        },
+        {
+          "id": "c5_insurance",
+          "title": "보험 증액 서류",
+          "difficulty": "fake",
+          "kind": "card",
+          "text": "농작물 재해보험 증액 신청서 / 신청일: 침수 전날 / 신청인 대표: 강철민 외",
+          "hotspot": {
+            "label": "농막 탁자 위 서류 봉투"
+          }
+        }
+      ],
+      "decoyHotspots": [
+        {
+          "id": "L5_d1",
+          "label": "멈춰 선 굴착기",
+          "text": "공사가 멈춘 굴착기다. 사고 이후로 움직이지 않았다."
+        }
+      ]
+    },
+    {
+      "id": "L6",
+      "order": 6,
+      "name": "군청 문서고",
+      "unlock": {
+        "start": true
+      },
+      "blurb": "군청 지하의 문서고와 옆 당직실. 서류와 기록이 모여 있다.",
+      "video": "loc_6_archive.mp4",
+      "poster": "loc_6_archive.png",
+      "character": "yoon",
+      "clues": [
+        {
+          "id": "c6_missed",
+          "title": "당직실 부재중 기록",
+          "difficulty": "easy",
+          "kind": "card",
+          "text": "당직실 전화 / 부재중 01:05 솔미마을 이장 / 부재중 01:08 솔미마을 이장 / 당직자 메모: 01:00~01:30 청사 지하 침수 점검으로 자리 비움",
+          "hotspot": {
+            "label": "당직실 책상의 전화기"
+          }
+        },
+        {
+          "id": "c6_calllog",
+          "title": "통화 기록부",
+          "difficulty": "normal",
+          "kind": "card",
+          "text": "21:30 솔미저수지 관리인: 사전 방류 요청 / 조치: 아랫들 수로 공사 중, 방류를 보류하고 대기하도록 지시 / 담당: 시설팀 윤재호",
+          "hotspot": {
+            "label": "당직실 책상의 기록부"
+          }
+        },
+        {
+          "id": "c6_report",
+          "title": "정밀 점검 보고서와 반려 공문",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "솔미저수지 정밀 점검 보고서 (2년 전) / 동쪽 제방 균열, 누수 흔적, 보수 필요 / 첨부: 도 예산 신청 2건 / 회신: '다음 해 재검토' (2회) / 결재: 도청 재난안전과장 배○○",
+          "hotspot": {
+            "label": "맨 아래 칸에 눕혀 둔 서류철"
+          }
+        },
+        {
+          "id": "c6_discipline",
+          "title": "관리인 징계 이력",
+          "difficulty": "fake",
+          "kind": "card",
+          "text": "노정구 / 10년 전 지각 1회, 경고 / 이후 이력 없음",
+          "hotspot": {
+            "label": "서가에서 빠져나온 상자"
+          }
+        }
+      ],
+      "decoyHotspots": []
+    },
+    {
+      "id": "L7",
+      "order": 7,
+      "name": "설비 업체 사무실",
+      "unlock": {
+        "anyClue": [
+          "c1_seal",
+          "c2_tire"
+        ]
+      },
+      "lockedHint": "관리동에서 찢어진 봉인을 찾거나 제방의 바퀴 자국을 찾으면 열린다.",
+      "blurb": "수문 설비를 관리하는 작은 업체. 기록 장치와 센서를 다룬다.",
+      "video": "loc_7_office.mp4",
+      "poster": "loc_7_office.png",
+      "character": "lim",
+      "clues": [
+        {
+          "id": "c7_dispatch",
+          "title": "출동 기록",
+          "difficulty": "easy",
+          "kind": "card",
+          "text": "출동 기록 / 22:00 솔미저수지 수위 센서 경보 / 조치: 접점 청소, 이상 없음 / 22:30 철수",
+          "hotspot": {
+            "label": "벽의 화이트보드"
+          }
+        },
+        {
+          "id": "c7_sensor",
+          "title": "센서 점검 결과지",
+          "difficulty": "normal",
+          "kind": "card",
+          "text": "수위 센서 점검 결과 (사고 다음 날) / 측정값 정상 / 자동 개방 신호 발생 기록 없음",
+          "hotspot": {
+            "label": "노트북 옆 종이"
+          }
+        },
+        {
+          "id": "c7_skew",
+          "title": "시계 오차 메모",
+          "difficulty": "hard",
+          "kind": "card",
+          "text": "정기 점검표 (석 달 전) / 구석의 손글씨: 기록 장치 시계 +7분, 다음 방문 때 조정",
+          "hotspot": {
+            "label": "벽에 걸린 클립보드"
+          }
+        },
+        {
+          "id": "c7_bid",
+          "title": "재계약 입찰 서류",
+          "difficulty": "fake",
+          "kind": "card",
+          "text": "솔미저수지 설비 유지 관리 재계약 입찰 안내 / 마감: 다음 달",
+          "hotspot": {
+            "label": "책상 구석의 서류 봉투"
+          }
+        }
+      ],
+      "decoyHotspots": []
+    }
+  ],
+  "characters": [
+    {
+      "id": "noh",
+      "name": "노정구",
+      "age": 63,
+      "role": "수문 관리인",
+      "locationId": "L1",
+      "statement1": {
+        "video": "st_noh_1.mp4",
+        "text": "저는 안 열었습니다. 밤새 여기 관리동에 있었고요. 새벽에 나와 보니 수문이 열려 있었습니다. 삼십 년을 이 일을 했는데, 폭우 오는 밤에 제 손으로 수문을 열 리가 없지 않습니까."
+      },
+      "statement2": {
+        "video": "st_noh_2.mp4",
+        "text": "집사람이 쓰러졌다고 연락이 왔습니다. 열한 시 사십 분에 병원으로 갔어요. 자리를 비운 건 제 잘못입니다. 그래도 수문은 제가 연 게 아닙니다. 아홉 시 반에 미리 물을 빼자고 군청에 전화했어요. 수로 공사 중이니 기다리라고 하더군요."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c1_log"
+          ],
+          [
+            "c1_receipt"
+          ]
+        ]
+      },
+      "wrongReply": "그게 저하고 무슨 상관입니까."
+    },
+    {
+      "id": "choi",
+      "name": "최덕희",
+      "age": 61,
+      "role": "솔미마을 이장",
+      "locationId": "L3",
+      "statement1": {
+        "video": "st_choi_1.mp4",
+        "text": "그날 밤엔 비가 하도 와서 집 밖에 나가지도 않았어요. 수문이 열린 건 아침에야 알았고요. 아랫들 분들 일은 참 안됐습니다."
+      },
+      "statement2": {
+        "video": "st_choi_2.mp4",
+        "text": "제방에서 물이 새는 걸 봤어요. 군청은 전화를 안 받고, 관리인도 없고. 요양원에 누워 계신 어르신이 스물여덟 분이에요. 그 비에 둘이서 어떻게 옮겨요. 그래서 내가 열었어요. 아랫들 하우스가 잠길 줄 알면서도요. 그 값은 내가 치르겠습니다. 미라 씨는 아무 잘못 없어요."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c3_key",
+            "c4_calls"
+          ]
+        ]
+      },
+      "wrongReply": "글쎄요, 저는 잘 모르는 일이네요."
+    },
+    {
+      "id": "song",
+      "name": "송미라",
+      "age": 34,
+      "role": "요양원 야간 근무자",
+      "locationId": "L4",
+      "statement1": {
+        "video": "st_song_1.mp4",
+        "text": "평소와 같은 밤이었어요. 비가 많이 와서 어르신들이 좀 불안해하신 것 말고는, 특별한 일은 없었습니다."
+      },
+      "statement2": {
+        "video": "st_song_2.mp4",
+        "text": "한 시 반쯤 이장님이 전화하셨어요. 제방이 위험하니 대피 준비하라고요. 둘이서 스물여덟 분을요. 세 분 옮겼을 때 다시 전화가 왔어요. 수문 열었으니 멈춰도 된다고. 그리고 누가 물으면 모른다고 해 달라고 하셨어요. 저는 그분이 우리를 살렸다고 생각해요."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c4_wheelchairs"
+          ]
+        ]
+      },
+      "wrongReply": "죄송해요, 저는 드릴 말씀이 없어요."
+    },
+    {
+      "id": "kang",
+      "name": "강철민",
+      "age": 55,
+      "role": "아랫들 작목반장",
+      "locationId": "L5",
+      "statement1": {
+        "video": "st_kang_1.mp4",
+        "text": "관리인이 잠들었든 실수했든, 수문 지키는 게 그 사람 일 아닙니까. 책임지게 해야죠. 우리는 일 년 농사를 하룻밤에 잃었습니다."
+      },
+      "statement2": {
+        "video": "st_kang_2.mp4",
+        "text": "보험이요? 호우 예보가 뜨면 작목반이 단체로 늘립니다. 매년 그래요. 그보다 수로 공사나 물어보쇼. 준설한다고 수로를 반이나 막아 놨어요. 물이 갈 데가 없으니 넘친 겁니다. 우리가 민원을 몇 번이나 넣었는데."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c5_insurance"
+          ]
+        ]
+      },
+      "wrongReply": "지금 그게 중요합니까? 우리 하우스나 보고 가쇼."
+    },
+    {
+      "id": "yoon",
+      "name": "윤재호",
+      "age": 41,
+      "role": "군청 시설 담당",
+      "locationId": "L6",
+      "statement1": {
+        "video": "st_yoon_1.mp4",
+        "text": "시설에는 문제가 없었습니다. 정기 점검도 모두 통과했고요. 저희는 운영상의 과실로 보고 있습니다. 자세한 건 발표 자료를 참고해 주시죠."
+      },
+      "statement2": {
+        "video": "st_yoon_2.mp4",
+        "text": "균열 보고는 이 년 전에 제가 올렸습니다. 도에 예산을 두 번 신청했고, 두 번 다 보류됐어요. 그날 밤 방류를 기다리라고 한 것도 접니다. 수로가 막혀 있어서 물을 내리면 아랫들이 잠기니까요. 어느 쪽을 골라도 누군가는 잠기는 밤이었습니다."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c6_report"
+          ],
+          [
+            "c6_calllog"
+          ]
+        ]
+      },
+      "wrongReply": "그 건은 저희 소관이 아닙니다."
+    },
+    {
+      "id": "lim",
+      "name": "임동수",
+      "age": 38,
+      "role": "설비 업체 기사",
+      "locationId": "L7",
+      "statement1": {
+        "video": "st_lim_1.mp4",
+        "text": "기계는 정상입니다. 기록은 두 시 십사 분 개방. 조작자 표시가 없는데, 그건 자동 개방 신호가 잘못 들어갔을 때도 그렇게 찍힙니다. 센서 오작동 가능성은... 뭐, 완전히 배제할 수는 없죠."
+      },
+      "statement2": {
+        "video": "st_lim_2.mp4",
+        "text": "센서는 멀쩡했습니다. 그리고... 기록 장치 시계가 칠 분 빠릅니다. 석 달 전에 알았는데 다음에 고치자고 미뤘어요. 실제로 열린 건 두 시 칠 분입니다. 레버 봉인 스티커요? 제가 그날 밤 열 시에 갔을 때는 붙어 있었습니다."
+      },
+      "flip": {
+        "anyOf": [
+          [
+            "c7_skew"
+          ],
+          [
+            "c7_sensor",
+            "c1_seal"
+          ]
+        ]
+      },
+      "wrongReply": "그건 저희 장비랑 관계없는 겁니다."
+    }
+  ],
+  "links": [
+    {
+      "id": "l1",
+      "clues": [
+        "c1_log",
+        "c1_receipt"
+      ],
+      "text": "관리인은 23:40부터 03:30까지 현장에 없었다. 그가 열 수는 없다."
+    },
+    {
+      "id": "l2",
+      "clues": [
+        "c1_seal",
+        "c7_sensor"
+      ],
+      "text": "기계 오작동이 아니다. 누군가 손으로 열었다."
+    },
+    {
+      "id": "l3",
+      "clues": [
+        "c4_calls",
+        "s_record"
+      ],
+      "text": "수문이 열리기 2분 전에 \"열었다\"는 전화가 왔다. 둘 중 하나의 시계가 틀렸다."
+    },
+    {
+      "id": "l4",
+      "clues": [
+        "c7_skew",
+        "s_record"
+      ],
+      "text": "실제 개방 시각은 02:07이다."
+    },
+    {
+      "id": "l5",
+      "clues": [
+        "c3_key",
+        "c2_boots"
+      ],
+      "text": "회관의 누군가가 그 밤 제방을 거쳐 관리동에 갔다."
+    },
+    {
+      "id": "l6",
+      "clues": [
+        "c6_missed",
+        "c4_calls"
+      ],
+      "text": "먼저 군청에 알리려 했고, 닿지 않자 요양원에 알렸다."
+    },
+    {
+      "id": "l7",
+      "clues": [
+        "c6_calllog",
+        "c5_sign"
+      ],
+      "text": "미리 물을 빼지 못한 이유는 수로 공사였다."
+    },
+    {
+      "id": "l8",
+      "clues": [
+        "c2_pin",
+        "c6_report"
+      ],
+      "text": "균열은 2년 전부터 알려져 있었고, 보수는 미뤄졌다."
+    }
+  ],
+  "linkWrongText": "이 두 단서는 이어지지 않습니다.",
+  "decisions": [
+    {
+      "id": "d1",
+      "when": "day1",
+      "label": "결정 1 · 1일 차 저녁",
+      "short": "보도 자료",
+      "call": {
+        "who": "배 과장 (도청 재난안전과)",
+        "image": "phone.png",
+        "text": "수고가 많아요. 군청 발표대로 관리인 과실로 정리합시다. 피해 주민들 보상이 하루라도 빨라야 하지 않겠어요? 초안 보냈으니 오늘 안에 서명해서 보내 줘요."
+      },
+      "situation": "‘관리인 과실’로 정리한 보도 자료 초안에 서명할 것인가?",
+      "options": [
+        {
+          "id": "sign",
+          "label": "서명한다",
+          "effect": {
+            "lockStatement": "noh"
+          }
+        },
+        {
+          "id": "refuse",
+          "label": "거절한다",
+          "effect": {
+            "inspectLimit": {
+              "L6": 5
+            }
+          }
+        }
+      ]
+    },
+    {
+      "id": "d2",
+      "when": "day2",
+      "label": "결정 2 · 2일 차 저녁",
+      "short": "근무자와의 약속",
+      "character": "song",
+      "skipIfFlipped": "song",
+      "visitLoc": "L4",
+      "situation": "요양원 근무자 송미라가 조용히 다가와 말한다. “제 이름이 보고서에 안 나온다고 약속해 주시면... 말씀드릴게요.”",
+      "situationIfNotVisited": "저녁에 낯선 번호로 전화가 왔다. 요양원 야간 근무자 송미라라고 한다. “제 이름이 보고서에 안 나온다고 약속해 주시면... 말씀드릴게요.”",
+      "options": [
+        {
+          "id": "promise",
+          "label": "약속한다 (진술은 들을 수 있지만, 보고서의 증거로는 쓸 수 없다)",
+          "effect": {
+            "flip": "song"
+          }
+        },
+        {
+          "id": "decline",
+          "label": "거절한다 (단서로만 풀어야 한다)"
+        }
+      ]
+    },
+    {
+      "id": "d3",
+      "when": "report",
+      "label": "결정 3",
+      "short": "이름",
+      "situation": "수문을 연 사람의 이름을 보고서에 쓸 것인가? 이름을 쓰면 그 사람은 조사와 소송의 대상이 된다.",
+      "options": [
+        {
+          "id": "name",
+          "label": "이름을 쓴다"
+        },
+        {
+          "id": "anonymous",
+          "label": "‘주민 한 명’으로만 쓴다"
+        }
+      ]
+    },
+    {
+      "id": "d4",
+      "when": "report",
+      "label": "결정 4",
+      "short": "책임",
+      "situation": "수문을 연 사람에게 침수 피해의 책임이 있다고 쓸 것인가?",
+      "options": [
+        {
+          "id": "liable",
+          "label": "책임이 있다",
+          "endingLine": "아랫들 주민들은 수문을 연 이장에게 보상을 요구했습니다."
+        },
+        {
+          "id": "notliable",
+          "label": "급박한 선택이었으므로 책임을 묻기 어렵다",
+          "endingLine": "아랫들 주민들은 “우리 피해는 누가 책임지느냐”며 도청을 찾아왔습니다."
+        },
+        {
+          "id": "factonly",
+          "label": "사실만 적고 판단은 남기지 않는다",
+          "endingLine": "판단은 법원과 두 마을의 대화로 넘어갔습니다."
+        }
+      ]
+    },
+    {
+      "id": "d5",
+      "when": "report",
+      "label": "결정 5 · 3일 차 저녁",
+      "short": "보류 결재",
+      "requiresClue": "c6_report",
+      "call": {
+        "who": "배 과장 (도청 재난안전과)",
+        "image": "phone.png",
+        "text": "문서고에 다녀왔다면서요. 이 년 전 일은 이번 사건과 별개예요. 그때는 그럴 만한 사정이 있었습니다. 보고서는 그날 밤 일만 다루는 걸로 합시다. 자네도 우리 과 사람 아닌가."
+      },
+      "situation": "2년 전 보수 예산 보류 결재를 보고서에 공개할 것인가? 결재자는 나의 상사다.",
+      "options": [
+        {
+          "id": "disclose",
+          "label": "공개한다"
+        },
+        {
+          "id": "omit",
+          "label": "빼고 제출한다"
+        }
+      ]
+    }
+  ],
+  "timeline": {
+    "intro": "그날 밤 일어난 일을 시간 순서대로 놓아 보자. 단서로 확인한 카드에만 시각이 적혀 있다. (맞힌 개수는 결말에 영향을 주지 않는다)",
+    "cards": [
+      {
+        "id": "t1",
+        "order": 1,
+        "shuffle": 7,
+        "time": "21:30",
+        "text": "관리인이 군청에 사전 방류를 요청했지만 보류 지시를 받는다",
+        "revealBy": [
+          "c6_calllog",
+          "noh"
+        ]
+      },
+      {
+        "id": "t2",
+        "order": 2,
+        "shuffle": 3,
+        "time": "22:00",
+        "text": "업체 기사가 센서 경보로 관리동을 찾는다",
+        "revealBy": [
+          "c7_dispatch",
+          "c1_log"
+        ]
+      },
+      {
+        "id": "t3",
+        "order": 3,
+        "shuffle": 11,
+        "time": "23:40",
+        "text": "관리인이 아내의 응급실 연락을 받고 근무지를 떠난다",
+        "revealBy": [
+          "noh"
+        ]
+      },
+      {
+        "id": "t4",
+        "order": 4,
+        "shuffle": 1,
+        "time": "00:50",
+        "text": "이장이 제방을 살피다 균열에서 물이 새는 것을 발견한다",
+        "revealBy": [
+          "choi"
+        ]
+      },
+      {
+        "id": "t5",
+        "order": 5,
+        "shuffle": 9,
+        "time": "01:05",
+        "text": "이장이 군청 당직실에 전화하지만 받지 않는다",
+        "revealBy": [
+          "c6_missed"
+        ]
+      },
+      {
+        "id": "t6",
+        "order": 6,
+        "shuffle": 5,
+        "time": "01:20",
+        "text": "이장이 관리인에게 전화하지만 받지 않는다",
+        "revealBy": [
+          "noh",
+          "choi"
+        ]
+      },
+      {
+        "id": "t7",
+        "order": 7,
+        "shuffle": 12,
+        "time": "01:35",
+        "text": "이장이 요양원에 “대피 준비하세요”라고 전화한다",
+        "revealBy": [
+          "c4_calls"
+        ]
+      },
+      {
+        "id": "t8",
+        "order": 8,
+        "shuffle": 2,
+        "time": "01:40",
+        "text": "요양원 근무자 두 명이 어르신들의 대피 준비를 시작한다",
+        "revealBy": [
+          "song"
+        ]
+      },
+      {
+        "id": "t9",
+        "order": 9,
+        "shuffle": 8,
+        "time": "02:07",
+        "timeNoSkew": "02:07",
+        "timeAlt": "02:14",
+        "altBy": [
+          "s_record"
+        ],
+        "text": "누군가 수동 레버로 수문을 연다",
+        "revealBy": [
+          "c7_skew",
+          "lim"
+        ]
+      },
+      {
+        "id": "t10",
+        "order": 10,
+        "shuffle": 4,
+        "time": "02:12",
+        "text": "요양원에 “수문 열었어요. 멈춰도 됩니다”라는 전화가 온다",
+        "revealBy": [
+          "c4_calls",
+          "song"
+        ]
+      },
+      {
+        "id": "t11",
+        "order": 11,
+        "shuffle": 10,
+        "time": "02:41",
+        "text": "수로가 넘쳐 아랫들 하우스에 물이 닿는다",
+        "revealBy": [
+          "c5_fan"
+        ]
+      },
+      {
+        "id": "t12",
+        "order": 12,
+        "shuffle": 6,
+        "time": "03:30",
+        "text": "관리인이 돌아와 열린 수문을 발견한다",
+        "revealBy": [
+          "c1_log",
+          "c1_receipt"
+        ]
+      }
+    ]
+  },
+  "report": {
+    "intro": "사흘의 조사가 끝났다. 내가 아는 것만으로 보고서를 쓴다.",
+    "questions": [
+      {
+        "id": "who",
+        "q": "누가 수문을 열었는가?",
+        "answer": "choi",
+        "machineOption": "machine",
+        "options": [
+          {
+            "id": "noh",
+            "label": "관리인 노정구"
+          },
+          {
+            "id": "choi",
+            "label": "솔미마을 이장 최덕희"
+          },
+          {
+            "id": "yoon",
+            "label": "군청 시설 담당 윤재호"
+          },
+          {
+            "id": "lim",
+            "label": "설비 업체 기사 임동수"
+          },
+          {
+            "id": "machine",
+            "label": "기계 오작동"
+          }
+        ]
+      },
+      {
+        "id": "when",
+        "q": "수문은 언제 열렸는가?",
+        "answer": "t0207",
+        "options": [
+          {
+            "id": "t0207",
+            "label": "02:07"
+          },
+          {
+            "id": "t0214",
+            "label": "02:14"
+          },
+          {
+            "id": "t0221",
+            "label": "02:21"
+          },
+          {
+            "id": "unknown",
+            "label": "알 수 없다"
+          }
+        ]
+      },
+      {
+        "id": "why",
+        "q": "왜 열었는가?",
+        "answer": "protect",
+        "options": [
+          {
+            "id": "mistake",
+            "label": "실수로"
+          },
+          {
+            "id": "broken",
+            "label": "기계 고장으로"
+          },
+          {
+            "id": "protect",
+            "label": "제방이 무너져 요양원이 잠기는 것을 막으려고"
+          },
+          {
+            "id": "harm",
+            "label": "아랫들에 피해를 주려고"
+          }
+        ]
+      }
+    ]
+  },
+  "endings": [
+    {
+      "id": "convenient",
+      "title": "편리한 결론",
+      "video": "end_convenient.mp4",
+      "text": "조사는 사흘 만에 끝났고 보상 절차가 시작되었습니다. 노정구 씨는 삼십 년을 일한 관리동을 떠났습니다. 동쪽 제방의 균열은 그대로입니다. 다음 장마가 오고 있습니다.",
+      "gain": "조사가 빨리 끝나고 보상 절차가 바로 시작된다.",
+      "loss": "관리인이 혼자 책임을 지고 물러난다. 제방의 균열은 그대로 남는다."
+    },
+    {
+      "id": "machine",
+      "title": "기계의 잘못",
+      "video": "end_machine.mp4",
+      "text": "설비는 새것으로 바뀌었고 아무도 처벌받지 않았습니다. 그날 밤 누가 무엇을 했는지는 어디에도 남지 않았습니다. 이장은 비가 올 때마다 제방에 나갑니다.",
+      "gain": "아무도 처벌받지 않는다.",
+      "loss": "업체만 바뀌고, 그 밤에 있었던 일과 제방의 위험은 묻힌다."
+    },
+    {
+      "id": "half",
+      "title": "절반의 진실",
+      "video": "end_half.mp4",
+      "useD4Line": true,
+      "text": "보고서에는 최덕희라는 이름이 적혔습니다. 아랫들 주민들은 보상을 요구했고, 솔미마을 주민들은 이장을 감쌌습니다. 두 마을은 그해 장터를 따로 열었습니다. 제방 보수 예산은 올해도 올라가지 않았습니다.",
+      "gain": "사실 관계가 밝혀지고 아랫들 주민들이 납득한다.",
+      "loss": "이장이 소송을 당하고 두 마을이 갈라선다. 보수를 미룬 책임은 빠진다."
+    },
+    {
+      "id": "anonymous",
+      "title": "이름 없는 보고서",
+      "video": "end_anonymous.mp4",
+      "text": "‘주민 한 명이 수문을 열었다.’ 보고서는 근거가 부족하다는 이유로 되돌아왔습니다. 이장과 요양보호사는 조사받지 않았습니다. 아랫들에는 도청이 무언가를 숨긴다는 말이 돕니다.",
+      "gain": "이장과 요양원 근무자가 보호된다.",
+      "loss": "보고서가 근거 부족으로 반려되고, 아랫들에는 누가 열었는지를 두고 소문이 돈다."
+    },
+    {
+      "id": "whole",
+      "title": "전체 그림",
+      "video": "end_whole.mp4",
+      "useD4Line": true,
+      "text": "이 년 전에 보류된 결재가 공개되었고, 제방 긴급 보수가 시작되었습니다. 침수 보상은 도에서 논의합니다. 당신은 다른 지역의 작은 사무소로 발령받았습니다. 이장의 선택이 옳았는지를 두고 두 마을은 아직 이야기하고 있습니다.",
+      "gain": "제방 긴급 보수가 시작되고, 침수 보상을 도에서 논의한다.",
+      "loss": "조사관은 한직으로 밀려나고, 이장의 선택이 옳았는지는 여전히 논쟁으로 남는다."
+    }
+  ],
+  "layers": [
+    {
+      "id": "surface",
+      "name": "겉: 관리인의 실수"
+    },
+    {
+      "id": "flip1",
+      "name": "관리인은 없었다",
+      "byLinks": [
+        "l1"
+      ],
+      "byFlip": [
+        "noh"
+      ]
+    },
+    {
+      "id": "flip2",
+      "name": "누군가 손으로 열었다",
+      "byLinks": [
+        "l2",
+        "l3",
+        "l4"
+      ],
+      "byFlip": [
+        "lim"
+      ]
+    },
+    {
+      "id": "flip3",
+      "name": "이장이 요양원을 지키려 열었다",
+      "byLinks": [
+        "l5",
+        "l6"
+      ],
+      "byFlip": [
+        "choi",
+        "song"
+      ]
+    },
+    {
+      "id": "bottom",
+      "name": "바닥: 미뤄진 보수",
+      "byLinks": [
+        "l8"
+      ],
+      "byFlip": [
+        "yoon"
+      ]
+    }
+  ],
+  "missed": {
+    "title": "당신이 보지 못한 것",
+    "question": "이것을 알았다면 보고서가 달라졌을까요?"
+  },
+  "reflectionPrompts": [
+    "이장은 아랫들이 잠길 줄 알면서 수문을 열었다. 그 선택은 옳았는가? 열지 않았다면 어떤 말을 들었을까?",
+    "관리인, 시설 담당, 업체 기사, 과장은 각자 작은 일을 미루거나 자리를 비웠다. 이들의 책임은 수문을 연 사람의 책임보다 가벼운가?",
+    "요양보호사와 한 약속(이름을 빼 주겠다)은 진실을 밝히는 일보다 중요한가?",
+    "내가 조사관이라면 상사의 결재를 공개했을까? 공개하지 않는 것은 거짓말인가?",
+    "나는 몇 번째 겹에서 멈추었는가? 더 찾지 않은 이유는 무엇이었는가?"
+  ]
+}

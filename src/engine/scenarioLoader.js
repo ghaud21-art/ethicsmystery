@@ -2,7 +2,7 @@ import { listScenarios, getScenario } from '../firebase/scenariosApi'
 
 const cache = new Map()
 
-const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', 'tanmun-1.0', 'room-2.0', 'missedscene-1.0']
+const SUPPORTED_SCHEMA_VERSIONS = ['1.0', '1.1', '1.2', 'tanmun-1.0', 'room-2.0', 'missedscene-1.0', 'missedscene-2.0']
 
 export async function loadScenario(scenarioId) {
   if (cache.has(scenarioId)) return cache.get(scenarioId)

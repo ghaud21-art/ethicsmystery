@@ -7,6 +7,7 @@ import { useAuth } from '../context/AuthContext.jsx'
 import { loadScenario } from '../engine/scenarioLoader.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
+import MissedInvestigationPage from './MissedInvestigationPage.jsx'
 import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newMissedSceneRun, newSceneRecord, saveMissedSceneRun, getMissedSceneRun, clearMissedSceneRun,
@@ -1000,5 +1001,6 @@ export default function MissedScenePlayPage() {
       </div>
     )
   }
+  if (scenario.mode === 'investigation') return <MissedInvestigationPage scenario={scenario} />
   return <MissedSceneInner scenario={scenario} />
 }
