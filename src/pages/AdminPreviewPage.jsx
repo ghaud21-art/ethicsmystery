@@ -912,10 +912,226 @@ function TimedHotspotPlacer({ loc, mediaUrls, onChangeLoc, inspectMode, onInspec
   )
 }
 
+// 조사 모드 플레이형 편집 — 학생 화면 흐름(시작→장소→결정→시간표→보고서→결말→성찰)대로
+// 점선 칸의 글을 바로 고치고, 미디어 자리에 파일을 올린다.
+function setIn(obj, path, value) {
+  const copy = JSON.parse(JSON.stringify(obj))
+  let o = copy
+  for (let i = 0; i < path.length - 1; i++) o = o[path[i]] ??= typeof path[i + 1] === 'number' ? [] : {}
+  o[path[path.length - 1]] = value
+  return copy
+}
+
+function InvestigationPlayEditor({ draft, onChange, slotProps }) {
+  const [sec, setSec] = useState('start')
+  const set = (path) => (v) => onChange(setIn(draft, path, v))
+  const T = (path, props = {}) => <EditableText editMode value={path.reduce((o, k) => o?.[k], draft)} onChange={set(path)} {...props} />
+  const L = (path, style = {}) => <EditableLine editMode value={path.reduce((o, k) => o?.[k], draft)} onChange={set(path)} style={{ width: '100%', boxSizing: 'border-box', ...style }} />
+  const lab = (t) => <div className="dim" style={{ fontSize: 11, margin: '6px 0 2px' }}>{t}</div>
+  const DIFF = { easy: '쉬움', normal: '보통', hard: '어려움', fake: '가짜' }
+  const sections = [['start', '시작·브리핑'], ...draft.locations.map((l, i) => [`loc${i}`, `${l.order}. ${l.name}`]), ['links', '단서 잇기'], ['decisions', '결정·전화'], ['timeline', '시간표'], ['report', '보고서'], ['endings', '결말'], ['reflect', '놓친 장면·성찰']]
+  const li = sec.startsWith('loc') ? Number(sec.slice(3)) : -1
+  const loc = draft.locations[li]
+  const ci = loc ? draft.characters.findIndex((c) => c.id === loc.character) : -1
+  const allClues = [...(draft.startClues ?? []), ...draft.locations.flatMap((l) => l.clues)]
+  const clueTitle = (id) => allClues.find((c) => c.id === id)?.title ?? draft.characters.find((c) => c.id === id)?.name ?? id
+
+  return (
+    <>
+      <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 12 }}>
+        {sections.map(([k, l]) => (
+          <button key={k} onClick={() => setSec(k)} style={{ fontSize: 12, padding: '4px 10px', borderColor: sec === k ? 'var(--gold)' : undefined, background: sec === k ? 'rgba(201,162,39,.12)' : undefined }}>{l}</button>
+        ))}
+      </div>
+
+      {sec === 'start' && (
+        <>
+          <div className="card col" style={{ borderTop: '2px solid var(--gold)' }}>
+            {lab('시리즈')}{L(['meta', 'series'], { fontSize: 12 })}
+            {lab('제목')}{L(['meta', 'title'], { fontSize: 22, fontWeight: 800 })}
+            {lab('소개')}{T(['meta', 'subtitle'])}
+            {lab('안내 문구 (가상 사건 안내)')}{T(['notice'], { fontSize: 12, dim: true })}
+          </div>
+          <div className="card col">
+            <div className="kicker">난이도</div>
+            {Object.keys(draft.levels ?? {}).map((k) => (
+              <div key={k} className="col" style={{ gap: 2 }}>
+                <div className="row" style={{ gap: 6 }}>{L(['levels', k, 'label'], { width: 90, fontWeight: 700 })}{L(['levels', k, 'minutes'], { width: 90 })}</div>
+                {T(['levels', k, 'desc'], { fontSize: 12, dim: true })}
+              </div>
+            ))}
+          </div>
+          <div className="card col">
+            {lab('브리핑 머리말')}{L(['briefing', 'kicker'], { fontSize: 11 })}
+            {lab('브리핑 제목')}{L(['briefing', 'title'], { fontSize: 20, fontWeight: 800 })}
+            {(draft.briefing?.lines ?? []).map((_, i) => <div key={i}>{T(['briefing', 'lines', i])}</div>)}
+          </div>
+          <div className="card col">
+            <strong style={{ fontSize: 13 }}>처음 받은 자료</strong>
+            {(draft.startClues ?? []).map((c, i) => (
+              <div key={c.id} className="card col" style={{ margin: 0, gap: 4 }}>
+                {L(['startClues', i, 'title'], { fontWeight: 700 })}
+                {T(['startClues', i, 'text'], { fontSize: 12.5 })}
+                {c.textNoSkew != null && <>{lab('입문(시계 오차 없음)에서 보이는 글')}{T(['startClues', i, 'textNoSkew'], { fontSize: 12.5, dim: true })}</>}
+              </div>
+            ))}
+            <div className="card col" style={{ margin: 0, gap: 4 }}>
+              <strong style={{ fontSize: 13 }}>조사 규칙</strong>
+              {(draft.rules ?? []).map((_, i) => <div key={i}>{T(['rules', i], { fontSize: 12.5 })}</div>)}
+            </div>
+          </div>
+        </>
+      )}
+
+      {loc && (
+        <>
+          <div className="card col">
+            <div className="kicker">{loc.order}. 장소</div>
+            {L(['locations', li, 'name'], { fontWeight: 800, fontSize: 16 })}
+            {lab('지도에 보이는 설명')}{T(['locations', li, 'blurb'], { fontSize: 13 })}
+            {loc.lockedHint != null && <>{lab('잠겨 있을 때 안내')}{T(['locations', li, 'lockedHint'], { fontSize: 12, dim: true })}</>}
+            <MediaSlot {...slotProps} kind="video" label="장소 영상" fileName={loc.video} />
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>단서가 영상 몇 초에 어디 있는지는 ‘단서 위치 지정’ 탭에서 찍습니다.</p>
+          </div>
+          {loc.clues.map((c, k) => (
+            <div key={c.id} className="card col" style={{ gap: 4, borderColor: c.difficulty === 'fake' ? 'rgba(208,138,90,.6)' : 'var(--gold)' }}>
+              <div className="row" style={{ justifyContent: 'space-between', gap: 6 }}>
+                <div style={{ flex: 1 }}>{L(['locations', li, 'clues', k, 'title'], { fontWeight: 700 })}</div>
+                <span className="pill pill-muted">{DIFF[c.difficulty] ?? c.difficulty}</span>
+              </div>
+              {lab('지목 위치 이름 (위치를 안 찍으면 이 글이 버튼으로 나옴)')}{L(['locations', li, 'clues', k, 'hotspot', 'label'], { fontSize: 12 })}
+              {c.kind === 'image' && <MediaSlot {...slotProps} kind="image" label="단서 이미지" fileName={c.image} />}
+              {lab(c.kind === 'card' ? '글 카드 ( / 로 줄바꿈)' : '이미지 아래 설명')}{T(['locations', li, 'clues', k, 'text'], { fontSize: 12.5 })}
+            </div>
+          ))}
+          {(loc.decoyHotspots ?? []).map((d, k) => (
+            <div key={d.id ?? k} className="card col" style={{ gap: 4 }}>
+              <span className="pill pill-muted" style={{ alignSelf: 'flex-start' }}>혼란 지점</span>
+              {L(['locations', li, 'decoyHotspots', k, 'label'], { fontSize: 12 })}
+              {T(['locations', li, 'decoyHotspots', k, 'text'], { fontSize: 12.5, dim: true })}
+            </div>
+          ))}
+          {ci >= 0 ? (
+            <div className="card col">
+              <div className="kicker">인물</div>
+              <div className="row" style={{ gap: 6 }}>
+                {L(['characters', ci, 'name'], { width: 100, fontWeight: 700 })}{L(['characters', ci, 'role'], { flex: 1 })}
+              </div>
+              {lab('첫 번째 진술')}
+              <MediaSlot {...slotProps} kind="video" label="첫 번째 진술 영상" fileName={draft.characters[ci].statement1?.video} />
+              {T(['characters', ci, 'statement1', 'text'], { fontSize: 13.5 })}
+              {lab(`두 번째 진술 — 여는 단서: ${(draft.characters[ci].flip?.anyOf ?? []).map((g) => (Array.isArray(g) ? g : g.clues).map(clueTitle).join(' + ')).join('  또는  ')}`)}
+              <MediaSlot {...slotProps} kind="video" label="두 번째 진술 영상" fileName={draft.characters[ci].statement2?.video} />
+              {T(['characters', ci, 'statement2', 'text'], { fontSize: 13.5 })}
+              {lab('틀린 단서를 내밀었을 때')}{L(['characters', ci, 'wrongReply'], { fontSize: 13 })}
+            </div>
+          ) : <div className="card dim" style={{ fontSize: 13 }}>이곳에는 만날 사람이 없다.</div>}
+        </>
+      )}
+
+      {sec === 'links' && (
+        <div className="card col">
+          <div className="kicker">단서 잇기 — 두 단서를 이으면 열리는 추론</div>
+          {draft.links.map((l, i) => (
+            <div key={l.id} className="col" style={{ gap: 2 }}>
+              <span className="dim" style={{ fontSize: 12 }}>{l.clues.map(clueTitle).join(' + ')}</span>
+              {T(['links', i, 'text'], { fontSize: 13.5 })}
+            </div>
+          ))}
+          {lab('잘못 이었을 때')}{L(['linkWrongText'])}
+        </div>
+      )}
+
+      {sec === 'decisions' && draft.decisions.map((d, i) => (
+        <div key={d.id} className="card col">
+          {L(['decisions', i, 'label'], { fontSize: 11, fontWeight: 700 })}
+          {d.call && (
+            <div className="card col" style={{ margin: 0, borderColor: 'rgba(94,145,224,.5)' }}>
+              {L(['decisions', i, 'call', 'who'], { fontSize: 12 })}
+              <MediaSlot {...slotProps} kind="image" label="전화 이미지" fileName={d.call.image} />
+              {d.call.audio && <MediaSlot {...slotProps} kind="audio" label="전화 음성" fileName={d.call.audio} />}
+              {T(['decisions', i, 'call', 'text'])}
+            </div>
+          )}
+          {T(['decisions', i, 'situation'])}
+          {d.situationIfNotVisited != null && <>{lab('그 장소에 가지 않은 학생에게 (전화로)')}{T(['decisions', i, 'situationIfNotVisited'], { dim: true })}</>}
+          {d.options.map((o, k) => (
+            <div key={o.id} className="col" style={{ gap: 2 }}>
+              {L(['decisions', i, 'options', k, 'label'])}
+              {o.endingLine != null && <>{lab('결말(절반의 진실·전체 그림)에 붙는 문장')}{T(['decisions', i, 'options', k, 'endingLine'], { fontSize: 12.5, dim: true })}</>}
+            </div>
+          ))}
+        </div>
+      ))}
+
+      {sec === 'timeline' && (
+        <div className="card col">
+          <div className="kicker">3일 차 · 시간표 맞추기 (정답 순서대로 표시)</div>
+          {T(['timeline', 'intro'], { fontSize: 13 })}
+          {[...draft.timeline.cards].sort((a, b) => a.order - b.order).map((c) => {
+            const i = draft.timeline.cards.indexOf(c)
+            return (
+              <div key={c.id} className="row" style={{ gap: 6, alignItems: 'center' }}>
+                {L(['timeline', 'cards', i, 'time'], { width: 64, fontFamily: 'var(--font-mono)' })}
+                <div style={{ flex: 1 }}>{L(['timeline', 'cards', i, 'text'])}</div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {sec === 'report' && (
+        <div className="card col">
+          <div className="kicker">최종 보고서</div>
+          {T(['report', 'intro'], { fontSize: 13 })}
+          {draft.report.questions.map((q, i) => (
+            <div key={q.id} className="col" style={{ gap: 4 }}>
+              {L(['report', 'questions', i, 'q'], { fontWeight: 700 })}
+              {q.options.map((o, k) => (
+                <div key={o.id} className="row" style={{ gap: 6, alignItems: 'center' }}>
+                  <span className="pill pill-muted" style={{ minWidth: 34, textAlign: 'center' }}>{o.id === q.answer ? '정답' : o.id === q.machineOption ? '기계' : ''}</span>
+                  <div style={{ flex: 1 }}>{L(['report', 'questions', i, 'options', k, 'label'])}</div>
+                </div>
+              ))}
+            </div>
+          ))}
+          <p className="dim" style={{ margin: 0, fontSize: 11 }}>결정 3·4·5는 ‘결정·전화’에서 고칩니다.</p>
+        </div>
+      )}
+
+      {sec === 'endings' && draft.endings.map((e, i) => (
+        <div key={e.id} className="card col" style={{ borderTop: '2px solid var(--gold)' }}>
+          {L(['endings', i, 'title'], { fontSize: 20, fontWeight: 800 })}
+          <MediaSlot {...slotProps} kind="video" label="결말 영상" fileName={e.video} />
+          {T(['endings', i, 'text'])}
+          {e.useD4Line && <p className="dim" style={{ margin: 0, fontSize: 11 }}>+ 결정 4에서 고른 답에 따른 문장이 이어집니다.</p>}
+          {lab('얻은 것')}{T(['endings', i, 'gain'], { fontSize: 13 })}
+          {lab('잃은 것')}{T(['endings', i, 'loss'], { fontSize: 13 })}
+        </div>
+      ))}
+
+      {sec === 'reflect' && (
+        <>
+          <div className="card col">
+            <div className="kicker">놓친 장면</div>
+            {L(['missed', 'title'], { fontSize: 18, fontWeight: 800 })}
+            <p className="dim" style={{ margin: 0, fontSize: 12 }}>(가지 않은 장소와 찾지 못한 단서 목록이 자동으로 나옵니다)</p>
+            {L(['missed', 'question'], { fontWeight: 700 })}
+          </div>
+          <div className="card col">
+            <div className="kicker">성찰 질문</div>
+            {(draft.reflectionPrompts ?? []).map((_, i) => <div key={i}>{T(['reflectionPrompts', i], { fontSize: 13 })}</div>)}
+          </div>
+        </>
+      )}
+    </>
+  )
+}
+
 function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy, saved, error }) {
   const isDirty = JSON.stringify(draft) !== JSON.stringify(original)
   const mediaUrls = draft.mediaUrls ?? {}
-  const [tab, setTab] = useState('media')
+  const [tab, setTab] = useState('play')
   const [locIdx, setLocIdx] = useState(0)
   const handleMediaUrlChange = async (fileName, url) => {
     const next = { ...mediaUrls }
@@ -939,15 +1155,17 @@ function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy
         </button>
       </div>
       <p className="dim" style={{ margin: '0 0 10px', fontSize: 11, lineHeight: 1.6 }}>
-        글 내용은 JSON 파일로 고쳐 다시 올립니다(미디어와 공개 상태는 유지됩니다). 미디어 자리에 파일을 올리면 즉시 저장됩니다
+        학생이 보는 순서대로 점선 칸의 글을 바로 고치고 <strong>변경사항 저장</strong>을 누르세요. 미디어 자리에 파일을 올리면 즉시 저장됩니다
         (업로드됨 {done}/{list.length}).{' '}
         <a href={`${window.location.origin}${window.location.pathname}#/missedscene/${draft.scenarioId}`} target="_blank" rel="noopener noreferrer" style={{ color: 'var(--gold-light)' }}>실제 플레이 화면 열기 →</a>
       </p>
       {error && <p style={{ color: 'var(--blood-light)', fontSize: 12 }}>{error}</p>}
       <div className="tabs" style={{ marginBottom: 12 }}>
-        <button className={`tab-button ${tab === 'media' ? 'active' : ''}`} onClick={() => setTab('media')}>미디어 업로드</button>
+        <button className={`tab-button ${tab === 'play' ? 'active' : ''}`} onClick={() => setTab('play')}>플레이형 편집</button>
+        <button className={`tab-button ${tab === 'media' ? 'active' : ''}`} onClick={() => setTab('media')}>미디어 한눈에 보기</button>
         <button className={`tab-button ${tab === 'spots' ? 'active' : ''}`} onClick={() => setTab('spots')}>단서 위치 지정</button>
       </div>
+      {tab === 'play' && <InvestigationPlayEditor draft={draft} onChange={onChange} slotProps={slotProps} />}
       {tab === 'media' && groups.map((g) => {
         const items = list.filter((m) => m.group === g)
         return (
