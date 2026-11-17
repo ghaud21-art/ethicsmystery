@@ -285,6 +285,19 @@ export default function MissedInvestigationPage({ scenario }) {
           </div>
           <p style={{ fontSize: 15, fontWeight: 700, margin: '16px 0 0' }}>{scenario.missed?.question ?? '이것을 알았다면 보고서가 달라졌을까요?'}</p>
         </div>
+        <button className="primary" style={{ width: '100%' }} onClick={() => setRun((r) => ({ ...r, step: scenario.hiddenStory ? 'story' : 'ended' }))}>
+          {scenario.hiddenStory ? `${scenario.hiddenStory.title ?? '숨겨진 이야기'} →` : '나의 조사 기록과 성찰 →'}
+        </button>
+      </div>
+    )
+  }
+
+  // ---------- 숨겨진 이야기 (결말·놓친 장면 뒤, 사건의 전모) ----------
+  if (run.step === 'story' && scenario.hiddenStory) {
+    return (
+      <div className="page">
+        <Masthead />
+        <HiddenStory scenario={scenario} run={run} mediaUrl={mediaUrl} />
         <button className="primary" style={{ width: '100%' }} onClick={() => setRun((r) => ({ ...r, step: 'ended' }))}>나의 조사 기록과 성찰 →</button>
       </div>
     )
@@ -292,6 +305,52 @@ export default function MissedInvestigationPage({ scenario }) {
 
   // ---------- 결과·성찰 ----------
   return <ResultView scenario={scenario} run={run} uid={uid} tier={tier} studentIdentity={studentIdentity} onRestart={restart} onExit={() => navigate('/')} />
+}
+
+function HiddenStory({ scenario, run, mediaUrl }) {
+  const st = scenario.hiddenStory
+  const reached = new Set(layersReached(scenario, run).map((l) => l.id))
+  return (
+    <>
+      <div className="card" style={{ borderTop: '2px solid var(--gold)' }}>
+        <div className="kicker">{st.kicker ?? '사건의 전모'}</div>
+        <h1 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 24, margin: '4px 0 10px' }}>{st.title}</h1>
+        {st.video && <Media kind="video" src={mediaUrl(st.video)} />}
+        {st.intro && <p style={{ fontSize: 14, lineHeight: 1.85, margin: '8px 0 0', whiteSpace: 'pre-line' }}>{st.intro}</p>}
+      </div>
+      {(st.chapters ?? []).map((c, i) => {
+        const got = c.layer ? reached.has(c.layer) : null
+        return (
+          <div key={i} className="card" style={{ borderLeft: `3px solid ${got === false ? 'var(--line)' : 'var(--gold)'}` }}>
+            <div className="row" style={{ justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
+              <div className="kicker">{c.kicker ?? `${i + 1}`}</div>
+              {got != null && <span className={`pill ${got ? 'pill-solid' : 'pill-muted'}`}>{got ? '당신이 도달한 진실' : '당신이 놓친 진실'}</span>}
+            </div>
+            <h3 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 17, margin: '2px 0 8px' }}>{c.heading}</h3>
+            <p style={{ fontSize: 14, lineHeight: 1.85, margin: 0, whiteSpace: 'pre-line' }}>{c.text}</p>
+          </div>
+        )
+      })}
+      {st.timeline?.length > 0 && (
+        <div className="card">
+          <div className="kicker">{st.timelineTitle ?? '그날 밤 실제 시간표'}</div>
+          <div className="col" style={{ gap: 6, marginTop: 6 }}>
+            {st.timeline.map((t, i) => (
+              <div key={i} className="row" style={{ gap: 10, alignItems: 'baseline' }}>
+                <span style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--gold-light)', minWidth: 48 }}>{t.time}</span>
+                <span style={{ fontSize: 13.5, lineHeight: 1.6 }}>{t.text}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+      {st.closing && (
+        <div className="card">
+          <p style={{ fontSize: 15, lineHeight: 1.9, margin: 0, fontWeight: 600, whiteSpace: 'pre-line' }}>{st.closing}</p>
+        </div>
+      )}
+    </>
+  )
 }
 
 // 하루를 마친 뒤 어디로 갈지 (결정 → 다음 날, 마지막 날은 시간표)

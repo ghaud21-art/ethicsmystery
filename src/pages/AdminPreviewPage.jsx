@@ -929,7 +929,7 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
   const L = (path, style = {}) => <EditableLine editMode value={path.reduce((o, k) => o?.[k], draft)} onChange={set(path)} style={{ width: '100%', boxSizing: 'border-box', ...style }} />
   const lab = (t) => <div className="dim" style={{ fontSize: 11, margin: '6px 0 2px' }}>{t}</div>
   const DIFF = { easy: '쉬움', normal: '보통', hard: '어려움', fake: '가짜' }
-  const sections = [['start', '시작·브리핑'], ...draft.locations.map((l, i) => [`loc${i}`, `${l.order}. ${l.name}`]), ['links', '단서 잇기'], ['decisions', '결정·전화'], ['timeline', '시간표'], ['report', '보고서'], ['endings', '결말'], ['reflect', '놓친 장면·성찰']]
+  const sections = [['start', '시작·브리핑'], ...draft.locations.map((l, i) => [`loc${i}`, `${l.order}. ${l.name}`]), ['links', '단서 잇기'], ['decisions', '결정·전화'], ['timeline', '시간표'], ['report', '보고서'], ['endings', '결말'], ['story', '숨겨진 이야기'], ['reflect', '놓친 장면·성찰']]
   const li = sec.startsWith('loc') ? Number(sec.slice(3)) : -1
   const loc = draft.locations[li]
   const ci = loc ? draft.characters.findIndex((c) => c.id === loc.character) : -1
@@ -1114,6 +1114,49 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
           {e.useD4Line && <p className="dim" style={{ margin: 0, fontSize: 11 }}>+ 결정 4에서 고른 답에 따른 문장이 이어집니다.</p>}
           {lab('얻은 것')}{T(['endings', i, 'gain'], { fontSize: 13 })}
           {lab('잃은 것')}{T(['endings', i, 'loss'], { fontSize: 13 })}
+        </div>
+      ))}
+
+      {sec === 'story' && (draft.hiddenStory ? (
+        <>
+          <div className="card col" style={{ borderTop: '2px solid var(--gold)' }}>
+            <p className="dim" style={{ margin: 0, fontSize: 11 }}>결말 → 놓친 장면 다음, 성찰 직전에 나옵니다.</p>
+            {L(['hiddenStory', 'kicker'], { fontSize: 11 })}
+            {L(['hiddenStory', 'title'], { fontSize: 22, fontWeight: 800 })}
+            {T(['hiddenStory', 'intro'])}
+          </div>
+          {(draft.hiddenStory.chapters ?? []).map((c, i) => (
+            <div key={i} className="card col" style={{ gap: 4 }}>
+              <div className="row" style={{ gap: 6, alignItems: 'center' }}>
+                {L(['hiddenStory', 'chapters', i, 'kicker'], { width: 160, fontSize: 11 })}
+                {c.layer && <span className="dim" style={{ fontSize: 11 }}>학생이 이 겹({(draft.layers ?? []).find((l) => l.id === c.layer)?.name})에 도달했는지 표시됩니다</span>}
+              </div>
+              {L(['hiddenStory', 'chapters', i, 'heading'], { fontWeight: 800, fontSize: 16 })}
+              {T(['hiddenStory', 'chapters', i, 'text'])}
+            </div>
+          ))}
+          <div className="card col">
+            {L(['hiddenStory', 'timelineTitle'], { fontSize: 11 })}
+            {(draft.hiddenStory.timeline ?? []).map((_, i) => (
+              <div key={i} className="row" style={{ gap: 6 }}>
+                {L(['hiddenStory', 'timeline', i, 'time'], { width: 64, fontFamily: 'var(--font-mono)' })}
+                <div style={{ flex: 1 }}>{L(['hiddenStory', 'timeline', i, 'text'])}</div>
+              </div>
+            ))}
+          </div>
+          <div className="card col">{lab('맺음말')}{T(['hiddenStory', 'closing'])}</div>
+        </>
+      ) : (
+        <div className="card col">
+          <p style={{ margin: 0, fontSize: 13 }}>아직 숨겨진 이야기가 없습니다.</p>
+          <button className="primary" style={{ alignSelf: 'flex-start' }} onClick={async () => {
+            try {
+              const base = await fetch(`${import.meta.env.BASE_URL}scenarios/${draft.scenarioId}.json`).then((r) => r.json())
+              if (!base.hiddenStory) return alert('기본 파일에 숨겨진 이야기가 없습니다.')
+              onChange({ ...draft, hiddenStory: base.hiddenStory })
+            } catch { alert('기본 숨겨진 이야기를 불러오지 못했습니다.') }
+          }}>기본 숨겨진 이야기 불러오기</button>
+          <p className="dim" style={{ margin: 0, fontSize: 11 }}>불러온 뒤 글을 고치고 <strong>변경사항 저장</strong>을 누르세요. 찍어 둔 단서 위치와 미디어는 그대로입니다.</p>
         </div>
       ))}
 
