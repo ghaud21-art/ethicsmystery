@@ -807,7 +807,6 @@ function investigationMediaList(d) {
   for (const l of d.locations ?? []) {
     const g = `${l.order}. ${l.name}`
     add(g, '장소 영상', 'video', l.video)
-    add(g, '(선택) 장소 컷 이미지 — 영상 썸네일. 영상에 단서 위치를 찍으면 지목은 영상에서 합니다', 'image', l.poster)
     for (const c of l.clues ?? []) if (c.kind === 'image') add(g, `단서 이미지 · ${c.title}`, 'image', c.image)
     const ch = (d.characters ?? []).find((x) => x.id === l.character)
     if (ch) {

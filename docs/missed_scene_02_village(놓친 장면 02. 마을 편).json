@@ -105,7 +105,6 @@
       },
       "blurb": "저수지 옆 작은 콘크리트 관리동. 수문을 여닫는 제어반과 수동 레버가 있다.",
       "video": "loc_1_gatehouse.mp4",
-      "poster": "loc_1_gatehouse.png",
       "character": "noh",
       "clues": [
         {
@@ -168,7 +167,6 @@
       },
       "blurb": "저수지 동쪽의 흙 제방. 바로 아래에 솔미마을과 요양원이 있다.",
       "video": "loc_2_embankment.mp4",
-      "poster": "loc_2_embankment.png",
       "character": null,
       "clues": [
         {
@@ -234,7 +232,6 @@
       "lockedHint": "제방에서 단서를 하나 이상 찾으면 열린다.",
       "blurb": "솔미마을 사람들이 모이는 회관. 이장이 머무는 곳이다.",
       "video": "loc_3_hall.mp4",
-      "poster": "loc_3_hall.png",
       "character": "choi",
       "clues": [
         {
@@ -297,7 +294,6 @@
       "lockedHint": "제방에서 모래주머니를 찾거나 회관을 다녀오면 열린다.",
       "blurb": "제방 바로 아래의 작은 요양원. 어르신 28명이 지낸다.",
       "video": "loc_4_carehome.mp4",
-      "poster": "loc_4_carehome.png",
       "character": "song",
       "clues": [
         {
@@ -360,7 +356,6 @@
       },
       "blurb": "수로 하류의 비닐하우스 단지. 물에 잠긴 곳이다.",
       "video": "loc_5_greenhouse.mp4",
-      "poster": "loc_5_greenhouse.png",
       "character": "kang",
       "clues": [
         {
@@ -422,7 +417,6 @@
       },
       "blurb": "군청 지하의 문서고와 옆 당직실. 서류와 기록이 모여 있다.",
       "video": "loc_6_archive.mp4",
-      "poster": "loc_6_archive.png",
       "character": "yoon",
       "clues": [
         {
@@ -481,7 +475,6 @@
       "lockedHint": "관리동에서 찢어진 봉인을 찾거나 제방의 바퀴 자국을 찾으면 열린다.",
       "blurb": "수문 설비를 관리하는 작은 업체. 기록 장치와 센서를 다룬다.",
       "video": "loc_7_office.mp4",
-      "poster": "loc_7_office.png",
       "character": "lim",
       "clues": [
         {

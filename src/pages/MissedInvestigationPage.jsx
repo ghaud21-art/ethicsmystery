@@ -388,8 +388,8 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
     use(hit ?? null, hit ? null : { x: fx, y: fy, t: nowT() })
   }
   const videoSrc = mediaUrl(loc.video)
-  // 시간 지정 단서가 있으면 영상 위에서 지목하고, 없으면 장소 컷(정지 사진) 위에서 지목한다
-  const posterSrc = timed ? null : mediaUrl(loc.poster)
+  // 영상이 있으면 언제나 영상 위에서 지목한다. 장소 컷은 영상이 없을 때만 쓴다.
+  const posterSrc = videoSrc ? null : mediaUrl(loc.poster)
   const ch = loc.character ? charOf(loc.character) : null
   const dot = (r, extra) => ({ position: 'absolute', left: `${(r.x + (r.w ?? 0.12) / 2) * 100}%`, top: `${(r.y + (r.h ?? 0.12) / 2) * 100}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', ...extra })
   // 입문(돋보기 힌트): 영상이 재생되는 동안에도 지금 보이는 단서 자리에 표시
