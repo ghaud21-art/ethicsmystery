@@ -347,7 +347,8 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
   const placed = spots.filter(isPlaced)
   const unplaced = spots.filter((s) => !isPlaced(s))
   const timed = spots.some(isTimed)
-  const [picking, setPicking] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const [dur, setDur] = useState(0)
   const [msg, setMsg] = useState(null)
   const [justFound, setJustFound] = useState(null)
   const [curT, setCurT] = useState(0)
@@ -376,7 +377,6 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
       setJustFound(null)
       setMsg(spot?.kind === 'decoy' ? spot.text ?? '자세히 살펴봤지만 사건과 관련된 것은 없었다.' : timed && point ? '그 순간 그곳에서는 아무것도 찾지 못했다.' : '그곳에서는 아무것도 찾지 못했다.')
     }
-    setPicking(false)
   }
   const nowT = () => (videoRef.current ? videoRef.current.currentTime : null)
   const onOverlayClick = (e) => {
@@ -399,40 +399,46 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
     <>
       <div className="card">
         <div className="kicker">{loc.order}. {loc.name}</div>
-        {videoSrc && posterSrc && (
-          <video ref={videoRef} controls playsInline preload="metadata" src={videoSrc} poster={posterSrc} style={{ ...box, background: '#000', marginTop: 6 }} />
-        )}
-        {videoSrc && posterSrc && <p className="dim" style={{ fontSize: 12, margin: '10px 0 0' }}>영상을 보고, 아래 현장 사진에서 수상한 곳을 지목하세요.</p>}
-        {timed && <p className="dim" style={{ fontSize: 12, margin: '6px 0 0' }}>영상을 보다가 수상한 것이 보이는 순간에 멈추고 지목하세요. 단서는 그것이 화면에 보이는 순간에만 찾을 수 있습니다.</p>}
+        {videoSrc && placed.length > 0 && <p className="dim" style={{ fontSize: 12, margin: '6px 0 0' }}>영상을 보다가 수상한 것이 보이면 <strong>그 자리를 바로 클릭</strong>하세요. 영상이 멈추며 그 순간을 조사합니다. 단서는 화면에 보이는 순간에만 찾을 수 있고, 빗나가도 지목 1번이 쓰입니다.</p>}
         <div style={{ position: 'relative', marginTop: 6 }}>
-          {posterSrc ? <img src={posterSrc} alt="" style={box} />
-          : videoSrc ? <video ref={videoRef} controls={!picking} playsInline preload="metadata" src={videoSrc} onTimeUpdate={(e) => setCurT(e.currentTarget.currentTime)} onSeeked={(e) => setCurT(e.currentTarget.currentTime)} style={{ ...box, background: '#000' }} />
+          {videoSrc ? <video ref={videoRef} playsInline preload="metadata" src={videoSrc} controls={placed.length === 0}
+              onTimeUpdate={(e) => setCurT(e.currentTarget.currentTime)} onSeeked={(e) => setCurT(e.currentTarget.currentTime)}
+              onPlay={() => setPlaying(true)} onPause={() => setPlaying(false)} onEnded={() => setPlaying(false)} onLoadedMetadata={(e) => setDur(e.currentTarget.duration || 0)}
+              style={{ ...box, background: '#000' }} />
+          : posterSrc ? <img src={posterSrc} alt="" style={box} />
           : <div className="dim" style={{ ...box, padding: 30, textAlign: 'center' }}>(장소 영상 준비 중)</div>}
-          {!picking && hintRects.map(({ key, r }) => (
+          {hintRects.map(({ key, r }) => (
             <span key={key} style={dot(r, { width: 30, height: 30, border: '2px solid var(--gold)', background: 'rgba(20,16,8,.5)', color: 'var(--gold-light)', fontSize: 15 })}>?</span>
           ))}
-          {picking && (
-            <div onClick={onOverlayClick} style={{ position: 'absolute', inset: 0, cursor: 'crosshair', outline: '2px dashed var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(0,0,0,.08)' }}>
-              {hintRects.map(({ key, r }) => (
-                <span key={key} style={dot(r, { width: 30, height: 30, border: '2px solid var(--gold)', background: 'rgba(20,16,8,.6)', color: 'var(--gold-light)', fontSize: 15 })}>?</span>
-              ))}
-            </div>
-          )}
-          {!picking && (insp.found ?? []).flatMap((cid) => {
+          {(insp.found ?? []).flatMap((cid) => {
             const s = placed.find((x) => x.id === cid)
             return s ? activeRects(s, curT).map((r, i) => <span key={`${cid}_${i}`} style={dot(r, { width: 24, height: 24, background: 'rgba(201,162,39,.92)', color: '#1a1510', fontSize: 13 })}>✓</span>) : []
           })}
+          {placed.length > 0 && (videoSrc || posterSrc) && (
+            <div onClick={(e) => {
+                videoRef.current?.pause()
+                if (left <= 0) return setMsg('이 장소에서는 더 지목할 수 없다.')
+                onOverlayClick(e)
+              }}
+              style={{ position: 'absolute', inset: 0, cursor: left > 0 ? 'crosshair' : 'default', borderRadius: 'var(--radius)' }} />
+          )}
+          {videoSrc && placed.length > 0 && !playing && curT < 0.05 && (
+            <button onClick={() => videoRef.current?.play()} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', fontSize: 15, padding: '10px 18px', background: 'rgba(20,16,8,.75)' }}>▶ 영상 재생</button>
+          )}
         </div>
+        {videoSrc && placed.length > 0 && (
+          <div className="row" style={{ gap: 8, alignItems: 'center', marginTop: 6 }}>
+            <button style={{ fontSize: 13, padding: '4px 12px', minWidth: 44 }} onClick={() => (playing ? videoRef.current?.pause() : videoRef.current?.play())}>{playing ? '❚❚' : '▶'}</button>
+            <button style={{ fontSize: 12, padding: '4px 8px' }} onClick={() => { if (videoRef.current) videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 2) }}>↺ 2초</button>
+            <input type="range" min="0" max={dur || 0} step="0.1" value={curT} style={{ flex: 1 }}
+              onChange={(e) => { if (videoRef.current) { videoRef.current.currentTime = Number(e.target.value); setCurT(Number(e.target.value)) } }} />
+            <span className="dim" style={{ fontSize: 12, fontFamily: 'var(--font-mono, monospace)' }}>{curT.toFixed(1)} / {dur.toFixed(1)}초</span>
+          </div>
+        )}
         <div className="row" style={{ gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
           <strong style={{ fontSize: 13 }}>지목 {left}/{limit}</strong>
           <span className="dim" style={{ fontSize: 12 }}>찾은 단서 {insp.found?.length ?? 0}/{clues.length}</span>
-          {placed.length > 0 && left > 0 && (
-            <button className="primary" style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => { videoRef.current?.pause(); setPicking((p) => !p) }}>
-              {picking ? '지목 취소' : posterSrc ? '현장 사진에서 수상한 곳 지목하기' : '영상을 멈추고 이 순간 수상한 곳 지목하기'}
-            </button>
-          )}
         </div>
-        {picking && <p className="dim" style={{ fontSize: 12, margin: '6px 0 0' }}>화면에서 수상한 곳을 클릭하세요. 빗나가도 지목 1번이 쓰입니다.</p>}
         {unplaced.length > 0 && left > 0 && (
           <div className="col" style={{ gap: 6, marginTop: 8 }}>
             <span className="dim" style={{ fontSize: 12 }}>살펴볼 곳을 고르세요.</span>
