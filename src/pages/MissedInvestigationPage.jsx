@@ -452,7 +452,9 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
   const ch = loc.character ? charOf(loc.character) : null
   const dot = (r, extra) => ({ position: 'absolute', left: `${(r.x + (r.w ?? 0.12) / 2) * 100}%`, top: `${(r.y + (r.h ?? 0.12) / 2) * 100}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', ...extra })
   // 입문(돋보기 힌트): 영상이 재생되는 동안에도 지금 보이는 단서 자리에 표시
-  const hintRects = mode === 'marker' ? placed.filter((s) => !inspectedIds.has(s.id)).flatMap((s) => activeRects(s, curT).map((r, i) => ({ key: `${s.id}_${i}`, r }))) : []
+  // 표시는 단서 하나당 하나만 (판정은 여러 영역 모두 인정): 지금 시각에 가장 가까운 영역 하나
+  const oneRect = (s) => activeRects(s, curT).sort((a, b) => Math.abs((a.t ?? curT) - curT) - Math.abs((b.t ?? curT) - curT))[0]
+  const hintRects = mode === 'marker' ? placed.filter((s) => !inspectedIds.has(s.id)).map((s) => ({ key: s.id, r: oneRect(s) })).filter((x) => x.r) : []
 
   return (
     <>
@@ -471,7 +473,8 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
           ))}
           {(insp.found ?? []).flatMap((cid) => {
             const s = placed.find((x) => x.id === cid)
-            return s ? activeRects(s, curT).map((r, i) => <span key={`${cid}_${i}`} style={dot(r, { width: 24, height: 24, background: 'rgba(201,162,39,.92)', color: '#1a1510', fontSize: 13 })}>✓</span>) : []
+            const r = s && oneRect(s)
+            return r ? [<span key={cid} style={dot(r, { width: 24, height: 24, background: 'rgba(201,162,39,.92)', color: '#1a1510', fontSize: 13 })}>✓</span>] : []
           })}
           {placed.length > 0 && (videoSrc || posterSrc) && (
             <div onClick={(e) => {
