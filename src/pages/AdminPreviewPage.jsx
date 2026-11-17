@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import Masthead from '../components/Masthead.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
@@ -807,7 +807,7 @@ function investigationMediaList(d) {
   for (const l of d.locations ?? []) {
     const g = `${l.order}. ${l.name}`
     add(g, '장소 영상', 'video', l.video)
-    add(g, '장소 컷 이미지 (학생이 단서를 지목하는 현장 사진)', 'image', l.poster)
+    add(g, '(선택) 장소 컷 이미지 — 영상 썸네일. 영상에 단서 위치를 찍으면 지목은 영상에서 합니다', 'image', l.poster)
     for (const c of l.clues ?? []) if (c.kind === 'image') add(g, `단서 이미지 · ${c.title}`, 'image', c.image)
     const ch = (d.characters ?? []).find((x) => x.id === l.character)
     if (ch) {
@@ -822,6 +822,95 @@ function investigationMediaList(d) {
   for (const e of d.endings ?? []) add('결말', `결말 · ${e.title}`, 'video', e.video)
   const seen = new Set()
   return out.filter((m) => (seen.has(m.file) ? false : seen.add(m.file)))
+}
+
+// 조사 모드: 장소 영상을 재생·멈춤하며 "이 시각, 이 자리"에 단서를 찍는다.
+// 단서 hotspot.at = [{ t, tw, x, y, w, h }] (한 단서를 여러 순간에 찍을 수 있음)
+function TimedHotspotPlacer({ loc, mediaUrls, onChangeLoc, inspectMode, onInspectModeChange }) {
+  const videoRef = useRef(null)
+  const [cur, setCur] = useState(0)
+  const [activeId, setActiveId] = useState(null)
+  const url = mediaUrls?.[loc.video]
+  const spots = [
+    ...(loc.clues ?? []).map((c, ci) => ({ id: c.id, label: `${c.title} — ${c.hotspot?.label ?? ''}`, kind: c.difficulty === 'fake' ? 'fake' : 'clue', at: c.hotspot?.at ?? [], ci })),
+    ...(loc.decoyHotspots ?? []).map((d, di) => ({ id: d.id ?? `decoy_${di}`, label: d.label, kind: 'decoy', at: d.at ?? [], di })),
+  ]
+  const setAt = (spot, at) => {
+    const next = JSON.parse(JSON.stringify(loc))
+    if (spot.ci != null) next.clues[spot.ci].hotspot = { ...(next.clues[spot.ci].hotspot ?? {}), at }
+    else next.decoyHotspots[spot.di].at = at
+    onChangeLoc(next)
+  }
+  const handleClick = (e) => {
+    const spot = spots.find((s) => s.id === activeId)
+    if (!spot) return
+    const rect = e.currentTarget.getBoundingClientRect()
+    const cx = (e.clientX - rect.left) / rect.width
+    const cy = (e.clientY - rect.top) / rect.height
+    const w = 0.14, h = 0.16
+    const t = Math.round((videoRef.current?.currentTime ?? 0) * 10) / 10
+    setAt(spot, [...spot.at, { t, tw: 1.5, x: Math.min(Math.max(cx - w / 2, 0), 1 - w), y: Math.min(Math.max(cy - h / 2, 0), 1 - h), w, h }])
+    setActiveId(null)
+  }
+  const seek = (t) => { if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = t } }
+  const color = (k) => (k === 'clue' ? 'var(--gold-light)' : k === 'fake' ? '#d08a5a' : 'var(--line)')
+  const tag = (k) => (k === 'clue' ? '단서' : k === 'fake' ? '가짜' : '혼란')
+
+  if (!url) return <div className="card dim" style={{ fontSize: 12 }}>‘미디어 업로드’ 탭에서 이 장소의 영상({loc.video})을 먼저 올리면 여기서 단서 위치를 찍을 수 있습니다.</div>
+  return (
+    <div className="card col">
+      <div className="kicker">영상 속 단서 위치 · {loc.name}</div>
+      <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+        {[['freeclick', '자유 클릭 (힌트 없음)'], ['marker', '돋보기 표시']].map(([m, l]) => (
+          <button key={m} onClick={() => onInspectModeChange(m)} style={{ fontSize: 12, padding: '4px 10px', borderColor: inspectMode === m ? 'var(--gold)' : undefined, background: inspectMode === m ? 'rgba(201,162,39,.12)' : undefined }}>{l}</button>
+        ))}
+        <span className="dim" style={{ fontSize: 11 }}>입문 난이도는 이 설정과 관계없이 늘 돋보기가 표시됩니다.</span>
+      </div>
+      <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>
+        ① 영상을 재생하다가 단서가 잘 보이는 순간에 멈춥니다. ② 아래 목록에서 <strong>이 순간 찍기</strong>를 누릅니다. ③ 영상에서 그 물건을 클릭합니다.
+        학생은 찍은 시각 앞뒤 <strong>인정 시간(기본 1.5초)</strong> 안에 그 자리를 눌러야 단서를 찾습니다. 카메라가 지나가며 물건이 두 번 보이면 두 번 찍어도 됩니다.
+      </p>
+      <div style={{ position: 'relative' }}>
+        <video ref={videoRef} src={url} controls={!activeId} playsInline preload="auto" onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)} onSeeked={(e) => setCur(e.currentTarget.currentTime)}
+          style={{ width: '100%', display: 'block', borderRadius: 'var(--radius)', background: '#000' }} />
+        {spots.flatMap((s) => s.at.map((a, i) => ({ s, a, i }))).filter(({ a }) => Math.abs(cur - a.t) <= (a.tw ?? 1.5)).map(({ s, a, i }) => (
+          <div key={`${s.id}_${i}`} style={{ position: 'absolute', left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%`, border: `2px dashed ${color(s.kind)}`, borderRadius: 6, pointerEvents: 'none', background: 'rgba(201,162,39,.12)' }}>
+            <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 4px', background: 'rgba(20,16,8,.85)', color: color(s.kind) }}>{tag(s.kind)} · {s.label.split(' — ')[0]}</span>
+          </div>
+        ))}
+        {activeId && <div onClick={handleClick} style={{ position: 'absolute', inset: 0, cursor: 'crosshair', outline: '2px dashed var(--gold)', borderRadius: 'var(--radius)' }} />}
+      </div>
+      <div className="dim" style={{ fontSize: 12 }}>현재 {cur.toFixed(1)}초 {activeId && <strong style={{ color: 'var(--gold-light)' }}>— 영상에서 그 물건을 클릭하세요 (취소하려면 다시 누르기)</strong>}</div>
+      <div className="col" style={{ gap: 8 }}>
+        {spots.map((s) => (
+          <div key={s.id} className="col" style={{ gap: 4, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
+            <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <span className="pill" style={{ borderColor: color(s.kind), color: color(s.kind) }}>{tag(s.kind)}</span>
+              <span style={{ fontSize: 12, flex: 1, minWidth: 160 }}>{s.label}</span>
+              <button onClick={() => { videoRef.current?.pause(); setActiveId(activeId === s.id ? null : s.id) }} style={{ fontSize: 11, padding: '3px 8px', borderColor: activeId === s.id ? 'var(--gold)' : undefined }}>
+                {activeId === s.id ? '클릭 대기 중…' : `이 순간(${cur.toFixed(1)}초) 찍기`}
+              </button>
+            </div>
+            {s.at.length === 0 && <span className="dim" style={{ fontSize: 11 }}>아직 찍지 않음 — 학생 화면에 글 버튼으로 나옵니다.</span>}
+            {s.at.map((a, i) => (
+              <div key={i} className="row" style={{ gap: 6, alignItems: 'center', flexWrap: 'wrap', fontSize: 11 }}>
+                <button onClick={() => seek(a.t)} style={{ fontSize: 11, padding: '2px 8px' }}>▶ {a.t.toFixed(1)}초로 이동</button>
+                <span className="dim">인정 시간 ±</span>
+                <input type="number" min="0.3" max="10" step="0.5" value={a.tw ?? 1.5} style={{ width: 60, fontSize: 11 }}
+                  onChange={(e) => setAt(s, s.at.map((x, j) => (j === i ? { ...x, tw: Number(e.target.value) || 1.5 } : x)))} />
+                <span className="dim">초 ({Math.max(0, a.t - (a.tw ?? 1.5)).toFixed(1)}~{(a.t + (a.tw ?? 1.5)).toFixed(1)}초)</span>
+                <span className="dim">크기</span>
+                <button onClick={() => setAt(s, s.at.map((x, j) => (j === i ? { ...x, w: Math.max(0.06, x.w - 0.03), h: Math.max(0.06, x.h - 0.03) } : x)))} style={{ fontSize: 11, padding: '2px 6px' }}>－</button>
+                <button onClick={() => setAt(s, s.at.map((x, j) => (j === i ? { ...x, w: Math.min(0.5, x.w + 0.03), h: Math.min(0.5, x.h + 0.03) } : x)))} style={{ fontSize: 11, padding: '2px 6px' }}>＋</button>
+                <button onClick={() => setAt(s, s.at.filter((_, j) => j !== i))} style={{ fontSize: 11, padding: '2px 8px', color: 'var(--blood-light)' }}>삭제</button>
+              </div>
+            ))}
+          </div>
+        ))}
+      </div>
+      <p className="dim" style={{ margin: 0, fontSize: 11 }}>찍은 뒤에는 상단의 <strong>변경사항 저장</strong>을 눌러야 반영됩니다.</p>
+    </div>
+  )
 }
 
 function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy, saved, error }) {
@@ -841,22 +930,6 @@ function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy
   const groups = [...new Set(list.map((m) => m.group))]
   const done = list.filter((m) => mediaUrls[m.file]).length
   const loc = draft.locations?.[locIdx]
-  // HotspotPlacer는 1.0 장면 모양(intro/facts/decoyHotspots)을 기대하므로 장소를 그 모양으로 감싼다.
-  const adapter = loc && {
-    intro: { video: loc.video, poster: loc.poster },
-    facts: (loc.clues ?? []).map((c) => ({ ...c, hotspot: { label: c.title, ...(c.hotspot ?? {}) } })),
-    decoyHotspots: loc.decoyHotspots ?? [],
-  }
-  const updateAdapter = (_i, mutate) => {
-    const copy = JSON.parse(JSON.stringify(adapter))
-    mutate(copy)
-    const locations = draft.locations.map((l, i) => (i !== locIdx ? l : {
-      ...l,
-      clues: l.clues.map((c, ci) => ({ ...c, hotspot: copy.facts[ci].hotspot })),
-      decoyHotspots: copy.decoyHotspots,
-    }))
-    onChange({ ...draft, locations })
-  }
   return (
     <div className="page">
       <Masthead showBack />
@@ -890,20 +963,18 @@ function MissedInvestigationEditorView({ draft, original, onChange, onSave, busy
           <div className="row" style={{ flexWrap: 'wrap', gap: 6, marginBottom: 10 }}>
             {draft.locations.map((l, i) => (
               <button key={l.id} onClick={() => setLocIdx(i)} style={{ fontSize: 12, padding: '4px 10px', borderColor: i === locIdx ? 'var(--gold)' : undefined, background: i === locIdx ? 'rgba(201,162,39,.12)' : undefined }}>
-                {l.order}. {l.name} ({(l.clues ?? []).filter((c) => c.hotspot?.x != null).length}/{l.clues?.length ?? 0})
+                {l.order}. {l.name} ({(l.clues ?? []).filter((c) => c.hotspot?.at?.length || c.hotspot?.x != null).length}/{l.clues?.length ?? 0})
               </button>
             ))}
           </div>
           <p className="dim" style={{ margin: '0 0 8px', fontSize: 11, lineHeight: 1.6 }}>
-            ‘사실’ = 이 장소의 단서(가짜 단서 포함), ‘혼란’ = 아무것도 없는 지점. 위치를 찍지 않은 단서는 학생 화면에서 글 버튼으로 나옵니다.
-            입문 난이도에서는 찍어 둔 자리에 돋보기가 표시됩니다.
+            ‘단서’ = 진짜 단서, ‘가짜’ = 그럴듯하지만 무관한 단서(입문에서는 숨김), ‘혼란’ = 아무것도 없는 지점.
           </p>
-          <HotspotPlacer
+          <TimedHotspotPlacer
             key={loc.id}
-            sc={adapter}
-            sci={0}
-            updateScene={updateAdapter}
+            loc={loc}
             mediaUrls={mediaUrls}
+            onChangeLoc={(next) => onChange({ ...draft, locations: draft.locations.map((l, i) => (i === locIdx ? next : l)) })}
             inspectMode={draft.settings?.inspectMode === 'marker' ? 'marker' : 'freeclick'}
             onInspectModeChange={(m) => onChange({ ...draft, settings: { ...draft.settings, inspectMode: m } })}
           />

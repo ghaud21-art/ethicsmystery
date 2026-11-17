@@ -9,7 +9,7 @@ import { getAiFeedback } from '../firebase/functionsApi.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import {
   newInvestigationRun, saveRun, loadRun, clearRun, levelOf, cluesOf, allClues, clueText, locationOpen,
-  inspectLimitOf, inspectModeOf, spotsOf, hitSpot, presentWorks, statementLocked, findLink, linkLimitOf,
+  inspectLimitOf, inspectModeOf, spotsOf, hitSpot, isTimed, isPlaced, activeRects, presentWorks, statementLocked, findLink, linkLimitOf,
   layersReached, decisionAvailable, timelineCardTime, timelineScore, decideEnding,
 } from '../utils/missedInvestigation.js'
 
@@ -344,11 +344,13 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
   const limit = inspectLimitOf(scenario, run, loc)
   const mode = inspectModeOf(scenario, run)
   const spots = spotsOf(scenario, run, loc)
-  const placed = spots.filter((s) => s.x != null)
-  const unplaced = spots.filter((s) => s.x == null)
+  const placed = spots.filter(isPlaced)
+  const unplaced = spots.filter((s) => !isPlaced(s))
+  const timed = spots.some(isTimed)
   const [picking, setPicking] = useState(false)
   const [msg, setMsg] = useState(null)
   const [justFound, setJustFound] = useState(null)
+  const [curT, setCurT] = useState(0)
   const videoRef = useRef(null)
   const left = limit - insp.used
   const clues = cluesOf(scenario, run, loc)
@@ -372,21 +374,26 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
       setMsg(null)
     } else {
       setJustFound(null)
-      setMsg(spot?.kind === 'decoy' ? spot.text ?? '자세히 살펴봤지만 사건과 관련된 것은 없었다.' : '그곳에서는 아무것도 찾지 못했다.')
+      setMsg(spot?.kind === 'decoy' ? spot.text ?? '자세히 살펴봤지만 사건과 관련된 것은 없었다.' : timed && point ? '그 순간 그곳에서는 아무것도 찾지 못했다.' : '그곳에서는 아무것도 찾지 못했다.')
     }
     setPicking(false)
   }
+  const nowT = () => (videoRef.current ? videoRef.current.currentTime : null)
   const onOverlayClick = (e) => {
     const rect = e.currentTarget.getBoundingClientRect()
     const fx = (e.clientX - rect.left) / rect.width
     const fy = (e.clientY - rect.top) / rect.height
-    const hit = hitSpot(placed, fx, fy)
+    const hit = hitSpot(placed, fx, fy, nowT())
     if (hit && inspectedIds.has(hit.id)) return setMsg('이미 살펴본 곳이다.')
-    use(hit ?? null, hit ? null : { x: fx, y: fy })
+    use(hit ?? null, hit ? null : { x: fx, y: fy, t: nowT() })
   }
   const videoSrc = mediaUrl(loc.video)
-  const posterSrc = mediaUrl(loc.poster)
+  // 시간 지정 단서가 있으면 영상 위에서 지목하고, 없으면 장소 컷(정지 사진) 위에서 지목한다
+  const posterSrc = timed ? null : mediaUrl(loc.poster)
   const ch = loc.character ? charOf(loc.character) : null
+  const dot = (r, extra) => ({ position: 'absolute', left: `${(r.x + (r.w ?? 0.12) / 2) * 100}%`, top: `${(r.y + (r.h ?? 0.12) / 2) * 100}%`, transform: 'translate(-50%,-50%)', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none', ...extra })
+  // 입문(돋보기 힌트): 영상이 재생되는 동안에도 지금 보이는 단서 자리에 표시
+  const hintRects = mode === 'marker' ? placed.filter((s) => !inspectedIds.has(s.id)).flatMap((s) => activeRects(s, curT).map((r, i) => ({ key: `${s.id}_${i}`, r }))) : []
 
   return (
     <>
@@ -396,21 +403,24 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
           <video ref={videoRef} controls playsInline preload="metadata" src={videoSrc} poster={posterSrc} style={{ ...box, background: '#000', marginTop: 6 }} />
         )}
         {videoSrc && posterSrc && <p className="dim" style={{ fontSize: 12, margin: '10px 0 0' }}>영상을 보고, 아래 현장 사진에서 수상한 곳을 지목하세요.</p>}
+        {timed && <p className="dim" style={{ fontSize: 12, margin: '6px 0 0' }}>영상을 보다가 수상한 것이 보이는 순간에 멈추고 지목하세요. 단서는 그것이 화면에 보이는 순간에만 찾을 수 있습니다.</p>}
         <div style={{ position: 'relative', marginTop: 6 }}>
           {posterSrc ? <img src={posterSrc} alt="" style={box} />
-          : videoSrc ? <video ref={videoRef} controls={!picking} playsInline preload="metadata" src={videoSrc} style={{ ...box, background: '#000' }} />
+          : videoSrc ? <video ref={videoRef} controls={!picking} playsInline preload="metadata" src={videoSrc} onTimeUpdate={(e) => setCurT(e.currentTarget.currentTime)} onSeeked={(e) => setCurT(e.currentTarget.currentTime)} style={{ ...box, background: '#000' }} />
           : <div className="dim" style={{ ...box, padding: 30, textAlign: 'center' }}>(장소 영상 준비 중)</div>}
+          {!picking && hintRects.map(({ key, r }) => (
+            <span key={key} style={dot(r, { width: 30, height: 30, border: '2px solid var(--gold)', background: 'rgba(20,16,8,.5)', color: 'var(--gold-light)', fontSize: 15 })}>?</span>
+          ))}
           {picking && (
             <div onClick={onOverlayClick} style={{ position: 'absolute', inset: 0, cursor: 'crosshair', outline: '2px dashed var(--gold)', borderRadius: 'var(--radius)', background: 'rgba(0,0,0,.08)' }}>
-              {mode === 'marker' && placed.filter((s) => !inspectedIds.has(s.id)).map((s) => (
-                <span key={s.id} style={{ position: 'absolute', left: `${(s.x + (s.w ?? 0.12) / 2) * 100}%`, top: `${(s.y + (s.h ?? 0.12) / 2) * 100}%`, transform: 'translate(-50%,-50%)', width: 30, height: 30, borderRadius: '50%', border: '2px solid var(--gold)', background: 'rgba(20,16,8,.6)', color: 'var(--gold-light)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 15, pointerEvents: 'none' }}>?</span>
+              {hintRects.map(({ key, r }) => (
+                <span key={key} style={dot(r, { width: 30, height: 30, border: '2px solid var(--gold)', background: 'rgba(20,16,8,.6)', color: 'var(--gold-light)', fontSize: 15 })}>?</span>
               ))}
             </div>
           )}
-          {!picking && (insp.found ?? []).map((cid) => {
+          {!picking && (insp.found ?? []).flatMap((cid) => {
             const s = placed.find((x) => x.id === cid)
-            if (!s) return null
-            return <span key={cid} style={{ position: 'absolute', left: `${(s.x + (s.w ?? 0.12) / 2) * 100}%`, top: `${(s.y + (s.h ?? 0.12) / 2) * 100}%`, transform: 'translate(-50%,-50%)', width: 24, height: 24, borderRadius: '50%', background: 'rgba(201,162,39,.92)', color: '#1a1510', fontSize: 13, display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>✓</span>
+            return s ? activeRects(s, curT).map((r, i) => <span key={`${cid}_${i}`} style={dot(r, { width: 24, height: 24, background: 'rgba(201,162,39,.92)', color: '#1a1510', fontSize: 13 })}>✓</span>) : []
           })}
         </div>
         <div className="row" style={{ gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
@@ -418,7 +428,7 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
           <span className="dim" style={{ fontSize: 12 }}>찾은 단서 {insp.found?.length ?? 0}/{clues.length}</span>
           {placed.length > 0 && left > 0 && (
             <button className="primary" style={{ fontSize: 12, padding: '5px 12px' }} onClick={() => { videoRef.current?.pause(); setPicking((p) => !p) }}>
-              {picking ? '지목 취소' : posterSrc ? '현장 사진에서 수상한 곳 지목하기' : '영상을 멈추고 수상한 곳 지목하기'}
+              {picking ? '지목 취소' : posterSrc ? '현장 사진에서 수상한 곳 지목하기' : '영상을 멈추고 이 순간 수상한 곳 지목하기'}
             </button>
           )}
         </div>

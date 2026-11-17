@@ -95,14 +95,24 @@ export function spotsOf(scenario, run, loc) {
   const decoys = (loc.decoyHotspots ?? []).map((d, i) => ({ id: d.id ?? `${loc.id}_d${i}`, kind: 'decoy', label: d.label, text: d.text, ...pick(d) }))
   return [...clues, ...decoys].sort((a, b) => hash(loc.id + a.id) - hash(loc.id + b.id))
 }
-const pick = (h) => ({ x: h?.x ?? null, y: h?.y ?? null, w: h?.w ?? null, h: h?.h ?? null })
+// at: [{ t, tw, x, y, w, h }] — 영상의 그 시각(t ± tw초)에만 그 자리에 있는 단서
+const pick = (h) => ({ x: h?.x ?? null, y: h?.y ?? null, w: h?.w ?? null, h: h?.h ?? null, at: (h?.at ?? []).filter((a) => a.x != null) })
+export const DEFAULT_TW = 1.5
+export const isTimed = (spot) => spot.at?.length > 0
+export const isPlaced = (spot) => isTimed(spot) || spot.x != null
+export const inRect = (r, fx, fy) => fx >= r.x && fx <= r.x + (r.w ?? 0.12) && fy >= r.y && fy <= r.y + (r.h ?? 0.12)
+// 지금 시각에 보이는 영역 (시간 지정이 없으면 언제나)
+export function activeRects(spot, t) {
+  if (isTimed(spot)) return spot.at.filter((a) => t != null && Math.abs(t - a.t) <= (a.tw ?? DEFAULT_TW))
+  return spot.x != null ? [spot] : []
+}
 function hash(s) {
   let h = 0
   for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0
   return h
 }
-export function hitSpot(spots, fx, fy) {
-  return spots.find((s) => s.x != null && s.y != null && fx >= s.x && fx <= s.x + (s.w ?? 0.12) && fy >= s.y && fy <= s.y + (s.h ?? 0.12))
+export function hitSpot(spots, fx, fy, t = null) {
+  return spots.find((s) => activeRects(s, t).some((r) => inRect(r, fx, fy)))
 }
 
 // 인물에게 단서를 내밀었을 때: flip.anyOf = [{clues:[a]}, {clues:[b, c]}] 중 한 묶음을 모두 포함하면 성공
