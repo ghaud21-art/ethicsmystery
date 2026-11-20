@@ -52,7 +52,7 @@ function ClueCardView({ scenario, run, clue, mediaUrl, compact, selected, onClic
       </div>
       {!compact && clue.kind === 'image' && <div style={{ marginTop: 6 }}><Media kind="image" src={mediaUrl(clue.image)} /></div>}
       {text && (
-        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.65, whiteSpace: 'pre-line', fontFamily: clue.kind === 'card' ? 'var(--font-mono, monospace)' : undefined }}>
+        <p style={{ margin: '6px 0 0', fontSize: 12.5, lineHeight: 1.65, whiteSpace: 'pre-line' }}>
           {clue.kind === 'card' ? text.split(' / ').join('\n') : text}
         </p>
       )}
@@ -337,7 +337,7 @@ function HiddenStory({ scenario, run, mediaUrl }) {
           <div className="col" style={{ gap: 6, marginTop: 6 }}>
             {st.timeline.map((t, i) => (
               <div key={i} className="row" style={{ gap: 10, alignItems: 'baseline' }}>
-                <span style={{ fontFamily: 'var(--font-mono, monospace)', color: 'var(--gold-light)', minWidth: 48 }}>{t.time}</span>
+                <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', color: 'var(--gold-light)', minWidth: 48 }}>{t.time}</span>
                 <span style={{ fontSize: 13.5, lineHeight: 1.6 }}>{t.text}</span>
               </div>
             ))}
@@ -494,7 +494,7 @@ function LocationView({ scenario, run, setRun, loc, clueMap, mediaUrl, charOf })
             <button style={{ fontSize: 12, padding: '4px 8px' }} onClick={() => { if (videoRef.current) videoRef.current.currentTime = Math.max(0, videoRef.current.currentTime - 2) }}>↺ 2초</button>
             <input type="range" min="0" max={dur || 0} step="0.1" value={curT} style={{ flex: 1 }}
               onChange={(e) => { if (videoRef.current) { videoRef.current.currentTime = Number(e.target.value); setCurT(Number(e.target.value)) } }} />
-            <span className="dim" style={{ fontSize: 12, fontFamily: 'var(--font-mono, monospace)' }}>{curT.toFixed(1)} / {dur.toFixed(1)}초</span>
+            <span className="dim" style={{ fontSize: 12, fontVariantNumeric: 'tabular-nums' }}>{curT.toFixed(1)} / {dur.toFixed(1)}초</span>
           </div>
         )}
         <div className="row" style={{ gap: 8, alignItems: 'center', marginTop: 8, flexWrap: 'wrap' }}>
@@ -708,7 +708,7 @@ function TimelineView({ scenario, run, onDone }) {
         const t = timelineCardTime(scenario, run, c)
         return (
           <div key={cid} className="row" style={{ gap: 8, alignItems: 'center', border: '1px solid var(--line)', borderRadius: 'var(--radius-sm)', padding: '8px 10px' }}>
-            <span style={{ fontFamily: 'var(--font-mono)', width: 52, color: t ? 'var(--gold-light)' : 'var(--ink-dim)' }}>{t ?? '--:--'}</span>
+            <span style={{ fontWeight: 700, fontVariantNumeric: 'tabular-nums', width: 52, color: t ? 'var(--gold-light)' : 'var(--ink-dim)' }}>{t ?? '--:--'}</span>
             <span style={{ flex: 1, fontSize: 13.5 }}>{c.text}</span>
             <button style={{ fontSize: 12, padding: '2px 8px' }} onClick={() => move(i, -1)} disabled={i === 0}>▲</button>
             <button style={{ fontSize: 12, padding: '2px 8px' }} onClick={() => move(i, 1)} disabled={i === order.length - 1}>▼</button>
