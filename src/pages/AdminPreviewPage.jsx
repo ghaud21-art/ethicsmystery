@@ -843,16 +843,54 @@ function TimedHotspotPlacer({ loc, mediaUrls, onChangeLoc, inspectMode, onInspec
     else next.decoyHotspots[spot.di].at = at
     onChangeLoc(next)
   }
-  const handleClick = (e) => {
-    const spot = spots.find((s) => s.id === activeId)
-    if (!spot) return
-    const rect = e.currentTarget.getBoundingClientRect()
-    const cx = (e.clientX - rect.left) / rect.width
-    const cy = (e.clientY - rect.top) / rect.height
-    const w = 0.14, h = 0.16
-    const t = Math.round((videoRef.current?.currentTime ?? 0) * 10) / 10
-    setAt(spot, [...spot.at, { t, tw: 1.5, x: Math.min(Math.max(cx - w / 2, 0), 1 - w), y: Math.min(Math.max(cy - h / 2, 0), 1 - h), w, h }])
-    setActiveId(null)
+  // 드래그: 새 상자 그리기(찍기 모드) / 기존 상자 옮기기·크기 조절
+  const boxRef = useRef(null)
+  const [drag, setDrag] = useState(null) // { mode: 'draw'|'move'|'resize', sid, i, x0, y0, orig, cur }
+  const clamp = (v, lo = 0, hi = 1) => Math.min(Math.max(v, lo), hi)
+  const ptr = (e) => {
+    const r = boxRef.current.getBoundingClientRect()
+    return { x: clamp((e.clientX - r.left) / r.width), y: clamp((e.clientY - r.top) / r.height) }
+  }
+  const startDraw = (e) => {
+    const p = ptr(e)
+    e.currentTarget.setPointerCapture(e.pointerId)
+    setDrag({ mode: 'draw', x0: p.x, y0: p.y, cur: p })
+  }
+  const startEdit = (e, s, i, mode) => {
+    e.stopPropagation()
+    e.preventDefault()
+    const p = ptr(e)
+    boxRef.current.setPointerCapture(e.pointerId)
+    setDrag({ mode, sid: s.id, i, x0: p.x, y0: p.y, orig: s.at[i], cur: p })
+  }
+  const dragRect = (dg) => {
+    if (!dg) return null
+    const dx = dg.cur.x - dg.x0, dy = dg.cur.y - dg.y0
+    if (dg.mode === 'draw') return { x: Math.min(dg.x0, dg.cur.x), y: Math.min(dg.y0, dg.cur.y), w: Math.abs(dx), h: Math.abs(dy) }
+    const o = dg.orig
+    if (dg.mode === 'move') return { ...o, x: clamp(o.x + dx, 0, 1 - o.w), y: clamp(o.y + dy, 0, 1 - o.h) }
+    return { ...o, w: clamp(o.w + dx, 0.03, 1 - o.x), h: clamp(o.h + dy, 0.03, 1 - o.y) }
+  }
+  const onMove = (e) => { if (drag) setDrag({ ...drag, cur: ptr(e) }) }
+  const onUp = () => {
+    if (!drag) return
+    const r = dragRect(drag)
+    if (drag.mode === 'draw') {
+      const spot = spots.find((x) => x.id === activeId)
+      if (spot) {
+        const w = r.w < 0.02 || r.h < 0.02 ? 0.14 : r.w
+        const h = r.w < 0.02 || r.h < 0.02 ? 0.16 : r.h
+        const x = r.w < 0.02 || r.h < 0.02 ? clamp(drag.x0 - w / 2, 0, 1 - w) : r.x
+        const y = r.w < 0.02 || r.h < 0.02 ? clamp(drag.y0 - h / 2, 0, 1 - h) : r.y
+        const t = Math.round((videoRef.current?.currentTime ?? 0) * 10) / 10
+        setAt(spot, [...spot.at, { t, tw: 1.5, x, y, w, h }])
+      }
+      setActiveId(null)
+    } else {
+      const spot = spots.find((x) => x.id === drag.sid)
+      if (spot) setAt(spot, spot.at.map((a, j) => (j === drag.i ? { ...a, x: r.x, y: r.y, w: r.w, h: r.h } : a)))
+    }
+    setDrag(null)
   }
   const seek = (t) => { if (videoRef.current) { videoRef.current.pause(); videoRef.current.currentTime = t } }
   const color = (k) => (k === 'clue' ? 'var(--gold-light)' : k === 'fake' ? '#d08a5a' : 'var(--line)')
@@ -869,20 +907,27 @@ function TimedHotspotPlacer({ loc, mediaUrls, onChangeLoc, inspectMode, onInspec
         <span className="dim" style={{ fontSize: 11 }}>입문 난이도는 이 설정과 관계없이 늘 돋보기가 표시됩니다.</span>
       </div>
       <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>
-        ① 영상을 재생하다가 단서가 잘 보이는 순간에 멈춥니다. ② 아래 목록에서 <strong>이 순간 찍기</strong>를 누릅니다. ③ 영상에서 그 물건을 클릭합니다.
+        ① 영상을 재생하다가 단서가 잘 보이는 순간에 멈춥니다. ② 아래 목록에서 <strong>이 순간 찍기</strong>를 누릅니다. ③ 영상에서 그 물건 위로 <strong>드래그해 상자</strong>를 그립니다. 그려진 상자는 끌어서 옮기고, 오른쪽 아래 모서리를 끌어 크기를 바꿀 수 있습니다.
         학생은 찍은 시각 앞뒤 <strong>인정 시간(기본 1.5초)</strong> 안에 그 자리를 눌러야 단서를 찾습니다. 카메라가 지나가며 물건이 두 번 보이면 두 번 찍어도 됩니다.
       </p>
-      <div style={{ position: 'relative' }}>
-        <video ref={videoRef} src={url} controls={!activeId} playsInline preload="auto" onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)} onSeeked={(e) => setCur(e.currentTarget.currentTime)}
+      <div ref={boxRef} style={{ position: 'relative', touchAction: 'none' }} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={() => setDrag(null)}>
+        <video ref={videoRef} src={url} controls={!activeId && !drag} playsInline preload="auto" onTimeUpdate={(e) => setCur(e.currentTarget.currentTime)} onSeeked={(e) => setCur(e.currentTarget.currentTime)}
           style={{ width: '100%', display: 'block', borderRadius: 'var(--radius)', background: '#000' }} />
-        {spots.flatMap((s) => s.at.map((a, i) => ({ s, a, i }))).filter(({ a }) => Math.abs(cur - a.t) <= (a.tw ?? 1.5)).map(({ s, a, i }) => (
-          <div key={`${s.id}_${i}`} style={{ position: 'absolute', left: `${a.x * 100}%`, top: `${a.y * 100}%`, width: `${a.w * 100}%`, height: `${a.h * 100}%`, border: `2px dashed ${color(s.kind)}`, borderRadius: 6, pointerEvents: 'none', background: 'rgba(201,162,39,.12)' }}>
-            <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 4px', background: 'rgba(20,16,8,.85)', color: color(s.kind) }}>{tag(s.kind)} · {s.label.split(' — ')[0]}</span>
-          </div>
-        ))}
-        {activeId && <div onClick={handleClick} style={{ position: 'absolute', inset: 0, cursor: 'crosshair', outline: '2px dashed var(--gold)', borderRadius: 'var(--radius)' }} />}
+        {spots.flatMap((s) => s.at.map((a, i) => ({ s, a, i }))).filter(({ a }) => Math.abs(cur - a.t) <= (a.tw ?? 1.5)).map(({ s, a, i }) => {
+          const live = drag && drag.mode !== 'draw' && drag.sid === s.id && drag.i === i ? dragRect(drag) : a
+          return (
+            <div key={`${s.id}_${i}`} onPointerDown={(e) => !activeId && startEdit(e, s, i, 'move')} title="끌어서 옮기기 · 오른쪽 아래 모서리를 끌어 크기 조절"
+              style={{ position: 'absolute', left: `${live.x * 100}%`, top: `${live.y * 100}%`, width: `${live.w * 100}%`, height: `${live.h * 100}%`, border: `2px dashed ${color(s.kind)}`, borderRadius: 6, background: 'rgba(201,162,39,.12)', cursor: activeId ? 'crosshair' : 'move', pointerEvents: activeId ? 'none' : 'auto', boxSizing: 'border-box' }}>
+              <span style={{ fontSize: 10, fontWeight: 800, padding: '2px 4px', background: 'rgba(20,16,8,.85)', color: color(s.kind), whiteSpace: 'nowrap', pointerEvents: 'none' }}>{tag(s.kind)} · {s.label.split(' — ')[0]}</span>
+              <span onPointerDown={(e) => !activeId && startEdit(e, s, i, 'resize')}
+                style={{ position: 'absolute', right: -7, bottom: -7, width: 14, height: 14, borderRadius: 3, background: color(s.kind), border: '2px solid #1a1510', cursor: 'nwse-resize' }} />
+            </div>
+          )
+        })}
+        {activeId && <div onPointerDown={startDraw} style={{ position: 'absolute', inset: 0, cursor: 'crosshair', outline: '2px dashed var(--gold)', borderRadius: 'var(--radius)' }} />}
+        {drag?.mode === 'draw' && (() => { const r = dragRect(drag); return <div style={{ position: 'absolute', left: `${r.x * 100}%`, top: `${r.y * 100}%`, width: `${r.w * 100}%`, height: `${r.h * 100}%`, border: '2px solid var(--gold-light)', background: 'rgba(201,162,39,.2)', borderRadius: 6, pointerEvents: 'none' }} /> })()}
       </div>
-      <div className="dim" style={{ fontSize: 12 }}>현재 {cur.toFixed(1)}초 {activeId && <strong style={{ color: 'var(--gold-light)' }}>— 영상에서 그 물건을 클릭하세요 (취소하려면 다시 누르기)</strong>}</div>
+      <div className="dim" style={{ fontSize: 12 }}>현재 {cur.toFixed(1)}초 {activeId && <strong style={{ color: 'var(--gold-light)' }}>— 영상에서 그 물건을 드래그해 상자를 그리세요 (그냥 클릭하면 기본 크기, 취소하려면 다시 누르기)</strong>}</div>
       <div className="col" style={{ gap: 8 }}>
         {spots.map((s) => (
           <div key={s.id} className="col" style={{ gap: 4, borderTop: '1px solid var(--line)', paddingTop: 6 }}>
