@@ -817,8 +817,11 @@ function investigationMediaList(d) {
   for (const dc of d.decisions ?? []) {
     add('전화·결정', `${dc.label} 전화 이미지`, 'image', dc.call?.image)
     add('전화·결정', `${dc.label} 전화 음성`, 'audio', dc.call?.audio)
+    add('전화·결정', `${dc.label} 전화 이미지 (그 장소에 안 간 경우)`, 'image', dc.callIfNotVisited?.image)
+    add('전화·결정', `${dc.label} 전화 음성 (그 장소에 안 간 경우)`, 'audio', dc.callIfNotVisited?.audio)
   }
   for (const e of d.endings ?? []) add('결말', `결말 · ${e.title}`, 'video', e.video)
+  add('결말', '숨겨진 이야기 영상', 'video', d.hiddenStory?.video)
   const seen = new Set()
   return out.filter((m) => (seen.has(m.file) ? false : seen.add(m.file)))
 }
@@ -971,6 +974,7 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
           <div className="card col">
             {lab('브리핑 머리말')}{L(['briefing', 'kicker'], { fontSize: 11 })}
             {lab('브리핑 제목')}{L(['briefing', 'title'], { fontSize: 20, fontWeight: 800 })}
+            {draft.briefing?.video && <MediaSlot {...slotProps} kind="video" label="브리핑 영상" fileName={draft.briefing.video} />}
             {(draft.briefing?.lines ?? []).map((_, i) => <div key={i}>{T(['briefing', 'lines', i])}</div>)}
           </div>
           <div className="card col">
@@ -1060,6 +1064,15 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
               {T(['decisions', i, 'call', 'text'])}
             </div>
           )}
+          {d.callIfNotVisited && (
+            <div className="card col" style={{ margin: 0, borderColor: 'rgba(94,145,224,.5)' }}>
+              {lab('그 장소에 안 간 학생에게 오는 전화')}
+              {L(['decisions', i, 'callIfNotVisited', 'who'], { fontSize: 12 })}
+              {d.callIfNotVisited.image && <MediaSlot {...slotProps} kind="image" label="전화 이미지" fileName={d.callIfNotVisited.image} />}
+              {d.callIfNotVisited.audio && <MediaSlot {...slotProps} kind="audio" label="전화 음성" fileName={d.callIfNotVisited.audio} />}
+              {T(['decisions', i, 'callIfNotVisited', 'text'])}
+            </div>
+          )}
           {T(['decisions', i, 'situation'])}
           {d.situationIfNotVisited != null && <>{lab('그 장소에 가지 않은 학생에게 (전화로)')}{T(['decisions', i, 'situationIfNotVisited'], { dim: true })}</>}
           {d.options.map((o, k) => (
@@ -1123,6 +1136,7 @@ function InvestigationPlayEditor({ draft, onChange, slotProps }) {
             <p className="dim" style={{ margin: 0, fontSize: 11 }}>결말 → 놓친 장면 다음, 성찰 직전에 나옵니다.</p>
             {L(['hiddenStory', 'kicker'], { fontSize: 11 })}
             {L(['hiddenStory', 'title'], { fontSize: 22, fontWeight: 800 })}
+            {draft.hiddenStory.video && <MediaSlot {...slotProps} kind="video" label="숨겨진 이야기 영상" fileName={draft.hiddenStory.video} />}
             {T(['hiddenStory', 'intro'])}
           </div>
           {(draft.hiddenStory.chapters ?? []).map((c, i) => (
