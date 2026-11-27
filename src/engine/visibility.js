@@ -9,7 +9,29 @@ export function isClueAutoRevealed(clue, scenario, playerCount) {
   if (!clue.owner || !scenario || !playerCount) return false
   const playable = getPlayableCharacters(scenario, playerCount)
   const effectiveOwner = getEffectiveCharacterId(scenario, clue.owner, playerCount)
-  return !playable.some((c) => c.id === effectiveOwner)
+  if (playable.some((c) => c.id === effectiveOwner)) return false
+  // NPC가 된 인물의 단서는 자동 공개하지 않고 npcMode에 따라 조사 카드/비밀 증거가 된다.
+  if (clue.npcMode) return false
+  return true
+}
+
+// 이 방에서 단서가 놓이는 단계: 'phase1' | 'phase2' | null(이번 판에는 없음).
+// owner가 NPC(플레이어가 맡지 않은 인물·상시 NPC)일 때 npcMode에 따라
+//  - 'investigation' → 1단계 조사 카드(AP로 조사)
+//  - 'keyEvidence'   → 보드에 놓이지 않음(NPC의 L2 비밀로만 드러남)
+// owner가 플레이어 배역이면 원래 정의된 단계 그대로.
+export function cluePhaseInRoom(clue, definedPhase, scenario, playerCount) {
+  if (!clue.npcMode || !clue.owner) return definedPhase
+  const playable = getPlayableCharacters(scenario, playerCount)
+  if (playable.some((c) => c.id === clue.owner)) return clue.npcMode === 'investigation' && clue.npcOnly ? null : definedPhase
+  if (clue.npcMode === 'investigation') return 'phase1'
+  return null
+}
+
+export function cluesForPhase(scenario, phase, playerCount) {
+  return ['phase1', 'phase2'].flatMap((p) =>
+    scenario.clues[p].items.filter((c) => cluePhaseInRoom(c, p, scenario, playerCount) === phase),
+  )
 }
 
 // 단서 하나가 특정 플레이어에게 보여야 하는지 판단한다.

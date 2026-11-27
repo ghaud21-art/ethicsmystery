@@ -11,6 +11,7 @@ import PhaseTimer from '../components/PhaseTimer.jsx'
 import MyCluesPanel from '../components/MyCluesPanel.jsx'
 import JudgingReferenceModal from '../components/JudgingReferenceModal.jsx'
 import CulpritBanner from '../components/CulpritBanner.jsx'
+import NpcPanel from '../components/NpcPanel.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
 import { getPhaseApBudget, getApFieldName, isSharedApPool } from '../engine/apEngine.js'
@@ -59,6 +60,13 @@ function BriefingScreen({ character, secretLayers, onContinue }) {
             ))}
           </div>
         </>
+      )}
+
+      {character?.adlibIntro && (
+        <div className="card" style={{ marginBottom: 16 }}>
+          <div className="kicker" style={{ marginBottom: 4 }}>자기소개 (소리 내어 읽기)</div>
+          <p style={{ margin: 0, fontSize: 14, lineHeight: 1.75 }}>“{character.adlibIntro}”</p>
+        </div>
       )}
 
       <button className="primary" onClick={onContinue} style={{ width: '100%', textAlign: 'left' }}>
@@ -224,6 +232,8 @@ function GameInner({ scenario }) {
         onClaim={handleClaim}
         onPublish={handlePublish}
       />
+
+      <NpcPanel scenario={scenario} room={room} uid={uid} myCharacterId={myCharacterId} roomCode={roomCode} phase={phase} />
 
       <div className="card row" style={{ justifyContent: 'space-between', marginTop: 18 }}>
         <span className="dim" style={{ fontSize: 12 }}>

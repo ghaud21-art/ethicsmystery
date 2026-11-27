@@ -2,7 +2,7 @@ import { createContext, useContext, useEffect, useState, useCallback, useMemo } 
 import { ref, onValue, set, update, remove, onDisconnect, get, runTransaction } from 'firebase/database'
 import { db } from '../firebase/firebaseConfig'
 import { useAuth } from './AuthContext'
-import { getPhaseApBudget, isSharedApPool, claimClue as claimClueEngine } from '../engine/apEngine'
+import { getPhaseApBudget, getTeamBonusAp, isSharedApPool, claimClue as claimClueEngine } from '../engine/apEngine'
 import { publishClue as publishClueEngine } from '../engine/manualReveal'
 import { saveActiveRoom, clearActiveRoom } from '../utils/activeRoom'
 
@@ -115,8 +115,9 @@ export function RoomProvider({ scenario, roomCode, children }) {
     // 공유 AP 풀 시나리오는 phase1 예산이 곧 게임 전체(phase1+phase2)의 예산이다 —
     // 한 번만 지급하고 phase2로 넘어갈 때 다시 채워주지 않는다.
     const apField = isSharedApPool(scenario) ? 'shared' : 'phase1'
+    const bonus = getTeamBonusAp(scenario, 'phase1', room.meta.playerCount)
     Object.keys(room.players).forEach((pUid) => {
-      updates[`players/${pUid}/ap/${apField}`] = apBudget
+      updates[`players/${pUid}/ap/${apField}`] = apBudget + (pUid === room.meta.hostUid ? bonus : 0)
     })
     await update(ref(db, `rooms/${roomCode}`), updates)
   }, [room, roomCode, scenario])
@@ -125,8 +126,9 @@ export function RoomProvider({ scenario, roomCode, children }) {
     const updates = { 'meta/phase': 'phase2', 'meta/phaseStartedAt': Date.now() }
     if (!isSharedApPool(scenario)) {
       const apBudget = getPhaseApBudget(scenario, 'phase2', room.meta.playerCount)
+      const bonus = getTeamBonusAp(scenario, 'phase2', room.meta.playerCount)
       Object.keys(room.players).forEach((pUid) => {
-        updates[`players/${pUid}/ap/phase2`] = apBudget
+        updates[`players/${pUid}/ap/phase2`] = apBudget + (pUid === room.meta.hostUid ? bonus : 0)
       })
     }
     await update(ref(db, `rooms/${roomCode}`), updates)

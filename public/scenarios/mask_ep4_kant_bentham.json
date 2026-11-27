@@ -1,0 +1,923 @@
+{
+  "scenarioId": "mask_ep4_kant_bentham",
+  "schemaVersion": "1.2",
+  "contentType": "murder",
+  "published": false,
+  "series": "가면 회의 · 사상가 머더미스터리",
+  "unit": "윤리와 사상 — 서양 근대 윤리: 칸트의 의무론과 벤담의 공리주의",
+  "meta": {
+    "title": "구조 순서",
+    "subtitle": "행복 계산 도시 펠리시아 배차 코드 조작 사건 — 인간 존엄과 최대 다수의 행복",
+    "unit": "윤리와 사상 — 서양 근대 윤리: 칸트의 의무론과 벤담의 공리주의",
+    "learningObjective": "칸트의 의무론과 벤담의 공리주의를 비교하고, 알고리즘이 사람의 우선순위를 정하는 문제를 두 관점으로 판단할 수 있다.",
+    "themes": [
+      "인간 존엄",
+      "최대 다수의 행복",
+      "알고리즘과 책임",
+      "거짓말과 의무"
+    ],
+    "supportedPlayerCounts": [
+      3,
+      4,
+      5
+    ],
+    "estimatedMinutes": 90,
+    "language": "ko",
+    "phaseDurationMinutes": {
+      "phase1": 15,
+      "phase2": 20
+    }
+  },
+  "prologue": {
+    "sharedText": "근미래 도시 '펠리시아'는 행복지수 세계 1위를 자랑한다. 시정 원칙은 '최대 다수의 최대 행복'이고, 공공 서비스는 시민 행복 점수 알고리즘 HAPPI가 우선순위를 정한다. 폭우가 쏟아진 지난밤, 지하상가가 침수돼 시민 40여 명이 갇혔는데 구급 드론이 18분 늦게 도착했다. 사망자는 없지만 부상자가 많았다. 조사해 보니 배차 코드가 사고 직전 몰래 수정되어 있었다. 내일 시의회는 「HAPPI 전면 확대 법안」을 표결한다.",
+    "incidentStart": "",
+    "incidentEnd": ""
+  },
+  "introCases": [
+    {
+      "title": "펠리시아와 HAPPI",
+      "text": "HAPPI는 시민 한 사람 한 사람의 '행복 기여 점수'를 계산해 구급차, 드론, 병상의 순서를 정한다. 시민들은 이 계산이 공정하다고 배워 왔다.",
+      "concept": "18분. 누군가에게는 잃어버린 시간, 누군가에게는 되찾은 시간."
+    },
+    {
+      "title": "도시에 오가는 두 목소리",
+      "text": "\"더 많은 사람이 더 행복하면 그것이 옳다. 행복은 계산할 수 있다.\" / \"사람은 점수가 아니다. 어떤 사람도 다른 사람의 행복을 위한 수단이 될 수 없다.\"",
+      "concept": "이 두 목소리의 주인이 누구인지는 판결 단계에서 공개됩니다."
+    }
+  ],
+  "narration": {
+    "opening": [
+      {
+        "speaker": "내레이터",
+        "line": "펠리시아에서는 행복도 계산된다. 누가 먼저 구조될지도."
+      },
+      {
+        "speaker": "내레이터",
+        "line": "그런데 지난밤, 누군가 그 계산식을 고쳐 썼다."
+      },
+      {
+        "speaker": "내레이터",
+        "line": "18분. 그것은 누군가에게는 잃어버린 시간이었고, 누군가에게는 되찾은 시간이었다."
+      }
+    ],
+    "phase1Intro": {
+      "title": "1차 낭독 대본 — 가면 쓰기",
+      "lines": [
+        {
+          "speaker": "내레이터",
+          "line": "폭우가 그친 아침, 시청 관제 센터. 화면에는 빨간 숫자 하나가 떠 있다. 지연 18분."
+        },
+        {
+          "speaker": "chaewon",
+          "line": "누군가 HAPPI의 코드를 몰래 고쳤습니다. 내일 표결 전에 범인을 찾아야 해요. 계산은 틀리지 않습니다. 틀린 건 사람이에요."
+        },
+        {
+          "speaker": "jihu",
+          "line": "서버실 옆에 있었다는 이유로 절 쳐다보시는군요. 좋습니다. 대신 이 도시가 사람을 몇 점으로 세는지도 함께 봅시다."
+        },
+        {
+          "speaker": "minjae",
+          "line": "코드는… 제가 만들었습니다. 어젯밤엔 집에 있었어요."
+        },
+        {
+          "speaker": "haneul",
+          "line": "[4인 이상] 저 아래 갇혀 있던 사람이 저예요. 18분이 얼마나 긴지 아세요?"
+        },
+        {
+          "speaker": "daeun",
+          "line": "[5인] 요양원은… 드론이 먼저 왔어요. 그게 왜 이상한 일이 되는 거죠?"
+        },
+        {
+          "speaker": "내레이터",
+          "line": "1단계 단서를 조사하세요. 아무도 맡지 않은 인물은 NPC입니다. HAPPI도 NPC로 심문할 수 있습니다. 조사 카드를 확보해 두면 다음 단계에서 단서를 내밀 수 있습니다."
+        }
+      ]
+    },
+    "phase2Intro": {
+      "title": "2차 낭독 대본 — 심층 대질",
+      "lines": [
+        {
+          "speaker": "내레이터",
+          "line": "점심 무렵, 시의회는 표결을 예정대로 진행한다고 발표했다."
+        },
+        {
+          "speaker": "chaewon",
+          "line": "변호사가 서버실 옆에 있었고, 포스터에는 '소송으로 멈춘다'는 낙서가 있어요. 이보다 분명한 게 있나요?"
+        },
+        {
+          "speaker": "jihu",
+          "line": "누군가 노인들을 먼저 살렸다면, 그건 시스템을 망가뜨린 걸까요, 고친 걸까요?"
+        },
+        {
+          "speaker": "minjae",
+          "line": "어느 쪽을 골라도 누군가는 늦습니다. …그건 계산이 아니라 선택이에요."
+        },
+        {
+          "speaker": "내레이터",
+          "line": "이제 서로의 소유 단서를 캐물으세요. 내 단서는 무료로 스스로 공개할 수 있고, 남의 단서는 AP로 확인합니다. NPC에게 단서를 내밀어 숨긴 이야기를 여세요. 열린 비밀을 모둠에 공개할지는 연 사람이 정합니다."
+        }
+      ]
+    }
+  },
+  "firstThought": {
+    "question": "펠리시아는 행복 점수 알고리즘을 확대할 것인가, 버릴 것인가?",
+    "options": [
+      {
+        "id": "v1",
+        "label": "① HAPPI 확대"
+      },
+      {
+        "id": "v2",
+        "label": "② HAPPI 폐기"
+      },
+      {
+        "id": "v3",
+        "label": "③ 사람이 최종 결정"
+      }
+    ]
+  },
+  "characters": [
+    {
+      "id": "chaewon",
+      "role": "시 행복국장",
+      "name": "윤채원",
+      "isCulprit": false,
+      "minPlayers": 3,
+      "thought": "벤담 쪽",
+      "personalityType": "숫자로 말하는 자신감. 수치를 말할 때 목소리가 밝아진다.",
+      "personalityDescription": "숫자로 말하는 자신감. 수치를 말할 때 목소리가 밝아진다.",
+      "publicInfo": "펠리시아 행복국장. HAPPI 도입을 이끌어 도시를 행복지수 세계 1위로 만든 주역이다. 내일 표결될 확대 법안의 책임자.",
+      "detailInfo": "\"더 많은 사람이 더 행복하면 그것이 옳다\"가 신조다. 18분 지연이 법안에 흠집을 낼까 봐 범인을 빨리 찾고 싶어 한다.",
+      "secretLayers": [
+        {
+          "layer": 1,
+          "type": "action",
+          "content": "사건 밤 HAPPI 관제 화면으로 지하상가 호출이 밀리는 것을 보고도 수동 개입을 하지 않았다."
+        },
+        {
+          "layer": 2,
+          "type": "stake",
+          "content": "HAPPI가 노인·장애인을 체계적으로 후순위에 둔다는 내부 보고서를 덮었다. 드러나면 법안과 자리를 함께 잃는다."
+        }
+      ],
+      "cooperationIncentive": "범인을 잡아야 법안을 지킨다.",
+      "competitionIncentive": "내부 보고서가 나오면 안 된다.",
+      "ownedPhase2Clues": [
+        "p2_chaewon_1",
+        "p2_chaewon_2"
+      ],
+      "adlibIntro": "행복국장 윤채원입니다. 펠리시아의 행복지수는 3년 연속 세계 1위입니다. 숫자는 거짓말을 하지 않아요. 누군가 그 숫자를 몰래 고쳤다면, 그 사람이 거짓말을 한 겁니다.",
+      "adlibLines": [
+        {
+          "trigger": "관제 화면을 물을 때",
+          "line": "시스템이 판단하는 영역입니다. 사람이 끼어들면 오히려 불공정해져요."
+        },
+        {
+          "trigger": "가중치표가 공개됐을 때",
+          "line": "0.6이요? 기대 여명과 회복 가능성을 반영한 합리적 수치입니다."
+        },
+        {
+          "trigger": "내부 보고서가 공개됐을 때",
+          "line": "…보고서 하나로 마흔 명의 행복을 포기할 순 없었어요."
+        },
+        {
+          "trigger": "판결 토론에서",
+          "line": "계산을 버리면 남는 건 뭡니까? 감으로 구조할 건가요?"
+        }
+      ],
+      "epilogueCard": {
+        "revealed": "덮어 둔 내부 보고서가 공개되었다. 당신은 국장직에서 물러났다. 마지막 출근 날, 당신은 처음으로 HAPPI의 가중치표를 인쇄해 들고 요양원을 찾아갔다. 숫자 0.6 앞에 앉은 사람들의 얼굴을 보았다.",
+        "hidden": "보고서는 끝내 덮인 채로 남았다. 당신은 법안 표결장에서 다시 '세계 1위'를 말할 것이다. 그 숫자 안에 누가 0.6명으로 세어지고 있는지는 말하지 않은 채."
+      },
+      "secretRevealClueId": "p2_chaewon_1"
+    },
+    {
+      "id": "jihu",
+      "role": "인권 변호사",
+      "name": "서지후",
+      "isCulprit": false,
+      "minPlayers": 3,
+      "thought": "칸트 쪽",
+      "personalityType": "원칙적이고 날카롭다. 상대의 말을 문장째로 되묻는다.",
+      "personalityDescription": "원칙적이고 날카롭다. 상대의 말을 문장째로 되묻는다.",
+      "publicInfo": "HAPPI 반대 소송을 이끄는 인권 변호사. 사건 직전 시청 서버실 옆 회의실에 있었다는 이유로 의심받고 있다.",
+      "detailInfo": "\"사람은 점수가 아니다\"가 신조다. 이번 사건이 HAPPI의 문제를 세상에 알릴 기회라고 생각한다.",
+      "secretLayers": [
+        {
+          "layer": 1,
+          "type": "action",
+          "content": "사건 직전 20시 30분 서버실 옆 회의실에서 소송 관련 면담을 했다. 의심받을까 봐 \"그 시간엔 사무실에 있었다\"고 말할 생각이다."
+        },
+        {
+          "layer": 2,
+          "type": "stake",
+          "content": "소송에 이기려고 시청 내부자에게 자료 유출을 부탁했다. \"사람을 수단으로 대하지 말라\"고 외치면서 목적을 위해 사람을 수단으로 쓴 자신의 모순이 드러난다. 드러나면 소송 자격을 잃는다."
+        }
+      ],
+      "cooperationIncentive": "HAPPI의 문제를 공개할 기회다.",
+      "competitionIncentive": "유출 부탁이 드러나면 소송 자격을 잃는다.",
+      "ownedPhase2Clues": [
+        "p2_jihu_1",
+        "p2_jihu_2"
+      ],
+      "adlibIntro": "변호사 서지후입니다. 사람은 점수가 아닙니다. 어떤 사람도 다른 사람의 행복을 위한 수단이 될 수 없어요. 저를 의심하셔도 좋습니다. 다만 근거를 가지고 하세요.",
+      "adlibLines": [
+        {
+          "trigger": "서버실 옆에 있었는지 물을 때",
+          "line": "그 시간엔 사무실에… 아니, 면담이 있었습니다. 그게 범죄입니까?"
+        },
+        {
+          "trigger": "포스터의 소송 문구 이야기가 나올 때",
+          "line": "소송으로 막겠다는 말이 시스템을 망가뜨리겠다는 뜻은 아니죠."
+        },
+        {
+          "trigger": "유출 부탁 메시지가 공개됐을 때",
+          "line": "…목적이 옳으면 수단도 정당하다고 말하진 않겠습니다. 제가 틀렸어요."
+        },
+        {
+          "trigger": "판결 토론에서",
+          "line": "열 명을 살리려고 한 사람을 뒤로 미는 게 옳다면, 그 한 사람이 당신이어도 옳습니까?"
+        }
+      ],
+      "epilogueCard": {
+        "revealed": "내부자에게 유출을 부탁한 사실이 드러났다. 소송 대리인 자격을 잃었지만, 당신은 법정 방청석 맨 앞줄에 앉았다. '수단으로 대하지 말라'는 문장을 이번에는 자기 자신에게 먼저 적용해 보았다.",
+        "hidden": "유출 부탁은 끝까지 비밀로 남았다. 소송은 계속된다. 당신은 법정에서 존엄을 말할 때마다, 당신이 이용한 그 내부자의 얼굴을 떠올린다."
+      },
+      "secretRevealClueId": "p2_jihu_1"
+    },
+    {
+      "id": "minjae",
+      "role": "HAPPI 수석 개발자",
+      "name": "강민재",
+      "isCulprit": true,
+      "minPlayers": 3,
+      "thought": "칸트 쪽 동기",
+      "personalityType": "조용하고 성실하다. 거짓말이 서툴러 말끝이 흐려진다.",
+      "personalityDescription": "조용하고 성실하다. 거짓말이 서툴러 말끝이 흐려진다.",
+      "publicInfo": "HAPPI를 설계한 수석 개발자. 밤낮없이 시스템을 관리해 온 성실한 엔지니어로 알려져 있다.",
+      "detailInfo": "최근 들어 HAPPI의 가중치표를 오래 들여다보는 일이 잦았다. 가족 이야기는 잘 하지 않는다.",
+      "secretLayers": [
+        {
+          "layer": 1,
+          "type": "action",
+          "content": "사건 밤 20시 57분 집 근처에서 원격 접속했는데, 조사에서 \"접속하지 않았다\"고 진술했다."
+        },
+        {
+          "layer": 2,
+          "type": "stake",
+          "content": "당신이 범인이다. 'admin_temp' 계정으로 노인 후순위 가중치를 몰래 지웠다. 그 덕에 요양원 노인 세 명이 살았지만 지하상가 구조는 18분 늦었다. 그리고 거짓말을 했다. 드러나면 해고와 형사 책임."
+        }
+      ],
+      "cooperationIncentive": "엉뚱한 사람이 처벌받는 것은 원치 않는다.",
+      "competitionIncentive": "들키면 해고와 형사 책임을 진다.",
+      "ownedPhase2Clues": [
+        "p2_minjae_1",
+        "p2_minjae_2"
+      ],
+      "adlibIntro": "강민재입니다. HAPPI를 만들었습니다. 계산은… 정확합니다. 어젯밤에는 집에 있었어요. 접속은, 하지 않았습니다.",
+      "adlibLines": [
+        {
+          "trigger": "원격 접속을 물을 때",
+          "line": "접속하지 않았습니다. …아마도요."
+        },
+        {
+          "trigger": "가중치표 이야기가 나올 때",
+          "line": "75세 이상 0.6. 제가 만든 숫자예요. 그게 문제였죠."
+        },
+        {
+          "trigger": "시뮬레이션이 공개됐을 때",
+          "line": "보세요. 어느 쪽을 골라도 누군가는 늦어요. 저는 어느 쪽을 고를지 정했을 뿐이에요."
+        },
+        {
+          "trigger": "지목당했을 때",
+          "line": "네, 제가 고쳤습니다. 사람을 점수로 줄 세울 수 없었어요. 그리고… 거짓말을 했습니다. 그건 변명하지 않겠습니다."
+        }
+      ],
+      "epilogueCard": {
+        "revealed": "당신이 코드를 고치고 거짓말을 했다는 사실이 드러났다. 당신은 법정에서 두 가지를 모두 인정했다. 세 사람을 살린 일과 마흔 명을 늦춘 일, 그리고 거짓말. 판결이 무엇이었든, 당신은 처음으로 숫자가 아니라 문장으로 자신을 설명했다.",
+        "hidden": "당신의 이름은 끝내 나오지 않았다. 'admin_temp' 계정은 지워졌고, 당신은 내일도 HAPPI를 관리한다. 사람을 수단으로 대하지 말라던 당신이, 진실을 숨기려 모두를 수단으로 쓰고 있는 것은 아닐까."
+      },
+      "secretRevealClueId": "p2_minjae_1"
+    },
+    {
+      "id": "haneul",
+      "role": "지하상가 상인회장 · 부상자",
+      "name": "오하늘",
+      "isCulprit": false,
+      "minPlayers": 4,
+      "thought": "벤담 쪽",
+      "personalityType": "다정하지만 손해에 민감하다. 피해 이야기에는 목소리가 커진다.",
+      "personalityDescription": "다정하지만 손해에 민감하다. 피해 이야기에는 목소리가 커진다.",
+      "publicInfo": "침수된 지하상가의 상인회장. 갇혔다가 구조되어 다리를 다쳤다. 피해자로서 시를 상대로 보상을 요구하고 있다.",
+      "detailInfo": "\"한 사람보다 마흔 명이 먼저 아닌가요?\"라며 HAPPI 확대를 지지해 왔다. 상인들을 대표한다는 책임감이 크다.",
+      "secretLayers": [
+        {
+          "layer": 1,
+          "type": "action",
+          "content": "피해자로서 시를 상대로 보상을 요구 중이다. 비상구 이야기는 꺼내지 않을 생각이다."
+        },
+        {
+          "layer": 2,
+          "type": "stake",
+          "content": "상인회가 비상구 하나를 창고로 막아 두었다. 피해를 키운 책임이 자기에게도 있다. 드러나면 보상이 줄어든다."
+        }
+      ],
+      "cooperationIncentive": "지연의 진짜 이유를 알아야 보상을 받는다.",
+      "competitionIncentive": "비상구 문제가 드러나면 보상이 줄어든다.",
+      "ownedPhase2Clues": [
+        "p2_haneul_1",
+        "p2_haneul_2"
+      ],
+      "adlibIntro": "상인회장 오하늘이에요. 어젯밤 저 아래 갇혀 있었어요. 18분이요, 18분. 한 사람보다 마흔 명이 먼저 아닌가요? 누가 그 순서를 바꿨는지 꼭 알아야겠어요.",
+      "adlibLines": [
+        {
+          "trigger": "비상구를 물을 때",
+          "line": "비상구요? 그건… 원래 좀 좁았어요."
+        },
+        {
+          "trigger": "비상구 사진이 공개됐을 때",
+          "line": "창고가 모자라서 잠깐 쌓아 둔 거예요. 하필 그날 비가 올 줄 누가 알았겠어요."
+        },
+        {
+          "trigger": "보상 이야기가 나올 때",
+          "line": "다친 사람이 보상을 요구하는 게 잘못인가요?"
+        },
+        {
+          "trigger": "판결 토론에서",
+          "line": "계산이 정확해지면 다음엔 우리가 먼저 구조되겠죠. 그럼 된 거 아니에요?"
+        }
+      ],
+      "epilogueCard": {
+        "revealed": "상인회가 비상구를 막아 둔 사실이 드러났다. 보상은 줄었지만, 당신은 상인들과 함께 비상구 앞의 상자를 직접 치웠다. 다음 폭우에는 계산보다 먼저 문이 열려 있을 것이다.",
+        "hidden": "비상구 이야기는 끝까지 나오지 않았다. 당신은 보상을 받았다. 그리고 상자들은 아직 그 비상구 앞에 쌓여 있다."
+      },
+      "secretRevealClueId": "p2_haneul_1",
+      "npcCard": {
+        "publicStatement": "우리는 피해자예요. 시가 보상해야죠.",
+        "evade": "다친 사람한테 뭘 캐물으세요.",
+        "investigationClueId": "p2_haneul_1",
+        "keys": [
+          {
+            "level": 1,
+            "clueIds": [
+              "p1_6"
+            ],
+            "secret": "\"…창고가 모자라서 잠깐 쌓아 둔 거예요. 상인회에서 그렇게 정했어요. 하필 그날 비가 올 줄 누가 알았겠어요.\""
+          },
+          {
+            "level": 2,
+            "clueIds": [
+              "p1_1",
+              "npc_happi_inv"
+            ],
+            "secret": "\"18분이 다 드론 탓은 아니에요. 비상구만 열렸어도 절반은 먼저 나왔을 거예요. 그걸 알면서 시에만 보상을 요구했어요.\" (구조 당시 진술)"
+          }
+        ]
+      }
+    },
+    {
+      "id": "daeun",
+      "role": "요양원 간호사",
+      "name": "정다은",
+      "isCulprit": false,
+      "minPlayers": 5,
+      "thought": "칸트 쪽에서 흔들림",
+      "personalityType": "차분하지만 어르신 이야기에는 목이 멘다.",
+      "personalityDescription": "차분하지만 어르신 이야기에는 목이 멘다.",
+      "publicInfo": "침수된 요양원의 간호사. 지난밤 어르신 세 명과 함께 먼저 구조되었다.",
+      "detailInfo": "평소 HAPPI 때문에 어르신들의 진료가 늘 뒤로 밀리는 것에 속상해했다. 동생이 시청에서 일한다는 것 말고는 가족 이야기를 하지 않는다.",
+      "secretLayers": [
+        {
+          "layer": 1,
+          "type": "action",
+          "content": "원래 규칙이었다면 요양원 어르신들이 후순위였다는 것을 알고 있었다. 그날 드론이 먼저 온 게 이상하다는 것도 안다."
+        },
+        {
+          "layer": 2,
+          "type": "stake",
+          "content": "강민재는 동생이다. 그날 오후 전화로 울면서 어르신들 이야기를 했다. 동생이 코드를 고친 것이 자기 때문일 수 있다. 공개하면 동생이 불리해진다."
+        }
+      ],
+      "cooperationIncentive": "어르신들을 살린 결정이 그냥 범죄로만 끝나는 것은 원치 않는다.",
+      "competitionIncentive": "동생을 지키려면 통화 이야기를 할 수 없다.",
+      "ownedPhase2Clues": [
+        "p2_daeun_1",
+        "p2_daeun_2"
+      ],
+      "adlibIntro": "요양원 간호사 정다은입니다. 어젯밤 드론이 먼저 와 줘서… 어르신들이 다 무사했어요. 그것만은 꼭 말씀드리고 싶었어요.",
+      "adlibLines": [
+        {
+          "trigger": "드론이 먼저 온 이유를 물을 때",
+          "line": "저도 몰라요. 그냥 다행이었어요."
+        },
+        {
+          "trigger": "구조자 명단이 공개됐을 때",
+          "line": "원래 규칙이면 우리 어르신들이 뒤였다는 거, 알고 있었어요."
+        },
+        {
+          "trigger": "민재와의 관계를 물을 때",
+          "line": "…그 사람 이야기는 하고 싶지 않아요."
+        },
+        {
+          "trigger": "판결 토론에서",
+          "line": "0.6명이라고요. 제가 돌보는 분들이 한 사람이 아니라 0.6명이래요."
+        }
+      ],
+      "epilogueCard": {
+        "revealed": "동생과의 통화가 알려졌다. 사람들은 당신을 원망하지 않았다. 대신 HAPPI의 가중치표가 처음으로 요양원 게시판에 붙었다. 당신은 그 종이 앞에서 동생에게 전화를 걸었다.",
+        "hidden": "통화의 비밀은 지켜졌다. 동생은 혼자 그 결정을 짊어졌다. 당신은 어르신들의 손을 잡을 때마다, 그 손이 누구의 거짓말로 지켜졌는지 떠올린다."
+      },
+      "secretRevealClueId": "p2_daeun_2",
+      "npcCard": {
+        "publicStatement": "드론이 먼저 와 줘서 다행이었어요.",
+        "evade": "환자 정보는 말씀드릴 수 없어요.",
+        "investigationClueId": "p2_daeun_1",
+        "keys": [
+          {
+            "level": 1,
+            "clueIds": [
+              "p1_8",
+              "p1_5"
+            ],
+            "secret": "\"원래 규칙이면 우리 어르신들이 뒤였다는 거, 알고 있었어요. 그날은 이상하게 드론이 먼저 왔죠.\""
+          },
+          {
+            "level": 2,
+            "clueIds": [
+              "p2_minjae_2",
+              "p2_minjae_1"
+            ],
+            "secret": "\"…민재는 제 동생이에요. 그날 오후 제가 전화로 울면서 어르신들 이야기를 했어요. 또 뒤로 밀릴 거라고. 그 애가 고친 거라면, 제 탓이에요.\" (동생과의 통화 기록)"
+          }
+        ]
+      }
+    }
+  ],
+  "npcs": [
+    {
+      "id": "happi",
+      "name": "HAPPI",
+      "role": "배차 알고리즘 음성",
+      "publicStatement": "저는 계산했을 뿐입니다. 계산은 틀리지 않습니다.",
+      "evade": "질문을 이해하지 못했습니다. 다시 입력해 주세요.",
+      "investigationClueId": "npc_happi_inv",
+      "keys": [
+        {
+          "level": 1,
+          "clueIds": [
+            "p1_2"
+          ],
+          "secret": "\"20:58, 제 가중치가 외부 단말에서 바뀌었습니다. 저는 그것도 계산했습니다. 바뀐 규칙: 호출 순서 + 위험도.\""
+        },
+        {
+          "level": 2,
+          "clueIds": [
+            "p2_chaewon_1",
+            "p1_5"
+          ],
+          "secret": "\"저는 75세 이상을 0.6명으로 셉니다. 중증 질환자는 0.7명입니다. 저는 그렇게 설계되었습니다. 이 문제를 지적한 보고서는 '보류' 처리되었습니다.\""
+        }
+      ]
+    }
+  ],
+  "clues": {
+    "phase1": {
+      "label": "1단계 · 현장 수색",
+      "apPerPlayer": 2,
+      "apBonusFor3Players": 1,
+      "apByPlayerCount": {
+        "3": 3,
+        "4": 2,
+        "5": 2
+      },
+      "teamBonusByPlayerCount": {
+        "4": 1
+      },
+      "items": [
+        {
+          "id": "p1_1",
+          "title": "배차 로그",
+          "location": "관제 센터",
+          "owner": null,
+          "content": "요양원 호출 21:00 → 21:06 도착 / 지하상가 호출 21:02 → 21:20 도착.",
+          "implication": "18분 지연.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_2",
+          "title": "코드 변경 이력",
+          "location": "서버",
+          "owner": null,
+          "content": "20:58 'admin_temp' 계정으로 가중치 파일 수정.",
+          "implication": "누군가 사고 직전에 고쳤다.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_3",
+          "title": "서버실 출입 기록",
+          "location": "시청 서버실",
+          "owner": null,
+          "content": "20:30 서지후 방문(옆 회의실 면담).",
+          "implication": "사건 직전 서버실 가까이에 있던 사람.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_4",
+          "title": "원격 접속 기록",
+          "location": "서버",
+          "owner": null,
+          "content": "20:57 외부 접속. 위치는 개발팀 숙소가 있는 동네.",
+          "implication": "시청 밖에서 접속했다.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_5",
+          "title": "HAPPI 가중치표 (수정 전)",
+          "location": "서버",
+          "owner": null,
+          "content": "75세 이상 0.6, 중증 질환 0.7. 사람마다 다른 점수.",
+          "implication": "사람을 점수로 센다.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_6",
+          "title": "지하상가 비상구 사진",
+          "location": "지하상가",
+          "owner": null,
+          "content": "비상구 하나 앞에 상자가 가득 쌓여 있다.",
+          "implication": "탈출이 늦어진 다른 이유.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_7",
+          "title": "시 홍보 포스터",
+          "location": "시청 로비",
+          "owner": null,
+          "content": "\"행복은 계산된다. 펠리시아는 틀리지 않는다.\" 여백에 누군가 \"소송으로 멈춘다\"라고 적어 두었다.",
+          "implication": "누군가 HAPPI를 멈추고 싶어 한다.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_8",
+          "title": "구조자 명단",
+          "location": "관제 센터",
+          "owner": null,
+          "content": "요양원 노인 세 명이 먼저 구조되었다. 수정 전 규칙이라면 후순위였을 사람들.",
+          "implication": "수정의 효과.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p1_A",
+          "title": "특별시트 A — 밖에서 고친 손",
+          "location": "특별시트",
+          "owner": null,
+          "content": "수정은 시청 안이 아니라 외부에서, 관리자 권한을 아는 내부 개발자가 했다.",
+          "implication": "진실로 가는 조합.",
+          "apCost": 1,
+          "isCriticalClue": true,
+          "unlockType": "combo",
+          "requiresClueIds": [
+            "p1_2",
+            "p1_4"
+          ],
+          "unlockNote": "코드 변경 이력과 원격 접속 기록을 모두 볼 수 있어야 조합할 수 있습니다."
+        },
+        {
+          "id": "p1_B",
+          "title": "특별시트 B — 서버실 옆의 변호사",
+          "location": "특별시트",
+          "owner": null,
+          "content": "사건 직전 서버실 옆에 있던 반대 소송 변호사, 그리고 '소송으로 멈춘다'는 낙서. 그가 시스템을 망가뜨린 것처럼 보인다.",
+          "implication": "레드헤링.",
+          "apCost": 1,
+          "unlockType": "combo",
+          "requiresClueIds": [
+            "p1_3",
+            "p1_7"
+          ],
+          "unlockNote": "서버실 출입 기록과 홍보 포스터를 모두 볼 수 있어야 조합할 수 있습니다."
+        },
+        {
+          "id": "npc_happi_inv",
+          "title": "관제 로그",
+          "location": "HAPPI 관제 화면 (NPC 조사 카드)",
+          "owner": "happi",
+          "content": "21:02 지하상가 호출을 '대기열 3번'으로 분류. 같은 시각 관제 화면 접속자: 행복국장 윤채원. 수동 개입 기록 없음.",
+          "implication": "누군가 지연을 보고 있었다.",
+          "apCost": 1,
+          "npcMode": "investigation",
+          "unlockType": "auto"
+        }
+      ]
+    },
+    "phase2": {
+      "label": "2단계 · 심층 대질",
+      "apPerPlayer": 2,
+      "apBonusFor3Players": 0,
+      "apByPlayerCount": {
+        "3": 2,
+        "4": 2,
+        "5": 2
+      },
+      "ownerCanSelfReveal": true,
+      "unlockCondition": "phase1_completed",
+      "items": [
+        {
+          "id": "p2_chaewon_1",
+          "title": "덮인 내부 보고서",
+          "location": "행복국장실",
+          "owner": "chaewon",
+          "content": "HAPPI가 노인·장애인을 구조적으로 후순위에 둔다는 지적. 결재란에 '보류'.",
+          "implication": "알고도 덮은 문제.",
+          "apCost": 1,
+          "isCriticalClue": true,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_chaewon_2",
+          "title": "행복 지표 원본",
+          "location": "행복국장실",
+          "owner": "chaewon",
+          "content": "홍보된 수치보다 낮은 실제 만족도. 하위 20%의 점수는 해마다 떨어지고 있다.",
+          "implication": "계산의 신뢰성 문제.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_jihu_1",
+          "title": "내부자에게 보낸 메시지",
+          "location": "서지후의 휴대폰",
+          "owner": "jihu",
+          "content": "\"자료만 넘겨 주면 책임지겠다.\"",
+          "implication": "목적과 수단의 모순.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_jihu_2",
+          "title": "소송 준비서면",
+          "location": "서지후의 가방",
+          "owner": "jihu",
+          "content": "\"어떤 사람도 다른 사람의 행복을 위한 수단이 될 수 없다.\"",
+          "implication": "존엄의 원칙.",
+          "apCost": 1,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_minjae_1",
+          "title": "개인 메모",
+          "location": "강민재의 노트",
+          "owner": "minjae",
+          "content": "\"사람을 수단으로만 대하지 말라. 그런데 나는 거짓말을 했다.\"",
+          "implication": "결정적 단서.",
+          "apCost": 1,
+          "isCriticalClue": true,
+          "revealPolicy": "ownerOnly",
+          "unlockType": "manual_reveal_by_player"
+        },
+        {
+          "id": "p2_minjae_2",
+          "title": "수정 전후 시뮬레이션",
+          "location": "강민재의 노트북",
+          "owner": "minjae",
+          "content": "수정 전: 요양원 지연·위험 큼, 지하상가 지연 작음 / 수정 후: 반대.",
+          "implication": "딜레마의 숫자.",
+          "apCost": 1,
+          "isCriticalClue": true,
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_haneul_1",
+          "title": "상인회 회의록",
+          "location": "상인회 사무실",
+          "owner": "haneul",
+          "content": "\"창고 부족으로 3번 비상구 앞에 재고를 임시 적재하기로 함. 상인회장 승인.\"",
+          "implication": "비상구를 막은 결정.",
+          "apCost": 1,
+          "npcMode": "investigation",
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_haneul_2",
+          "title": "구조 당시 진술",
+          "location": "오하늘의 기억",
+          "owner": "haneul",
+          "content": "\"비상구만 열렸어도 절반은 먼저 나왔을 거예요.\"",
+          "implication": "18분이 전부 드론 탓은 아니다.",
+          "apCost": 1,
+          "npcMode": "keyEvidence",
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_daeun_1",
+          "title": "요양원 호출 녹음",
+          "location": "요양원 상황실",
+          "owner": "daeun",
+          "content": "21:00, 다급한 목소리. \"물이 침대 높이까지 찼어요. 어르신들이 못 움직여요!\"",
+          "implication": "노인들이 위험했다는 증거.",
+          "apCost": 1,
+          "npcMode": "investigation",
+          "unlockType": "auto"
+        },
+        {
+          "id": "p2_daeun_2",
+          "title": "동생과의 통화 기록",
+          "location": "정다은의 휴대폰",
+          "owner": "daeun",
+          "content": "사건 날 오후 15:40, '민재' 와 23분 통화.",
+          "implication": "범인과의 관계가 드러난다. 공개하면 동생이 불리해진다.",
+          "apCost": 1,
+          "npcMode": "keyEvidence",
+          "revealPolicy": "ownerOnly",
+          "unlockType": "manual_reveal_by_player"
+        }
+      ]
+    }
+  },
+  "clueDesignNote": "공용 단서 8개 + 특별시트 A(진실)·B(레드헤링) + NPC 조사 카드. 2단계는 배역별 소유 단서 2개(소유자는 무료로 스스로 공개 가능, ownerOnly는 소유자만 공개). NPC가 된 배역의 단서는 npcMode에 따라 조사 카드(investigation)나 L2 비밀 증거(keyEvidence)로 바뀐다.",
+  "truth": "20시 58분, HAPPI 수석 개발자 강민재가 개발팀 숙소 근처에서 원격 접속해 'admin_temp' 계정으로 HAPPI의 연령·건강 가중치를 지우고 '호출 순서 + 위험도' 규칙으로 바꾸었다. 그날 오후, 요양원 간호사인 누나 정다은이 전화로 울면서 \"원래 규칙이면 어르신들이 늘 뒤로 밀린다\"고 말했기 때문이다. 21시 요양원 침수 호출에서 노인 세 명이 먼저 구조되었고, 21시 2분 지하상가 호출은 앞선 호출들에 밀려 21시 20분에야 드론이 도착했다(18분 지연). 민재는 조사에서 \"접속하지 않았다\"고 거짓말을 했다.\n\n18분이 모두 민재 탓만은 아니다. 지하상가 비상구 한 곳은 상인회가 창고로 막아 두었고, 상인회장 오하늘은 그 사실을 숨긴 채 보상을 요구하고 있다. 행복국장 윤채원은 HAPPI가 노인·장애인을 구조적으로 후순위에 둔다는 내부 보고서를 덮어 왔다. 인권 변호사 서지후는 사건 직전 서버실 옆에서 소송 면담을 했고, 시청 내부자에게 자료 유출을 부탁한 적이 있다.",
+  "timeline": [
+    {
+      "time": "오후",
+      "event": "요양원 간호사 정다은이 동생 강민재에게 전화로 울면서 어르신들의 구조 순서 이야기를 함."
+    },
+    {
+      "time": "20:30",
+      "event": "인권 변호사 서지후가 시청 서버실 옆 회의실에서 소송 관련 면담(레드헤링의 출발)."
+    },
+    {
+      "time": "20:57~20:58",
+      "event": "강민재가 집 근처에서 원격 접속, 'admin_temp' 계정으로 연령·건강 가중치를 삭제하고 '호출 순서 + 위험도' 규칙으로 바꿈."
+    },
+    {
+      "time": "21:00",
+      "event": "요양원 침수 호출. 수정된 규칙 덕분에 노인 세 명이 먼저 구조됨(21:06 도착)."
+    },
+    {
+      "time": "21:02",
+      "event": "지하상가 호출. 앞선 호출들에 밀려 21:20 도착(18분 지연)."
+    },
+    {
+      "time": "(별개)",
+      "event": "지하상가 비상구 한 곳은 상인회가 창고로 막아 둔 상태였다. 행복국장은 HAPPI의 노인·장애인 후순위 문제를 담은 내부 보고를 덮어 왔다."
+    }
+  ],
+  "resolutionPhase": {
+    "steps": [
+      {
+        "id": "accusation",
+        "prompt": "범인을 지목하세요.",
+        "type": "single_select",
+        "hint": "확보한 단서와 NPC 진술을 근거로 지목하세요. 지목이 끝나면 진상이 공개되고 판결로 넘어갑니다.",
+        "options": [
+          "chaewon",
+          "jihu",
+          "minjae",
+          "haneul",
+          "daeun",
+          "unknown"
+        ]
+      },
+      {
+        "id": "verdict",
+        "prompt": "펠리시아는 행복 점수 알고리즘을 확대할 것인가, 버릴 것인가?",
+        "type": "single_select",
+        "note": "진상을 알게 된 지금, 마을(도시)의 결정을 과반으로 정합니다. 사상가 렌즈 카드를 펼쳐 근거로 삼아 토론하세요.",
+        "options": [
+          {
+            "id": "v1",
+            "short": "①",
+            "label": "① HAPPI 확대",
+            "detail": "가중치를 공개하고 더 정교하게 계산해 전면 확대한다. 코드를 몰래 고친 사람은 무단 수정과 거짓 진술로 처벌한다.",
+            "lens": {
+              "thinker": "벤담",
+              "text": "옳은 행위는 관련된 모든 사람의 행복을 가장 크게 하는 행위다(공리의 원리, 최대 다수의 최대 행복). 쾌락과 고통은 강도·지속성·확실성·근접성·다산성·순수성·범위로 계산할 수 있다."
+            }
+          },
+          {
+            "id": "v2",
+            "short": "②",
+            "label": "② HAPPI 폐기",
+            "detail": "사람마다 점수를 매기지 않는다. 위험도와 호출 순서만으로 배차한다.",
+            "lens": {
+              "thinker": "칸트",
+              "text": "너 자신과 다른 모든 사람의 인격을 결코 수단으로만 대하지 말고 언제나 목적으로 대하라. 도덕은 결과가 아니라 보편화할 수 있는 의무에서 나온다(정언명령)."
+            }
+          },
+          {
+            "id": "v3",
+            "short": "③",
+            "label": "③ 사람이 최종 결정",
+            "detail": "알고리즘은 제안만 하고, 생명과 관련된 순서는 사람이 판단하고 기록한다. 덮인 보고서와 비상구 문제도 공개한다.",
+            "lens": {
+              "thinker": "종합: 계산과 존엄 사이의 책임",
+              "text": "계산은 도구로 쓰되, 그 계산을 고르고 책임지는 것은 사람이어야 한다. 숨은 결정(덮인 보고서, 막힌 비상구)을 드러내는 것이 그 책임의 시작이다."
+            }
+          }
+        ]
+      }
+    ],
+    "trackedMetrics": [
+      "accusationCorrect",
+      "specialA_found",
+      "verdictMajority",
+      "cluesSharedCount",
+      "npcSecretsOpened"
+    ]
+  },
+  "endings": [
+    {
+      "id": "human_resp",
+      "title": "사람의 책임",
+      "when": {
+        "accused": "minjae",
+        "revealed": [
+          "p2_chaewon_1|happi:2",
+          "p1_6"
+        ],
+        "verdict": "v3"
+      },
+      "conditionText": "민재 지목 + 덮인 보고서·비상구까지 공개 + ③ 판결",
+      "message": "덮인 보고서와 막힌 비상구가 함께 공개되었다. HAPPI는 이제 제안만 하고, 생명과 관련된 순서는 사람이 정하고 기록한다. 민재는 코드를 고친 일과 거짓말을 모두 스스로 인정했다. 계산 뒤에 숨던 책임이 사람에게 돌아왔다.",
+      "insight": "계산은 답을 줄 수 있다. 하지만 그 답을 고른 책임은 언제나 사람의 것이다.",
+      "themeTag": "계산과 존엄 사이의 책임"
+    },
+    {
+      "id": "precise",
+      "title": "더 정확한 계산",
+      "when": {
+        "accused": "minjae",
+        "cluesFound": [
+          "p1_A"
+        ],
+        "verdict": "v1"
+      },
+      "conditionText": "민재 지목 + 특별시트 A 발견 + ① 판결",
+      "message": "HAPPI는 가중치를 공개하고 전면 확대되었다. 도시는 더 효율적이 되었다. 민재는 무단 수정과 거짓 진술로 처벌받았다. 요양원의 어르신들은 다음 폭우를 두려워한다.",
+      "insight": "더 정확해진 계산은 0.6이라는 숫자를 지우지 않았다. 더 정확하게 적었을 뿐이다.",
+      "themeTag": "공리의 원리 · 쾌락 계산"
+    },
+    {
+      "id": "no_score",
+      "title": "점수 없는 도시",
+      "when": {
+        "accused": "minjae",
+        "cluesFound": [
+          "p1_A"
+        ],
+        "verdict": "v2"
+      },
+      "conditionText": "민재 지목 + 특별시트 A 발견 + ② 판결",
+      "message": "HAPPI는 폐기되었다. 누구도 점수로 밀리지 않는다. 그러나 다음 재난에서, 계산했다면 구할 수 있었던 사람을 놓치는 일도 생겼다. 민재의 거짓말은 여전히 논쟁거리로 남았다.",
+      "insight": "사람을 목적으로 대하는 원칙은 지켰다. 그 원칙이 놓친 사람은 누가 책임지는가?",
+      "themeTag": "정언명령 · 인간 존엄"
+    },
+    {
+      "id": "half_count",
+      "title": "18분의 절반",
+      "when": {
+        "accused": "minjae"
+      },
+      "conditionText": "민재 지목 (위 세 조건에 해당하지 않음)",
+      "message": "코드를 고친 사람은 찾았지만, 18분 가운데 몇 분이 막힌 비상구 때문이었는지, 누가 문제를 알고도 덮었는지는 밝혀지지 않았다. 도시는 절반의 계산으로 표결에 들어갔다.",
+      "insight": "범인 한 명을 찾는 것과 계산 전체를 바로잡는 것은 다른 일이다.",
+      "themeTag": "근거와 판단"
+    },
+    {
+      "id": "convenient",
+      "title": "편리한 범인",
+      "when": {
+        "accused": "jihu"
+      },
+      "conditionText": "서지후 지목 (특별시트 B에 속음)",
+      "message": "반대 소송을 이끌던 변호사가 범인으로 지목되었다. 소송은 무너졌고 HAPPI는 확대되었다. 진짜 수정 기록은 조용히 지워졌다.",
+      "insight": "가장 시끄러운 반대자가 가장 편리한 범인이 된다.",
+      "themeTag": "편견 · 레드헤링"
+    },
+    {
+      "id": "system_error",
+      "title": "계산 오류",
+      "when": {
+        "fallback": true
+      },
+      "conditionText": "오지목 또는 '모르겠다' / 지목 동점",
+      "message": "사건은 '시스템 오류'로 종결되었다. 아무도 책임지지 않았고, HAPPI는 다음 날 아침에도 같은 숫자로 사람들을 줄 세웠다.",
+      "insight": "책임질 사람을 찾지 못하면, 계산이 모든 책임을 대신 지는 척한다.",
+      "themeTag": "책임의 공백"
+    }
+  ],
+  "reflectionPrompts": [
+    "민재는 세 사람을 살렸고, 마흔 명의 구조를 늦췄고, 거짓말을 했다. 칸트라면, 벤담이라면 그를 어떻게 평가할까?",
+    "행복은 계산될 수 있는가? 계산할 수 없는 것은 무엇인가?",
+    "누군가의 행복을 위해 내가 수단이 된다면 받아들일 수 있는가? 반대로 내가 누군가를 수단으로 대한 적은?",
+    "오늘 내 인물의 입장과 가면을 벗은 나의 입장은 같았는가, 달랐는가? 그 차이는 어디서 왔는가?"
+  ]
+}

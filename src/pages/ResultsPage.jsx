@@ -10,7 +10,8 @@ import { useRoom } from '../context/RoomContext.jsx'
 import { evaluateEndings, computeResolutionMetrics } from '../engine/endingEvaluator.js'
 import { isClueAutoRevealed } from '../engine/visibility.js'
 import { resolveAccusationOptions } from '../engine/resolutionOptions.js'
-import { getPlayableCharacters, getEffectiveCharacterId } from '../engine/characterAssignment.js'
+import { getPlayableCharacters, getEffectiveCharacterId, getNpcs } from '../engine/characterAssignment.js'
+import { npcSecretOpenedBy } from '../engine/npcEngine.js'
 import { saveLocalResult } from '../utils/localStorageStore.js'
 import { saveReflectionLog } from '../firebase/reflectionApi.js'
 import { getAiFeedback } from '../firebase/functionsApi.js'
@@ -34,6 +35,7 @@ function ResultsInner({ scenario }) {
   const [aiError, setAiError] = useState(null)
   const [saved, setSaved] = useState(false)
   const [autoExportPending, setAutoExportPending] = useState(false)
+  const [laterThought, setLaterThought] = useState('')
 
   // 통합 캐릭터 3인 시나리오에서는 진범이 통합 캐릭터 쪽에 표시돼야 하므로
   // playerCount 기준의 플레이 가능 목록에서 찾는다(4인은 원본 캐릭터와 동일).
@@ -64,7 +66,8 @@ function ResultsInner({ scenario }) {
   // 도덕적 선택 스텝의 옵션이 시나리오 고유 라벨({id,label})로 저작돼 있으면 그걸
   // 그대로 쓰고(예: '자백한다'/'은닉한다'), 아니면 기존 두 시나리오가 쓰던
   // reveal_all/conceal_some 기본 문구로 되돌아간다.
-  const moralStepOptions = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')?.options
+  const verdictStep = scenario.resolutionPhase.steps.find((s) => s.id === 'verdict')
+  const moralStepOptions = (verdictStep ?? scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice'))?.options
   const moralOptionLabels = moralStepOptions?.every((o) => typeof o === 'object')
     ? Object.fromEntries(moralStepOptions.map((o) => [o.id, o.label]))
     : { reveal_all: '모두 공개했다', conceal_some: '일부는 덮었다' }
@@ -121,6 +124,13 @@ function ResultsInner({ scenario }) {
   if (loading) return <div className="dim">불러오는 중...</div>
   if (!room || !ending) return <div className="card">결과를 불러올 수 없습니다.</div>
 
+  const myFirst = room.players?.[uid]?.firstThought
+  const firstOptionLabel = scenario.firstThought?.options?.find((o) => o.id === myFirst?.choice)?.label
+  const firstThoughtText = myFirst ? [firstOptionLabel, myFirst.text].filter(Boolean).join(' — ') : '(기록 없음)'
+  const verdictCounts = {}
+  if (verdictStep) Object.values(moralChoices).forEach((v) => (verdictCounts[v] = (verdictCounts[v] ?? 0) + 1))
+  const npcs = getNpcs(scenario, room.meta?.playerCount)
+
   const handleReflectionSubmit = async () => {
     if (tier !== 'homeSchoolStudent') return
     if (!studentIdentity) return setAiError('학교 인증 정보가 만료됐어요 — 새로고침 후 학교 코드를 다시 인증해주세요')
@@ -135,8 +145,12 @@ function ResultsInner({ scenario }) {
         scenarioId: scenario.scenarioId,
         roomCode,
         characterId: myCharacterId,
-        reflectionPrompts: scenario.reflectionPrompts,
-        answers,
+        reflectionPrompts: scenario.firstThought
+          ? [`[처음 생각] ${scenario.firstThought.question}`, ...scenario.reflectionPrompts, `[나중 생각] ${scenario.firstThought.question}`]
+          : scenario.reflectionPrompts,
+        answers: scenario.firstThought
+          ? Object.fromEntries([firstThoughtText, ...scenario.reflectionPrompts.map((_, i) => answers[i] ?? ''), laterThought].map((v, i) => [i, v]))
+          : answers,
         resultSummary: {
           endingId: ending.id,
           endingTitle: ending.title,
@@ -215,6 +229,22 @@ function ResultsInner({ scenario }) {
       <p className="dim" style={{ marginBottom: 16 }}>
         팀이 무엇을 밝혀냈든 상관없이, 실제로 있었던 일과 이 사건의 핵심 단서를 모두 공개합니다.
       </p>
+      {verdictStep && (
+        <div className="card col" style={{ marginBottom: 12 }}>
+          <div className="kicker">모둠의 판결</div>
+          {verdictStep.options.map((o) => (
+            <div key={o.id} className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
+              <span style={{ fontSize: 13 }}>{o.label}{o.lens ? <span className="dim"> · {o.lens.thinker}</span> : null}</span>
+              <span className={`pill ${verdictCounts[o.id] ? 'pill-solid' : 'pill-muted'}`}>{verdictCounts[o.id] ?? 0}표</span>
+            </div>
+          ))}
+        </div>
+      )}
+      {scenario.truth && (
+        <div className="card" style={{ marginBottom: 12 }}>
+          <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{scenario.truth}</p>
+        </div>
+      )}
       <div className="card col" style={{ marginBottom: 12 }}>
         <strong style={{ fontFamily: 'var(--font-head)' }}>{culprit?.name} — {culprit?.role}</strong>
         {culprit?.secretLayers?.map((layer, i) => (
@@ -315,6 +345,40 @@ function ResultsInner({ scenario }) {
         })}
       </div>
 
+      {npcs.length > 0 && (
+        <>
+          <h2 className="page-title" style={{ fontSize: 19 }}>NPC의 비밀</h2>
+          <div className="col" style={{ marginBottom: 18 }}>
+            {npcs.flatMap((n) => (n.keys ?? []).map((k) => {
+              const openers = npcSecretOpenedBy(room, n.id, k.level).map((u) => room.players?.[u]?.name).filter(Boolean)
+              return (
+                <div key={`${n.id}_${k.level}`} className="card" style={{ marginBottom: 0 }}>
+                  <div className="row" style={{ justifyContent: 'space-between' }}>
+                    <strong style={{ fontSize: 13 }}>{n.name} · {k.level === 1 ? '첫 번째' : '두 번째'} 비밀</strong>
+                    <span className={`pill ${openers.length ? 'pill-solid' : 'pill-muted'}`}>{openers.length ? `${openers.join(', ')} 열람` : '열리지 않음'}</span>
+                  </div>
+                  <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.6 }}>{k.secret}</p>
+                </div>
+              )
+            }))}
+          </div>
+        </>
+      )}
+
+      {scenario.firstThought && (
+        <>
+          <hr className="divider" />
+          <h2 className="page-title" style={{ fontSize: 19 }}>가면 벗기 — 처음 생각과 나중 생각</h2>
+          <p className="dim" style={{ marginBottom: 10 }}>{scenario.firstThought.question}</p>
+          <div className="card" style={{ marginBottom: 10 }}>
+            <div className="kicker">게임 전 나의 처음 생각</div>
+            <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.7 }}>{firstThoughtText}</p>
+          </div>
+          <label className="dim" style={{ fontSize: 12 }}>가면을 벗은 지금, 나의 생각은? (역할이 아니라 나로서)</label>
+          <textarea rows={3} value={laterThought} onChange={(e) => setLaterThought(e.target.value)} style={{ marginBottom: 16 }} />
+        </>
+      )}
+
       <hr className="divider" />
 
       <h2 className="page-title" style={{ fontSize: 19 }}>성찰 기록</h2>
@@ -353,9 +417,15 @@ function ResultsInner({ scenario }) {
 
         <div className="row" style={{ marginBottom: 14 }}>
           <span className="pill pill-outline">나의 지목: {myAccusedLabel}</span>
-          <span className="pill pill-outline">나의 선택: {myMoralChoiceLabel}</span>
+          <span className="pill pill-outline">{verdictStep ? '나의 판결' : '나의 선택'}: {myMoralChoiceLabel}</span>
         </div>
 
+        {scenario.firstThought && (
+          <div className="col" style={{ marginBottom: 12 }}>
+            <div><p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>처음 생각</p><p style={{ fontSize: 13, margin: 0 }}>{firstThoughtText}</p></div>
+            <div><p className="dim" style={{ fontSize: 12, margin: '0 0 3px' }}>나중 생각</p><p style={{ fontSize: 13, margin: 0, whiteSpace: 'pre-wrap' }}>{laterThought || '(무응답)'}</p></div>
+          </div>
+        )}
         <div className="col">
           {scenario.reflectionPrompts.map((q, i) => (
             <div key={i}>

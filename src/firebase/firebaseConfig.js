@@ -1,7 +1,7 @@
 import { initializeApp } from 'firebase/app'
-import { getAuth } from 'firebase/auth'
-import { getDatabase } from 'firebase/database'
-import { getFirestore } from 'firebase/firestore'
+import { getAuth, connectAuthEmulator } from 'firebase/auth'
+import { getDatabase, connectDatabaseEmulator } from 'firebase/database'
+import { getFirestore, connectFirestoreEmulator } from 'firebase/firestore'
 import { getFunctions } from 'firebase/functions'
 
 // Firebase 웹 클라이언트 설정값은 비밀값이 아님(보안은 firestore.rules / database.rules.json이 담당).
@@ -21,3 +21,10 @@ export const auth = getAuth(app)
 export const db = getDatabase(app)
 export const firestore = getFirestore(app)
 export const functions = getFunctions(app)
+
+// 로컬 개발 전용: VITE_USE_EMULATORS=1 이면 Firebase 에뮬레이터에 붙는다(배포 빌드에는 영향 없음).
+if (import.meta.env.DEV && import.meta.env.VITE_USE_EMULATORS === '1') {
+  connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true })
+  connectDatabaseEmulator(db, '127.0.0.1', 9000)
+  connectFirestoreEmulator(firestore, '127.0.0.1', 8080)
+}

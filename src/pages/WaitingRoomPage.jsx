@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { ref, set } from 'firebase/database'
+import { db } from '../firebase/firebaseConfig'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
@@ -6,7 +8,7 @@ import StepProgress from '../components/StepProgress.jsx'
 import NarrationScript from '../components/NarrationScript.jsx'
 import { useAuth } from '../context/AuthContext.jsx'
 import { useRoom } from '../context/RoomContext.jsx'
-import { getPlayableCharacters } from '../engine/characterAssignment.js'
+import { getPlayableCharacters, getNpcs } from '../engine/characterAssignment.js'
 
 // 게임 시작 전에 관련 개념을 짧게 짚어주는 인트로 카드 — 방 전체 동기화 없이
 // 각자 자기 속도로 읽고 넘기는 로컬 read-along이라 게임 시작을 막지 않는다.
@@ -27,6 +29,35 @@ function IntroCases({ cases, onDone }) {
         <button className="primary" onClick={() => (isLast ? onDone() : setIndex((i) => i + 1))}>
           {isLast ? '확인했어요 →' : '다음 →'}
         </button>
+      </div>
+    </div>
+  )
+}
+
+// M 사건 만나기 — 판결 질문에 대한 '처음 생각'을 비공개로 남긴다(players/{uid}/firstThought).
+function FirstThoughtCard({ scenario, roomCode, uid, saved }) {
+  const ft = scenario.firstThought
+  const [choice, setChoice] = useState(saved?.choice ?? '')
+  const [text, setText] = useState(saved?.text ?? '')
+  const [done, setDone] = useState(!!saved)
+  const save = async () => {
+    await set(ref(db, `rooms/${roomCode}/players/${uid}/firstThought`), { choice, text, at: Date.now() })
+    setDone(true)
+  }
+  return (
+    <div className="card col" style={{ borderColor: 'var(--gold)' }}>
+      <div className="kicker">처음 생각 · 나만 보는 기록</div>
+      <strong style={{ fontSize: 14, lineHeight: 1.6 }}>{ft.question}</strong>
+      {(ft.options ?? []).map((o) => (
+        <label key={o.id} className="row" style={{ gap: 8, fontSize: 13, alignItems: 'flex-start', cursor: 'pointer' }}>
+          <input type="radio" checked={choice === o.id} onChange={() => { setChoice(o.id); setDone(false) }} style={{ marginTop: 4 }} />
+          <span>{o.label}</span>
+        </label>
+      ))}
+      <textarea rows={2} placeholder={ft.placeholder ?? '그렇게 생각한 이유를 한두 문장으로 적어 보세요'} value={text} onChange={(e) => { setText(e.target.value); setDone(false) }} />
+      <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+        <span className="dim" style={{ fontSize: 11 }}>다른 사람에게 보이지 않아요. 게임이 끝난 뒤 '나중 생각'과 비교합니다.</span>
+        <button className="primary" onClick={save} disabled={!choice && !text.trim()}>{done ? '저장됨' : '저장'}</button>
       </div>
     </div>
   )
@@ -140,6 +171,10 @@ function WaitingRoomInner({ scenario }) {
         <NarrationScript title="오프닝 내레이션" lines={scenario.narration.opening} characters={scenario.characters} />
       )}
 
+      {scenario.firstThought && (
+        <FirstThoughtCard scenario={scenario} roomCode={roomCode} uid={uid} saved={room.players?.[uid]?.firstThought} />
+      )}
+
       <div className="kicker">
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="var(--gold)" strokeWidth="2.5">
           <circle cx="12" cy="8" r="4" />
@@ -148,6 +183,11 @@ function WaitingRoomInner({ scenario }) {
         캐릭터 선택
       </div>
       <p className="dim" style={{ marginBottom: 14 }}>맡고 싶은 캐릭터를 선택하세요. 한 사람당 한 명씩만 선택할 수 있어요.</p>
+      {getNpcs(scenario, room.meta.playerCount).length > 0 && (
+        <p className="dim" style={{ fontSize: 12, marginTop: -8, marginBottom: 14 }}>
+          이번 판({room.meta.playerCount}인)의 NPC: {getNpcs(scenario, room.meta.playerCount).map((n) => n.name).join(', ')} — 게임 중 단서를 내밀어 심문할 수 있어요.
+        </p>
+      )}
 
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12, marginBottom: 8 }}>
         {characters.map((c) => {

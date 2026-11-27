@@ -1,5 +1,6 @@
 import { getEffectiveCharacterId } from './characterAssignment'
 import { resolveAccusationOptions } from './resolutionOptions'
+import { openedNpcSecretIds } from './npcEngine'
 
 // 시나리오는 관리자 페이지를 통해 코드 배포 없이 추가/수정되므로, 엔딩 판정 로직은
 // 시나리오별 JS 파일이 아니라 이 하나의 범용 평가기가 scenario.endings[].when(JSON)을
@@ -23,6 +24,10 @@ import { resolveAccusationOptions } from './resolutionOptions'
 //   minCriticalCluesFound: 팀이 확보한 isCriticalClue 단서 수가 이 값 미만이면
 //     (지목 내용과 무관하게) 이 엔딩이 최우선으로 매치된다 — "충분한 근거 없이
 //     결론 내림" 계열 엔딩용. 시나리오당 최대 하나만 두는 걸 권장.
+//   verdict: 판결 단계(resolutionPhase.steps id 'verdict')의 과반(최다) 판결안 id와 일치해야 매치
+//   verdictIn: 판결안 목록 중 하나
+//   revealed: ['clueA|npcId:2', 'clueB'] — 각 항목은 '|'로 나눈 대안 중 하나라도 밝혀졌으면 충족
+//     (단서는 확보됨, 'npcId:level'은 NPC 비밀이 누군가에게 열림)
 //   fallback: 다수결 지목이 동점이거나 1위가 'unknown'이거나, 다른 엔딩이 하나도
 //             매치하지 않을 때 사용되는 기본 엔딩 — 시나리오당 정확히 하나 있어야 한다.
 //
@@ -57,6 +62,9 @@ export function evaluateEndings(scenario, metrics, playerCount) {
       if (w.cluesFound && !w.cluesFound.every((id) => foundClueIds.has(id))) continue
       if (w.cluesNotFound && !w.cluesNotFound.every((id) => !foundClueIds.has(id))) continue
       if (w.moralChoiceMajority && w.moralChoiceMajority !== moralChoiceMajority) continue
+      if (w.verdict && w.verdict !== metrics.verdictMajority) continue
+      if (w.verdictIn && !w.verdictIn.includes(metrics.verdictMajority)) continue
+      if (w.revealed && !w.revealed.every((alt) => alt.split('|').some((id) => metrics.revealedIds?.has(id)))) continue
       if (w.confessedCharacterIds && !w.confessedCharacterIds.map(effectiveId).every((id) => confessedCharacterIds?.includes(id))) continue
       if (w.notConfessedCharacterIds && w.notConfessedCharacterIds.map(effectiveId).some((id) => confessedCharacterIds?.includes(id))) continue
       if (w.minConfessCount !== undefined && (metrics.confessCount ?? 0) < w.minConfessCount) continue
@@ -123,8 +131,22 @@ export function computeResolutionMetrics({ accusations, moralChoices, roomClues,
       .map((id) => getEffectiveCharacterId(scenario, id, playerCount))
   }
 
+  // 판결 단계가 있는 시나리오는 moralChoices에 판결안 id가 들어간다 — 최다 득표(동점이면 null)
+  let verdictMajority = null
+  if (scenario?.resolutionPhase?.steps?.some((s) => s.id === 'verdict')) {
+    const counts = new Map()
+    for (const v of choiceValues) counts.set(v, (counts.get(v) ?? 0) + 1)
+    const max = counts.size ? Math.max(...counts.values()) : 0
+    const top = [...counts.entries()].filter(([, c]) => c === max).map(([k]) => k)
+    verdictMajority = top.length === 1 ? top[0] : null
+  }
+  const revealedIds = new Set(foundClueIds)
+  if (scenario && players) for (const id of openedNpcSecretIds({ players }, scenario, playerCount)) revealedIds.add(id)
+
   return {
     accused,
+    verdictMajority,
+    revealedIds,
     moralChoiceMajority,
     foundClueIds,
     criticalCluesFoundCount,

@@ -3,7 +3,14 @@
 //     이미 시나리오 콘텐츠에 이식되어 있으므로 필터링만 하면 됨).
 //  2) 통합 방식 — scenario.threePlayerVariant.integratedCharacter가 있으면, 3인일 때
 //     mergedFromCharacterIds에 속한 캐릭터들을 빼고 그 자리에 통합 캐릭터 하나를 넣는다.
+// 인원 선택형(가면 회의) 시나리오: 캐릭터에 minPlayers가 있으면 그 인원 이상일 때만
+// 플레이어 배역이고, 아니면 NPC가 된다(npcCard로 심문). 기존 시나리오는 영향 없음.
+export function usesCastByPlayerCount(scenario) {
+  return (scenario?.characters ?? []).some((c) => c.minPlayers != null)
+}
+
 export function getPlayableCharacters(scenario, playerCount) {
+  if (usesCastByPlayerCount(scenario)) return scenario.characters.filter((c) => (c.minPlayers ?? 0) <= (playerCount ?? 99))
   if (playerCount >= 4) return scenario.characters
   const variant = scenario.threePlayerVariant
   if (playerCount === 3 && variant?.integratedCharacter) {
@@ -25,4 +32,17 @@ export function getEffectiveCharacterId(scenario, characterId, playerCount) {
     return variant.integratedCharacter.id
   }
   return characterId
+}
+
+// 이번 인원에서 NPC로 등장하는 인물 — 플레이어가 맡지 않은 배역(npcCard 보유) + 상시 NPC(scenario.npcs).
+export function getNpcs(scenario, playerCount) {
+  if (!usesCastByPlayerCount(scenario)) return scenario.npcs ?? []
+  const fromCast = scenario.characters
+    .filter((c) => (c.minPlayers ?? 0) > (playerCount ?? 99) && c.npcCard)
+    .map((c) => ({ id: c.id, name: c.name, role: c.role, fromCharacter: true, ...c.npcCard }))
+  return [...fromCast, ...(scenario.npcs ?? [])]
+}
+
+export function isNpcId(scenario, id, playerCount) {
+  return getNpcs(scenario, playerCount).some((n) => n.id === id)
 }

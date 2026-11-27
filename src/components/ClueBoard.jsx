@@ -1,5 +1,5 @@
 import ClueCard from './ClueCard.jsx'
-import { isClueVisibleTo, isClueAutoRevealed } from '../engine/visibility.js'
+import { isClueVisibleTo, isClueAutoRevealed, cluesForPhase } from '../engine/visibility.js'
 import { isComboReady, getApFieldName } from '../engine/apEngine.js'
 import { getPlayableCharacters, getEffectiveCharacterId } from '../engine/characterAssignment.js'
 
@@ -15,7 +15,7 @@ export default function ClueBoard({ scenario, phase, room, uid, myCharacterId, o
   // clue.revealPolicy==='ownerOnly')에는 본인에게도 보여야 스스로 공개할 수 있다.
   // 통합 캐릭터로 흡수된 인물의 단서는 통합 캐릭터 본인 소유로 취급해야 하므로
   // owner를 effective id로 치환해 비교한다.
-  const items = scenario.clues[phase].items.filter((c) => {
+  const items = cluesForPhase(scenario, phase, playerCount).filter((c) => {
     const effectiveOwner = getEffectiveCharacterId(scenario, c.owner, playerCount)
     const isMine = c.owner && effectiveOwner === myCharacterId
     if (!isMine) return true

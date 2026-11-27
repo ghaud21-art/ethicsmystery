@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { ref, update } from 'firebase/database'
+import { db } from '../firebase/firebaseConfig'
 import { useNavigate, useParams } from 'react-router-dom'
 import RoomPageShell from '../components/RoomPageShell.jsx'
 import Masthead from '../components/Masthead.jsx'
@@ -65,6 +67,56 @@ function RoleplayQuestionsStep({ step, questions }) {
   )
 }
 
+// 가면 회의: 지목 마감 뒤 진상 공개 → 사상가 렌즈 카드 → 과반 판결
+function VerdictStage({ scenario, room, step, value, onChange, accusationOptions, playableCharacters }) {
+  const accusations = room.resolution?.accusations ?? {}
+  const counts = {}
+  Object.values(accusations).forEach((v) => (counts[v] = (counts[v] ?? 0) + 1))
+  const culprit = playableCharacters.find((c) => c.isCulprit) ?? scenario.characters.find((c) => c.isCulprit)
+  const [lensOpen, setLensOpen] = useState(false)
+  return (
+    <>
+      <div className="card col" style={{ borderTop: '2px solid var(--gold)' }}>
+        <div className="kicker">지목 결과</div>
+        <div className="row" style={{ gap: 6, flexWrap: 'wrap' }}>
+          {Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([id, n]) => (
+            <span key={id} className="pill pill-outline">{accusationOptions.find((o) => o.id === id)?.label ?? id} {n}표</span>
+          ))}
+        </div>
+        <div className="kicker" style={{ marginTop: 6 }}>진상 공개</div>
+        <strong style={{ fontFamily: 'var(--font-head)' }}>{culprit?.name} — {culprit?.role}</strong>
+        {scenario.truth && <p style={{ margin: 0, fontSize: 13.5, lineHeight: 1.8, whiteSpace: 'pre-line' }}>{scenario.truth}</p>}
+      </div>
+      <h2 className="page-title" style={{ fontSize: 19 }}>{step.prompt}</h2>
+      {step.note && <p className="dim" style={{ fontSize: 12, marginTop: -4 }}>{step.note}</p>}
+      <button onClick={() => setLensOpen((o) => !o)} style={{ alignSelf: 'flex-start', marginBottom: 10 }}>
+        {lensOpen ? '사상가 렌즈 카드 접기 ▲' : '사상가 렌즈 카드 펼치기 ▼ (가면 벗기)'}
+      </button>
+      {lensOpen && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 10, marginBottom: 14 }}>
+          {step.options.map((o) => o.lens && (
+            <div key={o.id} className="card col" style={{ marginBottom: 0, borderColor: 'var(--gold)' }}>
+              <div className="kicker">{o.short ?? o.id}</div>
+              <strong style={{ fontFamily: 'var(--font-head)' }}>{o.lens.thinker}</strong>
+              <p style={{ margin: 0, fontSize: 13, lineHeight: 1.7 }}>{o.lens.text}</p>
+            </div>
+          ))}
+        </div>
+      )}
+      <div className="col" style={{ marginBottom: 20 }}>
+        {step.options.map((o) => (
+          <button key={o.id} onClick={() => onChange(o.id)}
+            style={{ textAlign: 'left', padding: '12px 16px', whiteSpace: 'normal', lineHeight: 1.6, background: value === o.id ? 'rgba(201,162,39,.14)' : 'var(--panel2)', border: value === o.id ? '1px solid var(--gold)' : '1px solid var(--line)', color: 'var(--ink)' }}>
+            <strong>{o.label}</strong>
+            {o.detail && <span className="dim" style={{ display: 'block', fontSize: 12.5, marginTop: 4 }}>{o.detail}</span>}
+            {lensOpen && o.lens && <span style={{ display: 'block', fontSize: 11.5, marginTop: 4, color: 'var(--gold-light)' }}>렌즈: {o.lens.thinker}</span>}
+          </button>
+        ))}
+      </div>
+    </>
+  )
+}
+
 function ResolutionInner({ scenario }) {
   const { scenarioId, roomCode } = useParams()
   const navigate = useNavigate()
@@ -103,6 +155,8 @@ function ResolutionInner({ scenario }) {
   const allSelfReported = !scenario.finalReflectionCheck || players.every((p) => selfReports[p])
   const canFinish = allAccused && allChose && allSelfReported
 
+  const verdictStep = scenario.resolutionPhase.steps.find((s) => s.id === 'verdict')
+  const stage = verdictStep ? room.meta.resolutionStage ?? 'accuse' : null
   const accusationStep = scenario.resolutionPhase.steps.find((s) => s.id === 'accusation')
   const moralStep = scenario.resolutionPhase.steps.find((s) => s.id === 'moral_choice')
   const moralOptions = moralStep?.options?.every((o) => typeof o === 'object') ? moralStep.options : undefined
@@ -157,17 +211,27 @@ function ResolutionInner({ scenario }) {
         )}
       </div>
 
-      <h1 className="page-title">{accusationStep?.prompt ?? '범인 지목'}</h1>
-      <div className="page-title-rule" />
-      <p className="dim" style={{ marginBottom: 16 }}>{accusationHint}</p>
+      {stage === 'verdict' ? (
+        <VerdictStage scenario={scenario} room={room} step={verdictStep} value={moralChoices[uid]} onChange={submitMoralChoice}
+          accusationOptions={accusationOptions} playableCharacters={playableCharacters} />
+      ) : (
+        <>
+          <h1 className="page-title">{accusationStep?.prompt ?? '범인 지목'}</h1>
+          <div className="page-title-rule" />
+          <p className="dim" style={{ marginBottom: 16 }}>{accusationHint}</p>
 
-      <AccusationForm options={accusationOptions} value={accusations[uid]} onChange={submitAccusation} />
+          <AccusationForm options={accusationOptions} value={accusations[uid]} onChange={submitAccusation} />
 
-      {roleplayQuestionsStep && <RoleplayQuestionsStep step={roleplayQuestionsStep} questions={roleplayQuestions} />}
+          {roleplayQuestionsStep && <RoleplayQuestionsStep step={roleplayQuestionsStep} questions={roleplayQuestions} />}
+        </>
+      )}
 
-      <hr className="divider" />
-
-      <MoralChoiceForm prompt={moralStep?.prompt} value={moralChoices[uid]} onChange={submitMoralChoice} options={moralOptions} />
+      {!verdictStep && (
+        <>
+          <hr className="divider" />
+          <MoralChoiceForm prompt={moralStep?.prompt} value={moralChoices[uid]} onChange={submitMoralChoice} options={moralOptions} />
+        </>
+      )}
 
       {mySelfReportQuestion && (
         <SelfReportStep question={mySelfReportQuestion} value={selfReports[uid]} onChange={submitSelfReport} />
@@ -175,18 +239,24 @@ function ResolutionInner({ scenario }) {
 
       <p className="dim" style={{ fontSize: 12 }}>
         {players.filter((p) => accusations[p]).length}/{players.length}명 지목 완료 ·{' '}
-        {players.filter((p) => moralChoices[p]).length}/{players.length}명 응답 완료
+        {players.filter((p) => moralChoices[p]).length}/{players.length}명 {verdictStep ? '판결' : '응답'} 완료
         {scenario.finalReflectionCheck && ` · ${players.filter((p) => selfReports[p]).length}/${players.length}명 자기 응답 완료`}
       </p>
 
-      {isHost && (
+      {isHost && stage === 'accuse' && (
+        <button className="primary" onClick={() => update(ref(db, `rooms/${roomCode}/meta`), { resolutionStage: 'verdict' })} disabled={!allAccused} style={{ width: '100%', textAlign: 'left' }}>
+          {allAccused ? '지목 마감 — 진상 공개와 판결로 →' : `모두 지목하면 진행할 수 있어요 (${players.filter((p) => accusations[p]).length}/${players.length})`}
+        </button>
+      )}
+      {!isHost && stage === 'accuse' && <p className="dim" style={{ fontSize: 12 }}>모두 지목하면 방장이 진상을 공개합니다.</p>}
+      {isHost && stage !== 'accuse' && (
         <button
           className="primary"
           onClick={finishGame}
           disabled={!canFinish}
           style={{ width: '100%', textAlign: 'left' }}
         >
-          결과 확인하기
+          {verdictStep ? (canFinish ? '판결 확정 — 결말 보기' : `모두 판결하면 확정할 수 있어요 (${players.filter((p) => moralChoices[p]).length}/${players.length})`) : '결과 확인하기'}
         </button>
       )}
 

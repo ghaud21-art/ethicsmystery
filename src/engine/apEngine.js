@@ -17,8 +17,14 @@ export function getApFieldName(scenario, phase) {
 
 export function getPhaseApBudget(scenario, phase, playerCount) {
   const phaseDef = scenario.clues[phase]
+  if (phaseDef.apByPlayerCount?.[playerCount] != null) return phaseDef.apByPlayerCount[playerCount]
   const bonus = playerCount === 3 ? phaseDef.apBonusFor3Players : 0
   return phaseDef.apPerPlayer + bonus
+}
+
+// 모둠 보너스 AP(예: 4인 +1) — 방장에게 얹어 준다.
+export function getTeamBonusAp(scenario, phase, playerCount) {
+  return scenario.clues[phase]?.teamBonusByPlayerCount?.[playerCount] ?? 0
 }
 
 export function findClueDef(scenario, clueId) {
