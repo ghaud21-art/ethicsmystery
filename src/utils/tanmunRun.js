@@ -94,3 +94,35 @@ export const VERDICT_STYLES = {
   중요하지않음: { color: '#9a9a9a', background: 'rgba(154,154,154,.12)' },
   반려: { color: 'var(--ink-dim)', background: 'transparent' },
 }
+
+// 에필로그 선택·멀티엔딩 (선택 기능) — scenario.epilogue {prompt, options[{id,label}]} 와
+// scenario.endings [{id, title, text, when: {noSubmit?, minHits?, maxHits?, choice?}}].
+export function tanmunHits(scenario, run) {
+  return run.solved ? scenario.slots?.length ?? 4 : run.bestSlotHits ?? 0
+}
+export function tanmunAttempts(run) {
+  return (run.log ?? []).filter((l) => l.type === 'attempt').length
+}
+// 최종 추리를 한 번도 내지 않고 끝냈으면 에필로그 선택 없이 noSubmit 결말로 간다
+export function needsEpilogueChoice(scenario, run) {
+  if (!scenario.epilogue || run.epilogueChoice) return false
+  if (!run.solved && tanmunAttempts(run) === 0 && (scenario.endings ?? []).some((e) => e.when?.noSubmit)) return false
+  return true
+}
+export function pickTanmunEnding(scenario, run) {
+  const endings = scenario.endings ?? []
+  if (!endings.length) return null
+  const hits = tanmunHits(scenario, run)
+  const noSubmit = !run.solved && tanmunAttempts(run) === 0
+  return (
+    endings.find((e) => {
+      const w = e.when ?? {}
+      if (w.noSubmit) return noSubmit
+      if (noSubmit && endings.some((x) => x.when?.noSubmit)) return false
+      if (w.minHits != null && hits < w.minHits) return false
+      if (w.maxHits != null && hits > w.maxHits) return false
+      if (w.choice && w.choice !== run.epilogueChoice) return false
+      return true
+    }) ?? null
+  )
+}

@@ -424,6 +424,13 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
     const reflectionPrompts = draft.reflectionPrompts.map((p, i) => (i === index ? value : p))
     onChange({ ...draft, reflectionPrompts })
   }
+  const handleMediaUrlChange = async (fileName, url) => {
+    const next = { ...(draft.mediaUrls ?? {}) }
+    if (url) next[fileName] = url
+    else delete next[fileName]
+    await updateScenarioFields(draft.scenarioId, { mediaUrls: next })
+    onChange({ ...draft, mediaUrls: next })
+  }
 
   return (
     <div className="page-wide">
@@ -492,6 +499,16 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
         />
       </div>
 
+      <h2 className="page-title" style={{ fontSize: 18 }}>초동 수사 파일 (시작부터 무료 열람)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <JsonField label="초동 수사 파일 (initialCaseFiles)" value={draft.initialCaseFiles ?? []} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, initialCaseFiles: v })} />
+        <div className="row" style={{ gap: 14, alignItems: 'flex-start' }}>
+          <Field grow label="단서 공개 간격(문)" value={draft.clueInterval ?? 15} editMode={editMode} onChange={(v) => onChange({ ...draft, clueInterval: Number(v) || 15 })} />
+          <Field grow label="질문 마감(문)" value={draft.questionCap ?? 50} editMode={editMode} onChange={(v) => onChange({ ...draft, questionCap: Number(v) || 50 })} />
+        </div>
+        <Field label="반려 시 안내 문구" value={draft.rejectionNote} editMode={editMode} multiline small onChange={(v) => onChange({ ...draft, rejectionNote: v })} />
+      </div>
+
       <h2 className="page-title" style={{ fontSize: 18 }}>진상 전문 (AI 기록관 판정의 유일한 근거)</h2>
       <div className="card col" style={{ marginBottom: 20 }}>
         <Field value={draft.truth} editMode={editMode} multiline onChange={(v) => onChange({ ...draft, truth: v })} />
@@ -507,15 +524,28 @@ function TanmunEditorView({ draft, original, editMode, setEditMode, onChange, on
         <JsonField value={draft.fewShots} editMode={editMode} rows={12} onChange={(v) => onChange({ ...draft, fewShots: v })} />
       </div>
 
-      <h2 className="page-title" style={{ fontSize: 18 }}>단서 (15문마다 1장 공개)</h2>
+      <h2 className="page-title" style={{ fontSize: 18 }}>단서 ({draft.clueInterval ?? 15}문마다 1장 공개)</h2>
       <div className="card col" style={{ marginBottom: 20 }}>
         <JsonField value={draft.clues} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, clues: v })} />
+        {(draft.clues ?? []).filter((c) => c.image).map((c) => (
+          <MediaSlot key={c.image} scenarioId={draft.scenarioId} mediaUrls={draft.mediaUrls ?? {}} onUrlChange={handleMediaUrlChange} kind="image" label={`단서 이미지 · ${c.title}`} fileName={c.image} />
+        ))}
       </div>
 
       <h2 className="page-title" style={{ fontSize: 18 }}>최종 추리 채점 슬롯</h2>
       <div className="card col" style={{ marginBottom: 20 }}>
         <JsonField value={draft.slots} editMode={editMode} rows={10} onChange={(v) => onChange({ ...draft, slots: v })} />
         <Field label="보너스 기준 (-1문)" value={draft.bonusRule} editMode={editMode} multiline small onChange={(v) => onChange({ ...draft, bonusRule: v })} />
+      </div>
+
+      <h2 className="page-title" style={{ fontSize: 18 }}>에필로그 선택 · 멀티엔딩 (선택 기능)</h2>
+      <div className="card col" style={{ marginBottom: 20 }}>
+        <p className="dim" style={{ margin: 0, fontSize: 11, lineHeight: 1.6 }}>
+          수사가 끝나면 epilogue의 선택지가 먼저 나오고, endings 중 조건(when)이 처음 맞는 결말이 결과 화면에 표시됩니다.
+          when: minHits/maxHits(적중한 핵심 요소 수), choice(에필로그 선택 id), noSubmit(최종 추리를 한 번도 안 내고 끝냄 — 이때는 선택 없이 바로 결말).
+        </p>
+        <JsonField label="에필로그 (epilogue)" value={draft.epilogue ?? null} editMode={editMode} rows={8} onChange={(v) => onChange({ ...draft, epilogue: v })} />
+        <JsonField label="결말 (endings)" value={draft.endings ?? []} editMode={editMode} rows={12} onChange={(v) => onChange({ ...draft, endings: v })} />
       </div>
 
       <h2 className="page-title" style={{ fontSize: 18 }}>성찰 질문</h2>

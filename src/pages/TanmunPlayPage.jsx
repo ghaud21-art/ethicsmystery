@@ -11,8 +11,7 @@ import { exportElementAsImage } from '../utils/html2canvasExport.js'
 import {
   newTanmunRun, saveTanmunRun, getTanmunRun, clearTanmunRun,
   getClueInterval, EMERGENCY_CLUE_COST, WRONG_ATTEMPT_PENALTY, MAX_DEDUCTION_ATTEMPTS,
-  getQuestionCap, unresolvedPenalty, gradeForScore, gradeLineText, VERDICT_STYLES,
-} from '../utils/tanmunRun.js'
+  getQuestionCap, unresolvedPenalty, gradeForScore, gradeLineText, VERDICT_STYLES, needsEpilogueChoice, pickTanmunEnding, tanmunHits } from '../utils/tanmunRun.js'
 
 const KAKAO_LINK = 'https://open.kakao.com/me/dalpjh'
 
@@ -305,6 +304,8 @@ function TanmunInner({ scenario }) {
   }
 
   const gradeInfo = run?.finalScore != null ? gradeForScore(run.finalScore, scenario) : null
+  const ending = run?.step === 'ended' ? pickTanmunEnding(scenario, run) : null
+  const epilogueOption = scenario.epilogue?.options?.find((o) => o.id === run?.epilogueChoice) ?? null
 
   const handleReflectionSubmit = async () => {
     if (tier !== 'homeSchoolStudent') return
@@ -327,7 +328,7 @@ function TanmunInner({ scenario }) {
           endingId: gradeInfo.grade,
           endingTitle,
           accusedLabel: null,
-          moralChoiceLabel: run.solved ? '사건 해결' : '미해결 종료',
+          moralChoiceLabel: `${run.solved ? '사건 해결' : '미해결 종료'}${ending ? ` · 결말 〈${ending.title}〉` : ''}${epilogueOption ? ` · ${epilogueOption.label}` : ''}`,
         },
       })
     } catch (e) {
@@ -341,7 +342,7 @@ function TanmunInner({ scenario }) {
         nickname: run.playerName?.trim() || studentIdentity.name,
         scenarioTitle: `${scenario.meta.title} (탐문 수사)`,
         endingTitle,
-        endingMessage: run.solved ? '플레이어가 진상에 도달해 사건을 해결했다.' : '플레이어가 진상에 도달하지 못한 채 수사를 종료했다.',
+        endingMessage: `${run.solved ? '플레이어가 진상에 도달해 사건을 해결했다.' : '플레이어가 진상에 도달하지 못한 채 수사를 종료했다.'}${epilogueOption ? ` 에필로그에서 '${epilogueOption.label}'를 골랐다.` : ''}${ending ? ` 결말: 〈${ending.title}〉 ${ending.text}` : ''}`,
         qaPairs: scenario.reflectionPrompts.map((q, i) => ({ question: q, answer: answers[i] ?? '' })),
       })
       setAiFeedback(feedback)
@@ -435,6 +436,28 @@ function TanmunInner({ scenario }) {
     )
   }
 
+  // ---------- 에필로그 선택 (수사 종료 직후, 결과 공개 전) ----------
+  if (run.step === 'ended' && needsEpilogueChoice(scenario, run)) {
+    const ep = scenario.epilogue
+    return (
+      <div className="page">
+        <Masthead />
+        <div className="card col" style={{ borderTop: '2px solid var(--gold)', padding: '24px 20px' }}>
+          <div className="kicker">{ep.kicker ?? '에필로그'}</div>
+          <p style={{ margin: 0, fontSize: 15, lineHeight: 1.9, whiteSpace: 'pre-line' }}>{ep.prompt}</p>
+          <div className="col" style={{ gap: 8, marginTop: 6 }}>
+            {(ep.options ?? []).map((o) => (
+              <button key={o.id} className="primary" style={{ textAlign: 'left', whiteSpace: 'normal', lineHeight: 1.6 }} onClick={() => setRun((prev) => ({ ...prev, epilogueChoice: o.id }))}>
+                {o.label}
+              </button>
+            ))}
+          </div>
+          {ep.note && <p className="dim" style={{ margin: 0, fontSize: 12 }}>{ep.note}</p>}
+        </div>
+      </div>
+    )
+  }
+
   // ---------- 결과 (수사 종료) ----------
   if (run.step === 'ended') {
     return (
@@ -456,6 +479,15 @@ function TanmunInner({ scenario }) {
             {run.solved && run.bonusHit && ' (결정적 근거 보너스 -1문 적용)'}
           </p>
         </div>
+
+        {ending && (
+          <div className="card col" style={{ borderLeft: '3px solid var(--gold)', padding: '20px' }}>
+            <div className="kicker">결말{ending.code ? ` ${ending.code}` : ''}</div>
+            <h2 style={{ fontFamily: 'var(--font-head)', fontWeight: 800, fontSize: 21, margin: 0 }}>〈{ending.title}〉</h2>
+            {epilogueOption && <p className="dim" style={{ margin: 0, fontSize: 12 }}>당신의 선택: {epilogueOption.label} · 핵심 요소 {tanmunHits(scenario, run)}/{scenario.slots?.length ?? 4}개 적중</p>}
+            <p style={{ margin: 0, fontSize: 14, lineHeight: 1.9, whiteSpace: 'pre-line' }}>{ending.text}</p>
+          </div>
+        )}
 
         <div className="divider-orn"><span className="divider-orn-diamond" /></div>
 
@@ -528,6 +560,7 @@ function TanmunInner({ scenario }) {
           <p className="dim" style={{ fontSize: 12, margin: '0 0 14px' }}>
             {run.playerName?.trim() ? `${run.playerName.trim()} 탐정 · ` : ''}
             {gradeInfo.grade}등급 「{gradeInfo.title}」 · 총 {run.finalScore}문 · {run.solved ? '사건 해결' : '미해결 종료'}
+            {ending && ` · 결말 〈${ending.title}〉`}
           </p>
           <div className="col">
             {(scenario.reflectionPrompts ?? []).map((q, i) => (
@@ -613,6 +646,9 @@ function TanmunInner({ scenario }) {
                 <strong style={{ fontSize: 13, fontFamily: 'var(--font-head)' }}>{clue.title}</strong>
                 <span className="pill pill-solid">단서 {i + 1}</span>
               </div>
+              {clue.image && scenario.mediaUrls?.[clue.image] && (
+                <img src={scenario.mediaUrls[clue.image]} alt={clue.title} style={{ width: '100%', borderRadius: 'var(--radius)', border: '1px solid var(--line)', marginTop: 8, display: 'block' }} />
+              )}
               <p className="dim" style={{ margin: '6px 0 0', fontSize: 12, lineHeight: 1.7 }}>{clue.content}</p>
             </div>
           ))}
